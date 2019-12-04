@@ -1,0 +1,16 @@
+{
+    "name": "fastserver/fastserver",
+    "description": "A Fast Server",
+    "autoload": {
+        "psr-4": {
+            "FastServer\\": "./FastServer"
+        }
+    },
+    "require": {
+        "php": ">=7.1.3",
+        "amphp/amp": "^2.4",
+        "amphp/http-server": "^1.1",
+        "symfony/options-resolver": "^5.0",
+        "symfony/console": "^5.0"
+    }
+}
