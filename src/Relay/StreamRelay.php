@@ -53,10 +53,11 @@ class StreamRelay implements RelayInterface
         }
         return $this;
     }
+
     /**
      * {@inheritdoc}
      */
-    public function receiveSync(int &$flags = null)
+    public function receive(int &$flags = null)
     {
         $prefix = $this->fetchMeta();
         $flags = $prefix['flags'];

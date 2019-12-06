@@ -8,7 +8,7 @@ use Amp\ByteStream\ResourceOutputStream;
 use Amp\Promise;
 use HttpServer\Exception\TransportException;
 
-class AsyncStreamRelay implements RelayInterface, AsyncRelayInterface
+class AsyncStreamRelay implements AsyncRelayInterface
 {
     /**
      * @var InputStream
@@ -39,8 +39,16 @@ class AsyncStreamRelay implements RelayInterface, AsyncRelayInterface
         return $this->output->write($body);
     }
 
-    public function read()
+    public function send($payload, int $flags = null)
     {
-        
+        \Amp\Promise\wait($this->sendAsync($payload, $flags));
+    }
+
+    public function receive(int &$flags = null)
+    {
+    }
+
+    public function receiveAsync(): Promise
+    {
     }
 }

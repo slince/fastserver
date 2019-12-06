@@ -4,7 +4,7 @@ namespace FastServer\Relay;
 
 use Amp\Promise;
 
-interface AsyncRelayInterface
+interface AsyncRelayInterface extends RelayInterface
 {
     public function sendAsync($payload, int $flags) :Promise;
 

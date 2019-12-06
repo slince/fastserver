@@ -13,4 +13,6 @@ interface RelayInterface
     const PAYLOAD_CONTROL = 16;
 
     public function send($payload, int $flags = null);
+
+    public function receive(int &$flags = null);
 }

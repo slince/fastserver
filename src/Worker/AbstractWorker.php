@@ -5,7 +5,7 @@ namespace FastServer\Worker;
 use FastServer\Process\Process;
 use FastServer\Process\ProcessInterface;
 
-class Worker implements WorkerInterface
+abstract class AbstractWorker implements WorkerInterface
 {
     /**
      * @var ProcessInterface
@@ -27,7 +27,7 @@ class Worker implements WorkerInterface
         $this->process->stop();
     }
 
-    public function work()
-    {
-    }
+    abstract protected function createRelay();
+
+    abstract  public function work();
 }
