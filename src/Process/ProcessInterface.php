@@ -33,6 +33,11 @@ interface ProcessInterface
     public function start($blocking = true);
 
     /**
+     * @return int
+     */
+    public function getPid();
+
+    /**
      * 关闭进程
      */
     public function kill();

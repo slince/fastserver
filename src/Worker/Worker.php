@@ -2,7 +2,6 @@
 
 namespace FastServer\Worker;
 
-use Amp\Loop;
 use FastServer\Process\Process;
 use FastServer\Process\ProcessInterface;
 
@@ -30,12 +29,5 @@ class Worker implements WorkerInterface
 
     public function work()
     {
-        Loop::run(function () {
-            $stream = $this->process->getInput();
-            stream_set_blocking($stream, false);
-            Loop::onReadable($stream, function(){
-
-            });
-        });
     }
 }
