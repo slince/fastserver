@@ -4,7 +4,6 @@ namespace FastServer;
 
 use Evenement\EventEmitter;
 use HttpServer\Exception\InvalidArgumentException;
-use React\Socket\Server;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 abstract class AbstractServer extends EventEmitter implements ServerInterface
