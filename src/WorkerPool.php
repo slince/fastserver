@@ -11,6 +11,11 @@ class WorkerPool
      */
     protected $workers = [];
 
+    public function __construct(array $workers = [])
+    {
+        $this->workers = $workers;
+    }
+
     public function add(WorkerInterface $worker)
     {
         $this->workers[] = $worker;

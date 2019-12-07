@@ -4,16 +4,29 @@ namespace FastServer\Worker;
 
 use FastServer\Process\Process;
 use FastServer\Process\ProcessInterface;
+use FastServer\ServerInterface;
 
-abstract class AbstractWorker implements WorkerInterface
+class Worker implements WorkerInterface
 {
+    /**
+     * @var ServerInterface
+     */
+    protected $server;
+
+    /**
+     * @var resource
+     */
+    protected $socket;
+
     /**
      * @var ProcessInterface
      */
     protected $process;
 
-    public function __construct()
+    public function __construct(ServerInterface $server, $socket)
     {
+        $this->server = $server;
+        $this->socket = $socket;
         $this->process = new Process([$this, 'work']);
     }
 

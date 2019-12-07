@@ -3,6 +3,8 @@
 namespace FastServer;
 
 use Evenement\EventEmitter;
+use FastServer\Socket\Server;
+use FastServer\Worker\Worker;
 use HttpServer\Exception\InvalidArgumentException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -18,9 +20,13 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     protected $pool;
 
+    /**
+     * @var resource
+     */
+    protected $socket;
+
     public function __construct()
     {
-        $this->pool = new WorkerPool();
     }
 
     /**
@@ -45,6 +51,29 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function serve()
+    {
+        $socket = $this->createSocket();
+        $this->pool = $this->createWorkers($socket);
+    }
+
+    protected function createSocket()
+    {
+        return Server::createSocket($this->options['address']);
+    }
+
+    protected function createWorkers($socket)
+    {
+        $pool = new WorkerPool();
+        for ($i = 0; $i <= $this->options['work_num']; $i++) {
+            $pool->add(new Worker($this, $socket));
+        }
+        return $pool;
+    }
+
+    /**
      * Configure options resolver for the server.
      *
      * @param OptionsResolver $resolver
@@ -55,10 +84,5 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
             ->setDefined([
                 'event_names' => ['start', 'end', 'client-connect']
             ]);
-    }
-
-    protected function createSocket()
-    {
-
     }
 }
