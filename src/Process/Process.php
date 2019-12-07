@@ -35,6 +35,13 @@ class Process implements ProcessInterface
      */
     protected $running = false;
 
+    /**
+     * Signal Handler
+     *
+     * @var array
+     */
+    protected $signalHandlers = [];
+
     public function __construct(callable $callback)
     {
         if (!function_exists('pcntl_fork')) {
@@ -46,9 +53,17 @@ class Process implements ProcessInterface
     /**
      * {@inheritdoc}
      */
+    public function onSignal($signal, callable $handler)
+    {
+        $this->signalHandlers[$signal] = $handler;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function start($blocking = true)
     {
-        if ($this->running()) {
+        if ($this->isRunning()) {
             throw new RuntimeException("The process is already running");
         }
         $pid = \pcntl_fork();
@@ -60,6 +75,7 @@ class Process implements ProcessInterface
             $blocking && $this->wait();
         } else {
             $this->pid = posix_getpid();
+            $this->installSignalHandler();
             try {
                 $exitCode = call_user_func($this->callback);
             } catch (\Exception $e) {
@@ -80,9 +96,9 @@ class Process implements ProcessInterface
     /**
      * {@inheritdoc}
      */
-    public function stop($signal = SIGKILL)
+    public function stop()
     {
-        $this->signal($signal);
+        $this->signal(SIGKILL);
     }
 
     /**
@@ -137,6 +153,16 @@ class Process implements ProcessInterface
         } else {
             //The process is terminated
             $this->running = false;
+        }
+    }
+
+    /**
+     * Install signal handlers for the process.
+     */
+    protected function installSignalHandler()
+    {
+        foreach ($this->signalHandlers as $signal => $signalHandler) {
+            pcntl_signal($signal, $signalHandler);
         }
     }
 }
