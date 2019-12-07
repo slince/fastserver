@@ -5,50 +5,55 @@ namespace FastServer\Process;
 interface ProcessInterface
 {
     /**
-     * 发送信号给进程
+     * Send signal to the process.
      *
      * @param int $signal
      */
     public function signal($signal);
 
     /**
-     * 获取输入流
+     * Register signal handler.
+     *
+     * @param $signal
+     * @param callable $handler
+     */
+    public function onSignal($signal, callable $handler);
+
+    /**
+     * Get input stream.
      *
      * @return resource
      */
     public function getInput();
 
     /**
-     * 获取输出流
+     * Gets the output stream.
      *
      * @return resource
      */
     public function getOutput();
 
     /**
-     * 启动进程
+     * Starts the process.
      *
      * @param bool $blocking
      */
     public function start($blocking = true);
 
     /**
-     * @return int
+     * Wait for the process exit.
      */
-    public function getPid();
+    public function wait();
 
     /**
-     * 关闭进程
-     */
-    public function kill();
-
-    /**
-     * 强制关闭进程
+     * Closes the process.
      */
     public function stop();
 
     /**
-     * 进程执行内容
+     * Gets the process id.
+     *
+     * @return int
      */
-    public function run();
+    public function getPid();
 }

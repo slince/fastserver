@@ -4,6 +4,7 @@ namespace FastServer\Worker;
 
 use FastServer\Process\Process;
 use FastServer\Process\ProcessInterface;
+use FastServer\Relay\RelayInterface;
 use FastServer\ServerInterface;
 
 class Worker implements WorkerInterface
@@ -23,11 +24,17 @@ class Worker implements WorkerInterface
      */
     protected $process;
 
+    /**
+     * @var RelayInterface
+     */
+    protected $relay;
+
     public function __construct(ServerInterface $server, $socket)
     {
         $this->server = $server;
         $this->socket = $socket;
         $this->process = new Process([$this, 'work']);
+        $this->relay = $this->createRelay();
     }
 
     public function start()
@@ -40,7 +47,15 @@ class Worker implements WorkerInterface
         $this->process->stop();
     }
 
+    public function send($payload, int $flags = null)
+    {
+        $this->relay->send(json_encode($payload), $flags);
+    }
+
     abstract protected function createRelay();
 
+    /**
+     * @internal
+     */
     abstract  public function work();
 }

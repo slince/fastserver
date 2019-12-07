@@ -6,6 +6,8 @@ use Evenement\EventEmitter;
 use FastServer\Socket\Server;
 use FastServer\Worker\Worker;
 use HttpServer\Exception\InvalidArgumentException;
+use React\EventLoop\Factory as LoopFactory;
+use React\EventLoop\LoopInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 abstract class AbstractServer extends EventEmitter implements ServerInterface
@@ -25,8 +27,14 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     protected $socket;
 
+    /**
+     * @var LoopInterface
+     */
+    protected $loop;
+
     public function __construct()
     {
+        $this->loop = LoopFactory::create();
     }
 
     /**
@@ -57,6 +65,18 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     {
         $socket = $this->createSocket();
         $this->pool = $this->createWorkers($socket);
+        $this->loop = LoopFactory::create();
+    }
+
+    /**
+     * Gets the worker pool.
+     *
+     * @return WorkerPool
+     * @internal
+     */
+    public function getPool(): WorkerPool
+    {
+        return $this->pool;
     }
 
     protected function createSocket()
@@ -71,6 +91,13 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
             $pool->add(new Worker($this, $socket));
         }
         return $pool;
+    }
+
+    protected function healthCheck()
+    {
+        foreach ($this->pool as $worker) {
+
+        }
     }
 
     /**
