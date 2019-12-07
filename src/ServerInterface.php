@@ -1,6 +1,6 @@
 <?php
 
-namespace FastServer\Server;
+namespace FastServer;
 
 interface ServerInterface
 {
