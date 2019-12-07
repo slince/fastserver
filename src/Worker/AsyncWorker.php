@@ -8,12 +8,11 @@ class AsyncWorker extends AbstractWorker
 {
     public function send($payload)
     {
-
     }
 
     public function work()
     {
-        
+
     }
 
     protected function createRelay()
