@@ -2,10 +2,10 @@
 
 namespace FastServer;
 
-use React\Socket\Connection;
+use Evenement\EventEmitterInterface;
+use React\Socket\ConnectionInterface;
 
-interface ProtocolParserInterface
+interface ProtocolParserInterface extends EventEmitterInterface
 {
-
-    public function handleConnection(Connection $connection);
+    public function handle(ConnectionInterface $connection);
 }

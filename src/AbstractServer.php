@@ -93,13 +93,6 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         return $pool;
     }
 
-    protected function healthCheck()
-    {
-        foreach ($this->pool as $worker) {
-
-        }
-    }
-
     /**
      * Configure options resolver for the server.
      *

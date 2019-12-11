@@ -2,20 +2,23 @@
 
 namespace FastServer;
 
-use React\Socket\Connection;
+use React\Socket\ConnectionInterface;
 
-abstract class TcpServer extends AbstractServer
+class TcpServer extends AbstractServer
 {
+    /**
+     * @var ProtocolParserInterface
+     */
     protected $parser;
 
-    public function handleConnection(Connection $connection)
+    public function __construct(ProtocolParserInterface $parser)
     {
-        $this->parser = $this->createParser();
-        $this->parser->handleConnection($connection);
+        $this->parser = $parser;
+        parent::__construct();
     }
 
-    /**
-     * @return ProtocolParserInterface
-     */
-    abstract function createParser();
+    public function handleConnection(ConnectionInterface $connection)
+    {
+        $this->parser->handleConnection($connection);
+    }
 }

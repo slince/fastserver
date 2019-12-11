@@ -6,7 +6,6 @@ use FastServer\Process\Process;
 use FastServer\Process\ProcessInterface;
 use FastServer\Relay\RelayInterface;
 use FastServer\ServerInterface;
-use React\Socket\Connection;
 use React\Socket\ServerInterface as Socket;
 
 class Worker implements WorkerInterface

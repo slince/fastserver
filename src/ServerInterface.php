@@ -2,7 +2,7 @@
 
 namespace FastServer;
 
-use React\Socket\Connection;
+use React\Socket\ConnectionInterface;
 
 interface ServerInterface
 {
@@ -12,5 +12,5 @@ interface ServerInterface
 
     public function serve();
 
-    public function handleConnection(Connection $connection);
+    public function handleConnection(ConnectionInterface $connection);
 }
