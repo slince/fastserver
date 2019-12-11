@@ -5,6 +5,18 @@ namespace FastServer\Process;
 interface ProcessInterface
 {
     /**
+     * process status,running
+     * @var string
+     */
+    const STATUS_RUNNING = 'running';
+
+    /**
+     * process status,terminated
+     * @var string
+     */
+    const STATUS_TERMINATED = 'terminated';
+
+    /**
      * Send signal to the process.
      *
      * @param int $signal

@@ -7,18 +7,6 @@ use FastServer\Exception\RuntimeException;
 class Process implements ProcessInterface
 {
     /**
-     * process status,running
-     * @var string
-     */
-    const STATUS_RUNNING = 'running';
-
-    /**
-     * process status,terminated
-     * @var string
-     */
-    const STATUS_TERMINATED = 'terminated';
-
-    /**
      * @var callable
      */
     protected $callback;
