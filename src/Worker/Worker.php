@@ -6,6 +6,8 @@ use FastServer\Process\Process;
 use FastServer\Process\ProcessInterface;
 use FastServer\Relay\RelayInterface;
 use FastServer\ServerInterface;
+use React\Socket\Connection;
+use React\Socket\ServerInterface as Socket;
 
 class Worker implements WorkerInterface
 {
@@ -15,7 +17,7 @@ class Worker implements WorkerInterface
     protected $server;
 
     /**
-     * @var resource
+     * @var Socket
      */
     protected $socket;
 
@@ -29,16 +31,16 @@ class Worker implements WorkerInterface
      */
     protected $relay;
 
-    public function __construct(ServerInterface $server, $socket)
+    public function __construct(ServerInterface $server, Socket $socket)
     {
         $this->server = $server;
         $this->socket = $socket;
         $this->process = new Process([$this, 'work']);
-        $this->relay = $this->createRelay();
     }
 
     public function start()
     {
+        $this->initialize();
         $this->process->start();
     }
 
@@ -47,15 +49,31 @@ class Worker implements WorkerInterface
         $this->process->stop();
     }
 
-    public function send($payload, int $flags = null)
+    /**
+     * @param int $signal
+     * @param callable $handler
+     */
+    public function onSignal($signal, $handler)
     {
-        $this->relay->send(json_encode($payload), $flags);
+        $this->process->onSignal($signal, $handler);
     }
 
-    abstract protected function createRelay();
+    public function getPid()
+    {
+        return $this->process->getPid();
+    }
+
+    protected function initialize()
+    {
+        $this->onSignal(SIGTERM, function(){
+        });
+    }
 
     /**
      * @internal
      */
-    abstract  public function work();
+     public function work()
+     {
+        $this->socket->on('connection', [$this->server, 'handleConnection']);
+     }
 }

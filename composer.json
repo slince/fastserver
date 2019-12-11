@@ -11,7 +11,8 @@
         "symfony/options-resolver": "^5.0",
         "symfony/console": "^5.0",
         "react/socket": "^1.3",
-        "react/event-loop": "^1.1"
+        "react/event-loop": "^1.1",
+        "guzzlehttp/psr7": "^1.6"
     },
     "suggest": {
         "ext-pcntl": "*",

@@ -2,6 +2,8 @@
 
 namespace FastServer;
 
+use React\Socket\Connection;
+
 interface ServerInterface
 {
     public function on($eventName, callable $listener);
@@ -9,4 +11,6 @@ interface ServerInterface
     public function configure(array $options);
 
     public function serve();
+
+    public function handleConnection(Connection $connection);
 }

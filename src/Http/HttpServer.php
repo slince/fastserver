@@ -2,20 +2,12 @@
 
 namespace FastServer\Http;
 
-use FastServer\Server\AbstractServer;
+use FastServer\TcpServer;
 
-class HttpServer extends AbstractServer
+class HttpServer extends TcpServer
 {
-    /**
-     * @var resource
-     */
-    protected $socket;
-
-
-    public function serve()
+    public function createParser()
     {
-        $this->socket = $this->createSocket(
-            "tcp://{$this->options['address']}"
-        );
+        return new RequestHeaderParser();
     }
 }

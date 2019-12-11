@@ -9,6 +9,4 @@ interface WorkerInterface
     public function stop();
 
     public function getPid();
-
-    public function send($payload);
 }

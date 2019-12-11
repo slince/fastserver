@@ -20,20 +20,6 @@ interface ProcessInterface
     public function onSignal($signal, callable $handler);
 
     /**
-     * Get input stream.
-     *
-     * @return resource
-     */
-    public function getInput();
-
-    /**
-     * Gets the output stream.
-     *
-     * @return resource
-     */
-    public function getOutput();
-
-    /**
      * Starts the process.
      *
      * @param bool $blocking
