@@ -3,11 +3,11 @@
 namespace FastServer;
 
 use Evenement\EventEmitter;
-use FastServer\Socket\Server;
 use FastServer\Worker\Worker;
-use HttpServer\Exception\InvalidArgumentException;
+use FastServer\Exception\InvalidArgumentException;
 use React\EventLoop\Factory as LoopFactory;
 use React\EventLoop\LoopInterface;
+use React\Socket\Server;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 abstract class AbstractServer extends EventEmitter implements ServerInterface
@@ -31,11 +31,6 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      * @var LoopInterface
      */
     protected $loop;
-
-    public function __construct()
-    {
-        $this->loop = LoopFactory::create();
-    }
 
     /**
      * {@inheritdoc}
@@ -63,9 +58,11 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     public function serve()
     {
+        $this->loop = LoopFactory::create();
         $socket = $this->createSocket();
         $this->pool = $this->createWorkers($socket);
-        $this->loop = LoopFactory::create();
+        $this->initialize();
+        $this->loop->run();
     }
 
     /**
@@ -81,13 +78,13 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
 
     protected function createSocket()
     {
-        return Server::createSocket($this->options['address']);
+        return new Server($this->options['address'], $this->loop);
     }
 
     protected function createWorkers($socket)
     {
         $pool = new WorkerPool();
-        for ($i = 0; $i <= $this->options['work_num']; $i++) {
+        for ($i = 0; $i <= $this->options['max_workers']; $i++) {
             $pool->add(new Worker($this, $socket));
         }
         return $pool;
@@ -100,9 +97,15 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     protected function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults([ 'max_workers' => 1])
-            ->setDefined([
+        $resolver
+            ->setDefaults([
+                'max_workers' => 1,
                 'event_names' => ['start', 'end', 'client-connect']
-            ]);
+            ])
+            ->setRequired(['address']);
+    }
+
+    protected function initialize()
+    {
     }
 }

@@ -2,9 +2,9 @@
 
 namespace FastServer\Relay;
 
-use HttpServer\Exception\InvalidArgumentException;
-use HttpServer\Exception\MetaException;
-use HttpServer\Exception\TransportException;
+use FastServer\Exception\InvalidArgumentException;
+use FastServer\Exception\MetaException;
+use FastServer\Exception\TransportException;
 
 class StreamRelay implements RelayInterface
 {

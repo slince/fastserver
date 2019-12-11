@@ -4,23 +4,28 @@ namespace FastServer\Http;
 
 use FastServer\ProtocolParserInterface;
 use FastServer\TcpServer;
+use GuzzleHttp\Psr7\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
+use React\Http\StreamingServer;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class HttpServer extends TcpServer
 {
     /**
-     * @var RequestHandlerInterface
+     * @var callable
      */
     protected $requestHandler;
 
-    public function __construct(ProtocolParserInterface $parser)
-    {
-        $parser = new RequestHeaderParser();
-        parent::__construct($parser);
-    }
+    /**
+     * @var ProtocolParserInterface
+     */
+    protected $parser;
+
+    /**
+     * @var StreamingServer
+     */
+    protected $streamServer;
 
     /**
      * {@inheritdoc}
@@ -30,13 +35,37 @@ class HttpServer extends TcpServer
         parent::configureOptions($resolver);
     }
 
-    protected function createParser()
+    public function onRequest(callable $requestHandler)
     {
-        $this->parser->on('headers', [$this, 'handle']);
+        $this->requestHandler = $requestHandler;
     }
 
-    public function handleRequest(ConnectionInterface $connection, ServerRequestInterface $request)
+    protected function initialize()
     {
-        $response = $this->requestHandler->handle($request);
+        $this->parser = new RequestHeaderParser();
+        $this->streamServer = new StreamingServer($this->requestHandler);
+        $this->parser->on('headers', function (ServerRequestInterface $request, ConnectionInterface $conn) {
+            $this->streamServer->handleRequest($conn, $request);
+        });
+
+        $this->parser->on('error', function(\Exception $e, ConnectionInterface $conn)  {
+            $this->emit('error', array($e));
+            // parsing failed => assume dummy request and send appropriate error
+            $this->streamServer->writeError(
+                $conn,
+                $e->getCode() !== 0 ? $e->getCode() : 400,
+                new ServerRequest('GET', '/')
+            );
+        });
+        $this->parser->on('headers', [$this->streamServer, 'handle']);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function handleConnection(ConnectionInterface $connection)
+    {
+        parent::handleConnection($connection);
+        $this->parser->handle($connection);
     }
 }

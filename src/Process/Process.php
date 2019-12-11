@@ -2,7 +2,7 @@
 
 namespace FastServer\Process;
 
-use HttpServer\Exception\RuntimeException;
+use FastServer\Exception\RuntimeException;
 
 class Process implements ProcessInterface
 {

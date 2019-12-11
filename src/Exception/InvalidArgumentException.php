@@ -1,6 +1,6 @@
 <?php
 
-namespace HttpServer\Exception;
+namespace FastServer\Exception;
 
 class InvalidArgumentException extends \InvalidArgumentException
 {

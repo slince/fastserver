@@ -3,7 +3,7 @@
     "description": "A Fast Server",
     "autoload": {
         "psr-4": {
-            "FastServer\\": "./FastServer"
+            "FastServer\\": "./src"
         }
     },
     "require": {

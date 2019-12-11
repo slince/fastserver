@@ -12,5 +12,8 @@ interface ServerInterface
 
     public function serve();
 
+    /**
+     * {@internal }
+     */
     public function handleConnection(ConnectionInterface $connection);
 }
