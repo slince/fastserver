@@ -32,6 +32,14 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     protected $loop;
 
+    public function __construct(?LoopInterface $loop = null)
+    {
+        if (null === $loop) {
+            $loop = LoopFactory::create();
+        }
+        $this->loop = $loop;
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -58,7 +66,6 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     public function serve()
     {
-        $this->loop = LoopFactory::create();
         $socket = $this->createSocket();
         $this->pool = $this->createWorkers($socket);
         $this->initialize();

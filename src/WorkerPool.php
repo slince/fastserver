@@ -4,7 +4,7 @@ namespace FastServer;
 
 use FastServer\Worker\WorkerInterface;
 
-class WorkerPool implements \IteratorAggregate
+class WorkerPool implements \IteratorAggregate, \Countable
 {
     /**
      * @var WorkerInterface[]
@@ -28,12 +28,18 @@ class WorkerPool implements \IteratorAggregate
         }
     }
 
-    public function count()
+    /**
+     * {@inheritdoc}
+     */
+    public function count(): int
     {
         return count($this->workers);
     }
 
-    public function getIterator()
+    /**
+     * {@inheritdoc}
+     */
+    public function getIterator(): \Iterator
     {
         return new \ArrayIterator($this->workers);
     }
