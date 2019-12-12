@@ -2,15 +2,15 @@
 
 namespace FastServer\Http;
 
-use FastServer\ProtocolParserInterface;
 use FastServer\TcpServer;
 use GuzzleHttp\Psr7\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;
+use React\Http\Io\RequestHeaderParser;
 use React\Http\StreamingServer;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class HttpServer extends TcpServer
+final class HttpServer extends TcpServer
 {
     /**
      * @var callable
@@ -18,7 +18,7 @@ class HttpServer extends TcpServer
     protected $requestHandler;
 
     /**
-     * @var ProtocolParserInterface
+     * @var RequestHeaderParser
      */
     protected $parser;
 
@@ -57,7 +57,7 @@ class HttpServer extends TcpServer
                 new ServerRequest('GET', '/')
             );
         });
-        $this->parser->on('headers', [$this->streamServer, 'handle']);
+        parent::initialize();
     }
 
     /**

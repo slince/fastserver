@@ -84,7 +84,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     protected function createWorkers($socket)
     {
         $pool = new WorkerPool();
-        for ($i = 0; $i <= $this->options['max_workers']; $i++) {
+        for ($i = 0; $i < $this->options['max_workers']; $i++) {
             $pool->add(new Worker($this, $socket));
         }
         return $pool;
@@ -107,5 +107,8 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
 
     protected function initialize()
     {
+        foreach ($this->pool as $worker) {
+            $worker->start();
+        }
     }
 }

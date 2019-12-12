@@ -43,10 +43,19 @@ class FakeProcess implements ProcessInterface
     {
     }
 
+    /**
+     * {@inheritdoc }
+     */
+    public function onSignal($signal, callable $handler)
+    {
+
+    }
+
+    /**
+     * {@inheritdoc }
+     */
     public function getPid()
     {
         return getmygid();
     }
-
-
 }

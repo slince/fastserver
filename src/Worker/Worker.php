@@ -2,6 +2,7 @@
 
 namespace FastServer\Worker;
 
+use FastServer\Process\FakeProcess;
 use FastServer\Process\Process;
 use FastServer\Process\ProcessInterface;
 use FastServer\Relay\RelayInterface;
@@ -34,7 +35,7 @@ class Worker implements WorkerInterface
     {
         $this->server = $server;
         $this->socket = $socket;
-        $this->process = new Process([$this, 'work']);
+        $this->process = static::createProcess([$this, 'work']);
     }
 
     public function start()
@@ -64,8 +65,14 @@ class Worker implements WorkerInterface
 
     protected function initialize()
     {
-        $this->onSignal(SIGTERM, function(){
-        });
+    }
+
+    protected static function createProcess(callable $callback)
+    {
+        if (function_exists('pcntl_fork')) {
+            return new Process($callback);
+        }
+        return new FakeProcess($callback);
     }
 
     /**
