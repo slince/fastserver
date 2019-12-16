@@ -1,15 +1,14 @@
 <?php
 
-namespace FastServer\Worker;
+namespace FastServer;
 
 use FastServer\Process\FakeProcess;
 use FastServer\Process\Process;
 use FastServer\Process\ProcessInterface;
-use FastServer\Relay\RelayInterface;
-use FastServer\ServerInterface;
+use React\EventLoop\LoopInterface;
 use React\Socket\ServerInterface as Socket;
 
-class Worker implements WorkerInterface
+final class Worker
 {
     /**
      * @var ServerInterface
@@ -27,44 +26,75 @@ class Worker implements WorkerInterface
     protected $process;
 
     /**
-     * @var RelayInterface
+     * @var LoopInterface
      */
-    protected $relay;
+    protected $loop;
 
-    public function __construct(ServerInterface $server, Socket $socket)
+    /**
+     * @var callable[]
+     */
+    protected $signals;
+
+    public function __construct(ServerInterface $server, LoopInterface $loop, Socket $socket)
     {
         $this->server = $server;
+        $this->loop = $loop;
         $this->socket = $socket;
-        $this->process = static::createProcess([$this, 'work']);
     }
 
+    /**
+     * Starts the worker.
+     */
     public function start()
     {
+        $this->process = static::createProcess([$this, 'work']);
         $this->initialize();
-        $this->process->start();
+        $this->process->start(false);
     }
 
+    /**
+     * Stop the worker.
+     */
     public function stop()
     {
         $this->process->stop();
     }
 
     /**
-     * @param int $signal
+     * Register signal handler.
+     *
+     * @param $signal
      * @param callable $handler
      */
     public function onSignal($signal, $handler)
     {
-        $this->process->onSignal($signal, $handler);
+        $this->signals[$signal] = $handler;
     }
 
+    /**
+     * Gets the worker pid.
+     *
+     * @return int
+     */
     public function getPid()
     {
         return $this->process->getPid();
     }
 
+    /**
+     * Close the worker.
+     *
+     * {@internal }
+     */
+    public function close()
+    {
+        $this->loop->stop();
+    }
+
     protected function initialize()
     {
+        $this->onSignal(SIGTERM, [$this, 'close']);
+        $this->onSignal(SIGUSR1, [$this, 'retry']);
     }
 
     protected static function createProcess(callable $callback)
@@ -80,6 +110,10 @@ class Worker implements WorkerInterface
      */
      public function work()
      {
+         foreach ($this->signals as $signal => $handler) {
+             $this->loop->addSignal($signal, $handler);
+         }
         $this->socket->on('connection', [$this->server, 'handleConnection']);
+        $this->loop->run();
      }
 }

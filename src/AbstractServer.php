@@ -3,7 +3,6 @@
 namespace FastServer;
 
 use Evenement\EventEmitter;
-use FastServer\Worker\Worker;
 use FastServer\Exception\InvalidArgumentException;
 use React\EventLoop\Factory as LoopFactory;
 use React\EventLoop\LoopInterface;
@@ -69,6 +68,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $socket = $this->createSocket();
         $this->pool = $this->createWorkers($socket);
         $this->initialize();
+        $this->runWorkers();
         $this->loop->run();
     }
 
@@ -81,20 +81,6 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     public function getPool(): WorkerPool
     {
         return $this->pool;
-    }
-
-    protected function createSocket()
-    {
-        return new Server($this->options['address'], $this->loop);
-    }
-
-    protected function createWorkers($socket)
-    {
-        $pool = new WorkerPool();
-        for ($i = 0; $i < $this->options['max_workers']; $i++) {
-            $pool->add(new Worker($this, $socket));
-        }
-        return $pool;
     }
 
     /**
@@ -112,10 +98,28 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
             ->setRequired(['address']);
     }
 
-    protected function initialize()
+    protected function createSocket()
+    {
+        return new Server($this->options['address'], $this->loop);
+    }
+
+    protected function createWorkers($socket)
+    {
+        $pool = new WorkerPool();
+        for ($i = 0; $i < $this->options['max_workers']; $i++) {
+            $pool->add(new Worker($this, $socket));
+        }
+        return $pool;
+    }
+
+    protected function runWorkers()
     {
         foreach ($this->pool as $worker) {
             $worker->start();
         }
+    }
+
+    protected function initialize()
+    {
     }
 }

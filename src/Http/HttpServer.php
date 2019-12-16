@@ -65,6 +65,7 @@ final class HttpServer extends TcpServer
      */
     public function handleConnection(ConnectionInterface $connection)
     {
+        var_dump('receive connection');
         parent::handleConnection($connection);
         $this->parser->handle($connection);
     }

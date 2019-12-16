@@ -102,7 +102,7 @@ class Process implements ProcessInterface
      */
     public function signal($signal)
     {
-        if (!$this->running()) {
+        if (!$this->running) {
             throw new RuntimeException("The process is not currently running");
         }
         posix_kill($this->getPid(), $signal);
