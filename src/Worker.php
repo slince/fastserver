@@ -35,10 +35,10 @@ final class Worker
      */
     protected $signals;
 
-    public function __construct(ServerInterface $server, LoopInterface $loop, Socket $socket)
+    public function __construct(LoopInterface $loop, ServerInterface $server, Socket $socket)
     {
-        $this->server = $server;
         $this->loop = $loop;
+        $this->server = $server;
         $this->socket = $socket;
     }
 
