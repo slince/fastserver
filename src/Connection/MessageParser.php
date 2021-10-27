@@ -11,10 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-
 namespace FastServer\Connection;
-
-use React\Stream\ReadableStreamInterface;
 
 final class MessageParser
 {
@@ -25,7 +22,13 @@ final class MessageParser
      */
     protected $buffer = '';
 
-    protected $readSize = 0;
+    /**
+     * Buffer length.
+     * @var int
+     */
+    protected $length = 0;
+
+    protected $meta;
 
     public function __construct(callable $callback)
     {
@@ -35,15 +38,16 @@ final class MessageParser
     protected function push(string $chunk)
     {
         $this->buffer .= $chunk;
-        $this->readSize += strlen($chunk);
+        $this->length += strlen($chunk);
         $this->evaluate();
     }
 
     public function evaluate()
     {
-        $meta = null;
+        if (null === $this->meta) {
 
-        if (null === $meta && $this->readSize >= Message::HEADER_SIZE) {
+        }
+        if (null === $this->meta && $this->buffer >= Message::HEADER_SIZE) {
             $meta = Message::parseHeader(substr($this->buffer, 0, Message::HEADER_SIZE));
             $buffer = substr($this->buffer, Message::HEADER_SIZE); // reset buffer
             $readSize = strlen($buffer);
