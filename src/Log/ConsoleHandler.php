@@ -3,7 +3,7 @@
 namespace FastServer\Log;
 
 use Monolog\Handler\AbstractProcessingHandler;
-use Monolog\Logger;
+use Psr\Log\LogLevel;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ConsoleHandler extends AbstractProcessingHandler
@@ -13,7 +13,7 @@ class ConsoleHandler extends AbstractProcessingHandler
      */
     protected $output;
 
-    public function __construct(OutputInterface $output, $level = Logger::DEBUG, bool $bubble = true)
+    public function __construct(OutputInterface $output, $level = LogLevel::DEBUG, bool $bubble = true)
     {
         $this->output = $output;
         parent::__construct($level, $bubble);

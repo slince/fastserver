@@ -16,7 +16,6 @@ namespace FastServer\Process;
 use FastServer\Exception\InvalidArgumentException;
 use FastServer\Exception\LogicException;
 use FastServer\Exception\RuntimeException;
-use FastServer\Process\Fifo\Fifo;
 
 class Process extends AbstractProcess
 {

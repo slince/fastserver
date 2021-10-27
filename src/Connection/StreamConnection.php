@@ -15,7 +15,6 @@ namespace FastServer\Connection;
 
 use React\Stream\DuplexStreamInterface;
 use FastServer\Connection\Command\CommandInterface;
-use FastServer\Connection\Message;
 
 class StreamConnection implements ConnectionInterface
 {
@@ -40,9 +39,17 @@ class StreamConnection implements ConnectionInterface
         $this->stream->write($message);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function listen(callable $callback)
     {
-        $parser = new MessageParser($this->stream, $callback);
-        $parser->parse();
+        $parser = new MessageParser();
+        $this->stream->once('data', function(string $chunk) use ($parser, $callback){
+            $messages = $parser->push($chunk)->evaluate();
+            foreach ($messages as $message) {
+                $callback($message, $this);
+            }
+        });
     }
 }

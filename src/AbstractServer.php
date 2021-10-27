@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Socket;
+namespace FastServer;
 
 use Evenement\EventEmitter;
 use React\EventLoop\Loop;
@@ -79,29 +79,27 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $resolver
             ->setDefaults([
                 'max_workers' => 1,
-                'event_names' => ['start', 'end', 'worker_pool_start', 'connection'],
+                'event_names' => array_merge(['start', 'end', 'connection'], $this->allowedEventNames()),
             ])
             ->setRequired(['address']);
     }
 
     /**
+     * Return allowed event names by this server.
+     *
+     * @return array
+     */
+    abstract protected function allowedEventNames(): array;
+
+    /**
      * {@inheritdoc}
      */
-    public function on($event, callable $listener)
+    public function on(string $event, callable $listener)
     {
         if (!in_array($event, $this->options['event_names'])) {
             throw new InvalidArgumentException(sprintf('The event "%s" is not supported.', $event));
         }
         return parent::on($event, $listener);
-    }
-
-    /**
-     * @internal
-     * @param ConnectionInterface $connection
-     */
-    public function handleConnection(ConnectionInterface $connection)
-    {
-        $this->emit('connection', [$connection]);
     }
 
     /**
@@ -131,15 +129,42 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
+    public function getSocket(): SocketServer
+    {
+        return $this->socket;
+    }
+
+    /**
+     * Gets the worker pool.
+     *
+     * @return WorkerPool
+     * @internal
+     */
+    public function getPool(): WorkerPool
+    {
+        return $this->pool;
+    }
+
+    /**
+     * @internal
+     * @param ConnectionInterface $connection
+     */
+    public function handleConnection(ConnectionInterface $connection)
+    {
+        $this->emit('connection', [$connection]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function serve()
     {
         $this->boot();
         $this->emit('start', [$this]);
         $this->pool->run();
-        $this->emit('worker_pool_start', [$this]);
     }
 
-    protected function boot()
+    private function boot()
     {
         $socket = $this->createSocketServer($this->options['address'], $this->loop);
         $this->pool = $this->createWorkers($socket);
@@ -162,7 +187,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      * @param SocketServer $socket
      * @return WorkerPool
      */
-    protected function createWorkers(SocketServer $socket): WorkerPool
+    private function createWorkers(SocketServer $socket): WorkerPool
     {
         $pool = new WorkerPool();
         for ($i = 0; $i < $this->options['max_workers']; $i++) {
@@ -176,24 +201,5 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     protected function initialize()
     {
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getSocket(): SocketServer
-    {
-        return $this->socket;
-    }
-
-    /**
-     * Gets the worker pool.
-     *
-     * @return WorkerPool
-     * @internal
-     */
-    public function getPool(): WorkerPool
-    {
-        return $this->pool;
     }
 }

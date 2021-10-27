@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Socket;
+namespace FastServer;
 
 use React\Socket\ConnectionInterface;
 use React\Socket\ServerInterface as Socket;

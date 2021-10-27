@@ -16,7 +16,6 @@ namespace FastServer\Handler;
 use FastServer\Connection\Command\CommandInterface;
 use FastServer\Connection\ConnectionInterface;
 use FastServer\Exception\InvalidArgumentException;
-use FastServer\Connection\Message;
 
 final class DelegatingHandler implements HandlerInterface
 {

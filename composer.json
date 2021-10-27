@@ -1,22 +1,20 @@
 {
     "name": "fastserver/fastserver",
-    "description": "A Fast Server",
+    "description": "Fast server is secure TLS socket server.",
     "autoload": {
         "psr-4": {
             "FastServer\\": "./src"
-        },
-        "files": ["./bootstrap.php"]
+        }
     },
     "require": {
         "php": ">=7.1.3",
         "symfony/options-resolver": "^5.0",
-        "symfony/console": "^5.0",
         "react/socket": "^1.3",
         "react/event-loop": "^1.1",
         "guzzlehttp/psr7": "^1.6",
         "react/http": "^0.8.5",
         "psr/http-server-handler": "^1.0",
-        "symfony/process": "^5.0"
+        "monolog/monolog": "^2.3"
     },
     "suggest": {
         "ext-pcntl": "*",

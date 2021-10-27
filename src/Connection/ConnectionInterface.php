@@ -23,4 +23,11 @@ interface ConnectionInterface
      * @param CommandInterface $command Command instance.
      */
     public function executeCommand(CommandInterface $command);
+
+    /**
+     * Add a listener to listen message.
+     *
+     * @param callable $callback
+     */
+    public function listen(callable $callback);
 }

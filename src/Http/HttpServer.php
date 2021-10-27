@@ -1,5 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of the fastserver/fastserver package.
+ *
+ * (c) Slince <taosikai@yeah.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace FastServer\Http;
 
 use FastServer\TcpServer;
@@ -13,11 +24,6 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 final class HttpServer extends TcpServer
 {
     /**
-     * @var callable
-     */
-    protected $requestHandler;
-
-    /**
      * @var RequestHeaderParser
      */
     protected $parser;
@@ -30,34 +36,20 @@ final class HttpServer extends TcpServer
     /**
      * {@inheritdoc}
      */
-    protected function configureOptions(OptionsResolver $resolver)
+    protected function allowedEventNames(): array
     {
-        parent::configureOptions($resolver);
+        return ['request'];
     }
 
-    public function onRequest(callable $requestHandler)
-    {
-        $this->requestHandler = $requestHandler;
-    }
-
+    /**
+     * {@inheritdoc}
+     */
     protected function initialize()
     {
         $this->parser = new RequestHeaderParser();
-        $this->streamServer = new StreamingServer($this->requestHandler);
-        $this->parser->on('headers', function (ServerRequestInterface $request, ConnectionInterface $conn) {
-            $this->streamServer->handleRequest($conn, $request);
+        $this->streamServer = new StreamingServer(function(ServerRequestInterface $request){
+            $this->emit('request', [$request]);
         });
-
-        $this->parser->on('error', function(\Exception $e, ConnectionInterface $conn)  {
-            $this->emit('error', array($e));
-            // parsing failed => assume dummy request and send appropriate error
-            $this->streamServer->writeError(
-                $conn,
-                $e->getCode() !== 0 ? $e->getCode() : 400,
-                new ServerRequest('GET', '/')
-            );
-        });
-        parent::initialize();
     }
 
     /**
@@ -65,8 +57,6 @@ final class HttpServer extends TcpServer
      */
     public function handleConnection(ConnectionInterface $connection)
     {
-        var_dump('receive connection');
-        parent::handleConnection($connection);
         $this->parser->handle($connection);
     }
 }
