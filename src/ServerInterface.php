@@ -24,7 +24,7 @@ interface ServerInterface
      * @param string $event
      * @param callable $listener
      */
-    public function on(string $event, callable $listener);
+    public function on($event, callable $listener);
 
     /**
      * Configure the server.

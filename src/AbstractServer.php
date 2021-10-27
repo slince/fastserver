@@ -79,7 +79,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $resolver
             ->setDefaults([
                 'max_workers' => 1,
-                'event_names' => array_merge(['start', 'end', 'connection'], $this->allowedEventNames()),
+                'event_names' => $this->allowedEventNames()
             ])
             ->setRequired(['address']);
     }
@@ -89,12 +89,15 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      *
      * @return array
      */
-    abstract protected function allowedEventNames(): array;
+    protected function allowedEventNames(): array
+    {
+        return ['start', 'end', 'connection'];
+    }
 
     /**
      * {@inheritdoc}
      */
-    public function on(string $event, callable $listener)
+    public function on($event, callable $listener)
     {
         if (!in_array($event, $this->options['event_names'])) {
             throw new InvalidArgumentException(sprintf('The event "%s" is not supported.', $event));

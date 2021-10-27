@@ -38,7 +38,9 @@ final class HttpServer extends TcpServer
      */
     protected function allowedEventNames(): array
     {
-        return ['request'];
+        $eventNames = parent::allowedEventNames();
+        $eventNames[] = 'request';
+        return $eventNames;
     }
 
     /**
@@ -49,6 +51,19 @@ final class HttpServer extends TcpServer
         $this->parser = new RequestHeaderParser();
         $this->streamServer = new StreamingServer(function(ServerRequestInterface $request){
             $this->emit('request', [$request]);
+        });
+        $this->parser->on('headers', function (ServerRequestInterface $request, ConnectionInterface $conn) {
+            $this->streamServer->handleRequest($conn, $request);
+        });
+
+        $this->parser->on('error', function(\Exception $e, ConnectionInterface $conn)  {
+            $this->emit('error', array($e));
+            // parsing failed => assume dummy request and send appropriate error
+            $this->streamServer->writeError(
+                $conn,
+                $e->getCode() !== 0 ? $e->getCode() : 400,
+                new ServerRequest('GET', '/')
+            );
         });
     }
 
