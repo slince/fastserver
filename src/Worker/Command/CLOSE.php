@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace FastServer\Socket\Worker\Command;
 
-use FastServer\Command\CommandInterface;
-use FastServer\Protocol\Message;
+use FastServer\Connection\Command\CommandInterface;
+use FastServer\Connection\Message;
 
 class CLOSE implements CommandInterface
 {

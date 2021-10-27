@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace FastServer\Handler;
 
-use FastServer\Command\CommandInterface;
+use FastServer\Connection\Command\CommandInterface;
 use FastServer\Connection\ConnectionInterface;
 use FastServer\Exception\InvalidArgumentException;
-use FastServer\Protocol\Message;
+use FastServer\Connection\Message;
 
 final class DelegatingHandler implements HandlerInterface
 {

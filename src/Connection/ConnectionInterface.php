@@ -13,18 +13,10 @@ declare(strict_types=1);
 
 namespace FastServer\Connection;
 
-use Evenement\EventEmitterInterface;
-use FastServer\Command\CommandInterface;
+use FastServer\Connection\Command\CommandInterface;
 
-interface ConnectionInterface extends EventEmitterInterface
+interface ConnectionInterface
 {
-    /**
-     * Closes the connection to FastServerd.
-     *
-     * @param bool $force
-     */
-    public function disconnect(bool $force = false);
-
     /**
      * Writes a request for the given command over the connection.
      *

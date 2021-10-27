@@ -15,7 +15,7 @@ namespace FastServer\Handler;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
-use FastServer\Command\CommandInterface;
+use FastServer\Connection\Command\CommandInterface;
 
 final class HandlerResolver
 {

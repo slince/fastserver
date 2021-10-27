@@ -23,8 +23,8 @@ final class ConnectionFactory
      * @param DuplexStreamInterface $stream
      * @return ConnectionInterface
      */
-    public static function wrapConnection(DuplexStreamInterface $stream): ConnectionInterface
+    public static function createConnection(DuplexStreamInterface $stream): ConnectionInterface
     {
-        return new WrapperConnection($stream);
+        return new StreamConnection($stream);
     }
 }

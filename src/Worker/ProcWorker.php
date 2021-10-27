@@ -8,7 +8,7 @@ use React\Stream\CompositeStream;
 use React\Stream\DuplexResourceStream;
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
-use FastServer\Command\CommandFactory;
+use FastServer\Connection\Command\CommandFactory;
 use FastServer\Connection\ConnectionInterface;
 use FastServer\Connection\StreamConnection;
 use FastServer\Process\Process;

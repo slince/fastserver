@@ -12,9 +12,7 @@ declare(strict_types=1);
  */
 
 
-namespace FastServer\Protocol;
-
-use FastServer\Connection\ConnectionInterface;
+namespace FastServer\Connection;
 
 final class MessageParser
 {

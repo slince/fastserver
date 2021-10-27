@@ -8,14 +8,14 @@ use React\Stream\CompositeStream;
 use React\Stream\DuplexResourceStream;
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
-use FastServer\Command\CommandFactory;
-use FastServer\Command\CommandInterface;
+use FastServer\Connection\Command\CommandFactory;
+use FastServer\Connection\Command\CommandInterface;
 use FastServer\Connection\ConnectionInterface;
 use FastServer\Connection\StreamConnection;
 use FastServer\Exception\RuntimeException;
 use FastServer\Process\Process;
-use FastServer\Protocol\Message;
-use FastServer\Protocol\MessageParser;
+use FastServer\Connection\Message;
+use FastServer\Connection\MessageParser;
 use FastServer\Socket\ServerInterface;
 use FastServer\Socket\Worker;
 

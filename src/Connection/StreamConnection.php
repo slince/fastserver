@@ -13,12 +13,11 @@ declare(strict_types=1);
 
 namespace FastServer\Connection;
 
-use Evenement\EventEmitter;
 use React\Stream\DuplexStreamInterface;
-use FastServer\Command\CommandInterface;
-use FastServer\Protocol\Message;
+use FastServer\Connection\Command\CommandInterface;
+use FastServer\Connection\Message;
 
-class StreamConnection extends EventEmitter implements ConnectionInterface
+class StreamConnection implements ConnectionInterface
 {
     /**
      * @var DuplexStreamInterface
@@ -30,11 +29,9 @@ class StreamConnection extends EventEmitter implements ConnectionInterface
         $this->stream = $stream;
     }
 
-    public function disconnect(bool $force = false)
-    {
-        $force ? $this->stream->close() : $this->stream->end();
-    }
-
+    /**
+     * {@inheritdoc}
+     */
     public function executeCommand(CommandInterface $command)
     {
         $message = $command->createMessage();
