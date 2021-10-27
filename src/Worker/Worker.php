@@ -51,6 +51,7 @@ class Worker
      */
     public function start()
     {
+        $this->work();
     }
 
     /**
@@ -59,10 +60,6 @@ class Worker
      * {@internal}
      */
     public function close()
-    {
-    }
-
-    public function restart()
     {
     }
 
