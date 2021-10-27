@@ -18,52 +18,49 @@ use React\Stream\ReadableStreamInterface;
 
 final class MessageParser
 {
-    /**
-     * @var ReadableStreamInterface
-     */
-    protected $stream;
+    protected $callback;
 
     /**
      * @var string
      */
     protected $buffer = '';
 
-    protected $callback;
+    protected $readSize = 0;
 
-    public function __construct(ReadableStreamInterface $stream, callable $callback)
+    public function __construct(callable $callback)
     {
-        $this->stream = $stream;
         $this->callback = $callback;
     }
 
-    public function parse()
+    protected function push(string $chunk)
     {
-        $buffer = '';
-        $readSize = 0;
-        $meta = null;
-        $this->stream->on('data', function($data) use(&$buffer, &$readSize, &$meta){
-            $buffer .= $data;
-            $readSize += strlen($data);
-            if (null === $meta && $readSize >= Message::HEADER_SIZE) {
-                $meta = Message::parseHeader(substr($buffer, 0, Message::HEADER_SIZE));
-                $this->connection->emit('meta', $meta);
-                $buffer = substr($buffer, Message::HEADER_SIZE); // reset buffer
-                $readSize = strlen($buffer);
-            }
-            if (null !== $meta && $readSize >= $meta['size']) {
-                $body = substr($buffer, 0, $meta['size']);
-                $payload = Message::parsePayload($body);
-                $message = new Message($meta['flags'], $payload, $body);
-                $this->connection->emit('message', [$message, $this->connection, $meta]);
-                $buffer = substr($buffer, $meta['size']); // reset buffer
-                $readSize = strlen($buffer);
-                $meta = null;
+        $this->buffer .= $chunk;
+        $this->readSize += strlen($chunk);
+        $this->evaluate();
+    }
 
-                // maybe buffer contains 2+ message.
-                if ($readSize >= Message::HEADER_SIZE) {
-                    $this->connection->emit('data', ['']);
-                }
+    public function evaluate()
+    {
+        $meta = null;
+
+        if (null === $meta && $this->readSize >= Message::HEADER_SIZE) {
+            $meta = Message::parseHeader(substr($this->buffer, 0, Message::HEADER_SIZE));
+            $buffer = substr($this->buffer, Message::HEADER_SIZE); // reset buffer
+            $readSize = strlen($buffer);
+        }
+        if (null !== $meta && $readSize >= $meta['size']) {
+            $body = substr($buffer, 0, $meta['size']);
+            $payload = Message::parsePayload($body);
+            $message = new Message($meta['flags'], $payload, $body);
+            $this->connection->emit('message', [$message, $this->connection, $meta]);
+            $buffer = substr($buffer, $meta['size']); // reset buffer
+            $readSize = strlen($buffer);
+            $meta = null;
+
+            // maybe buffer contains 2+ message.
+            if ($readSize >= Message::HEADER_SIZE) {
+                $this->connection->emit('data', ['']);
             }
-        });
+        }
     }
 }
