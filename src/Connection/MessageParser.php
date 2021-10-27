@@ -14,16 +14,26 @@ declare(strict_types=1);
 
 namespace FastServer\Connection;
 
+use React\Stream\ReadableStreamInterface;
+
 final class MessageParser
 {
     /**
-     * @var ConnectionInterface
+     * @var ReadableStreamInterface
      */
-    protected $connection;
+    protected $stream;
 
-    public function __construct(ConnectionInterface $connection)
+    /**
+     * @var string
+     */
+    protected $buffer = '';
+
+    protected $callback;
+
+    public function __construct(ReadableStreamInterface $stream, callable $callback)
     {
-        $this->connection = $connection;
+        $this->stream = $stream;
+        $this->callback = $callback;
     }
 
     public function parse()
@@ -31,7 +41,7 @@ final class MessageParser
         $buffer = '';
         $readSize = 0;
         $meta = null;
-        $this->connection->on('data', function($data) use(&$buffer, &$readSize, &$meta){
+        $this->stream->on('data', function($data) use(&$buffer, &$readSize, &$meta){
             $buffer .= $data;
             $readSize += strlen($data);
             if (null === $meta && $readSize >= Message::HEADER_SIZE) {

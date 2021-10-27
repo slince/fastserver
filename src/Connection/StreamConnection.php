@@ -39,4 +39,10 @@ class StreamConnection implements ConnectionInterface
         $message = Message::pack($message);
         $this->stream->write($message);
     }
+
+    public function listen(callable $callback)
+    {
+        $parser = new MessageParser($this->stream, $callback);
+        $parser->parse();
+    }
 }
