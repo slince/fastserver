@@ -1,14 +1,22 @@
 <?php
 
-namespace FastServer;
+declare(strict_types=1);
 
-use FastServer\Process\FakeProcess;
-use FastServer\Process\Process;
-use FastServer\Process\ProcessInterface;
+/*
+ * This file is part of the fastserver/fastserver package.
+ *
+ * (c) Slince <taosikai@yeah.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace FastServer\Socket;
+
 use React\EventLoop\LoopInterface;
 use React\Socket\ServerInterface as Socket;
 
-final class Worker
+class Worker
 {
     /**
      * @var ServerInterface
@@ -21,11 +29,6 @@ final class Worker
     protected $socket;
 
     /**
-     * @var ProcessInterface
-     */
-    protected $process;
-
-    /**
      * @var LoopInterface
      */
     protected $loop;
@@ -33,13 +36,13 @@ final class Worker
     /**
      * @var callable[]
      */
-    protected $signals;
+    protected $signals = [];
 
-    public function __construct(LoopInterface $loop, ServerInterface $server, Socket $socket)
+    public function __construct(LoopInterface $loop, ServerInterface $server)
     {
         $this->loop = $loop;
         $this->server = $server;
-        $this->socket = $socket;
+        $this->socket = $server->getSocket();
     }
 
     /**
@@ -47,62 +50,29 @@ final class Worker
      */
     public function start()
     {
-        $this->process = static::createProcess([$this, 'work']);
-        $this->initialize();
-        $this->process->start(false);
-    }
-
-    /**
-     * Stop the worker.
-     */
-    public function stop()
-    {
-        $this->process->stop();
-    }
-
-    /**
-     * Register signal handler.
-     *
-     * @param $signal
-     * @param callable $handler
-     */
-    public function onSignal($signal, $handler)
-    {
-        $this->signals[$signal] = $handler;
-    }
-
-    /**
-     * Gets the worker pid.
-     *
-     * @return int
-     */
-    public function getPid()
-    {
-        return $this->process->getPid();
     }
 
     /**
      * Close the worker.
      *
-     * {@internal }
+     * {@internal}
      */
     public function close()
     {
-        $this->loop->stop();
     }
 
-    protected function initialize()
+    public function restart()
     {
-        $this->onSignal(SIGTERM, [$this, 'close']);
-        $this->onSignal(SIGUSR1, [$this, 'retry']);
     }
 
-    protected static function createProcess(callable $callback)
+    /**
+     * Register signal handler.
+     * @param $signal
+     * @param callable $handler
+     */
+    public function onSignal($signal, callable $handler)
     {
-        if (function_exists('pcntl_fork')) {
-            return new Process($callback);
-        }
-        return new FakeProcess($callback);
+        $this->signals[$signal] = $handler;
     }
 
     /**
@@ -110,10 +80,7 @@ final class Worker
      */
      public function work()
      {
-         foreach ($this->signals as $signal => $handler) {
-             $this->loop->addSignal($signal, $handler);
-         }
-        $this->socket->on('connection', [$this->server, 'handleConnection']);
-        $this->loop->run();
+         $this->socket->on('connection', [$this->server, 'handleConnection']);
+         $this->socket->on('error', [$this->server, 'handleError']);
      }
 }

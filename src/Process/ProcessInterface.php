@@ -1,6 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of the fastserver/fastserver package.
+ *
+ * (c) Slince <taosikai@yeah.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace FastServer\Process;
+
+use Symfony\Component\Process\Exception\LogicException;
+use Symfony\Component\Process\Exception\RuntimeException;
 
 interface ProcessInterface
 {
@@ -8,7 +22,13 @@ interface ProcessInterface
      * process status,running
      * @var string
      */
-    const STATUS_RUNNING = 'running';
+    const STATUS_READY = 'ready';
+
+    /**
+     * process status,running
+     * @var string
+     */
+    const STATUS_STARTED = 'started';
 
     /**
      * process status,terminated
@@ -17,26 +37,11 @@ interface ProcessInterface
     const STATUS_TERMINATED = 'terminated';
 
     /**
-     * Send signal to the process.
-     *
-     * @param int $signal
-     */
-    public function signal($signal);
-
-    /**
-     * Register signal handler.
-     *
-     * @param $signal
-     * @param callable $handler
-     */
-    public function onSignal($signal, callable $handler);
-
-    /**
      * Starts the process.
      *
      * @param bool $blocking
      */
-    public function start($blocking = true);
+    public function start(bool $blocking = true);
 
     /**
      * Wait for the process exit.
@@ -46,12 +51,88 @@ interface ProcessInterface
     /**
      * Closes the process.
      */
-    public function stop();
+    public function close();
+
+    /**
+     * Terminate the process with an optional signal.
+     * @param int|null $signal
+     * @return bool
+     */
+    public function terminate(int $signal = null): bool;
+
+    /**
+     * Sends a POSIX signal to the process.
+     *
+     * @param int $signal A valid POSIX signal (see https://php.net/pcntl.constants)
+     *
+     * @throws LogicException   In case the process is not running
+     * @throws RuntimeException In case --enable-sigchild is activated and the process can't be killed
+     * @throws RuntimeException In case of failure
+     */
+    public function signal(int $signal);
 
     /**
      * Gets the process id.
      *
      * @return int
      */
-    public function getPid();
+    public function getPid(): ?int;
+
+    /**
+     * Gets the std iny stream for the process.
+     *
+     * @return resource
+     */
+    public function getStdin();
+
+    /**
+     * Gets the std out stream for the process.
+     *
+     * @return resource
+     */
+    public function getStdout();
+
+    /**
+     * Gets the std err stream for the process.
+     *
+     * @return resource
+     */
+    public function getStderr();
+
+    /**
+     * Checks whether the process is running.
+     *
+     * @return bool
+     */
+    public function isRunning(): bool;
+
+    /**
+     * Checks if the process has been started with no regard to the current state.
+     *
+     * @return bool true if status is ready, false otherwise
+     */
+    public function isStarted(): bool;
+
+    /**
+     * Checks if the process is terminated.
+     *
+     * @return bool true if process is terminated, false otherwise
+     */
+    public function isTerminated(): bool;
+
+    /**
+     * Gets the process status.
+     *
+     * The status is one of: ready, started, terminated.
+     *
+     * @return string The current process status
+     */
+    public function getStatus(): string;
+
+    /**
+     * Returns the exit code returned by the process.
+     *
+     * @return int|null The exit status code, null if the Process is not terminated
+     */
+    public function getExitCode(): ?int;
 }

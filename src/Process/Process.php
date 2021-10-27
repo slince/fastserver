@@ -1,11 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of the fastserver/fastserver package.
+ *
+ * (c) Slince <taosikai@yeah.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace FastServer\Process;
 
+use FastServer\Exception\InvalidArgumentException;
+use FastServer\Exception\LogicException;
 use FastServer\Exception\RuntimeException;
+use FastServer\Process\Fifo\Fifo;
 
-class Process implements ProcessInterface
+class Process extends AbstractProcess
 {
+    /**
+     * Whether the process is running
+     * @var bool
+     */
+    protected $running = false;
+
     /**
      * @var callable
      */
@@ -17,39 +37,50 @@ class Process implements ProcessInterface
      */
     protected $pid;
 
-    /**
-     * Whether the process is running
-     * @var bool
-     */
-    protected $running = false;
+    protected $statusInfo;
+
+    protected $exitcode;
 
     /**
-     * Signal Handler
-     *
      * @var array
      */
-    protected $signalHandlers = [];
+    protected $signalHandlers;
+
+    protected $isChildProcess = false;
+
+    protected $stdinFifo;
+    protected $stdoutFifo;
+    protected $stderrFifo;
 
     public function __construct(callable $callback)
     {
         if (!function_exists('pcntl_fork')) {
-            throw new RuntimeException(sprintf('Please install ext-pcntl'));
+            throw new RuntimeException(sprintf('The Process class relies on ext-pcntl, which is not available on your PHP installation.'));
         }
         $this->callback = $callback;
+        $this->stdinFifo = $this->createFifo();
+        $this->stdoutFifo = $this->createFifo();
+        $this->stderrFifo = $this->createFifo();
     }
 
     /**
-     * {@inheritdoc}
+     * Checks whether support signal.
+     * @return bool
      */
-    public function onSignal($signal, callable $handler)
+    public static function isSupportPosixSignal(): bool
     {
-        $this->signalHandlers[$signal] = $handler;
+        return function_exists('pcntl_signal');
+    }
+
+    protected function createFifo(string $suffix = null): string
+    {
+        return sys_get_temp_dir() . '/' . 'sl_' . mt_rand(0, 999) . $suffix . '.pipe';
     }
 
     /**
      * {@inheritdoc}
      */
-    public function start($blocking = true)
+    public function start(bool $blocking = true)
     {
         if ($this->isRunning()) {
             throw new RuntimeException("The process is already running");
@@ -60,17 +91,68 @@ class Process implements ProcessInterface
         } elseif ($pid) { //Records the pid of the child process
             $this->pid = $pid;
             $this->running = true;
-            $blocking && $this->wait();
+            $this->status = self::STATUS_STARTED;
+            $this->stdin = (new Fifo($this->stdinFifo, 'w'))->getStream();
+            $this->stdout = (new Fifo($this->stdoutFifo, 'r'))->getStream();
+            $this->stderr = (new Fifo($this->stderr, 'r'))->getStream();
+            $this->updateStatus($blocking);
         } else {
+            $this->isChildProcess = true;
             $this->pid = posix_getpid();
-            $this->installSignalHandler();
+            $this->installSignalHandlers();
+            $stdin = (new Fifo($this->stdinFifo, 'r'))->getStream();
+            $stdout = (new Fifo($this->stdoutFifo, 'w'))->getStream();
+            $stderr = (new Fifo($this->stderr, 'w'))->getStream();
             try {
-                $exitCode = call_user_func($this->callback);
+                $exitCode = call_user_func($this->callback, $stdin, $stdout, $stderr);
             } catch (\Exception $e) {
                 $exitCode  = 255;
             }
             exit(intval($exitCode));
         }
+    }
+
+    /**
+     * Registers a callback for some signals
+     * @param int|array $signals a signal or an array of signals
+     * @param callable|int $handler
+     */
+    public function registerSignal($signals, $handler)
+    {
+        if (!is_array($signals)) {
+            $signals = [$signals];
+        }
+        foreach ($signals as $signal) {
+            $this->setSignalHandler($signal, $handler);
+        }
+    }
+
+    protected function setSignalHandler($signal, $handler)
+    {
+        if (!is_int($handler) && !is_callable($handler)) {
+            throw new InvalidArgumentException('The signal handler should be called or a number');
+        }
+        $this->signalHandlers[$signal] = $handler;
+    }
+
+    protected function installSignalHandlers()
+    {
+        foreach ($this->signalHandlers as $signal => $signalHandler) {
+            pcntl_signal($signal, $signalHandler);
+        }
+    }
+
+    /**
+     * Gets the handler for a signal
+     * @param int $signal
+     * @return int|string
+     */
+    public function getHandler(int $signal)
+    {
+        if ($this->isChildProcess) {
+            return pcntl_signal_get_handler($signal);
+        }
+        return $this->signalHandlers[$signal];
     }
 
     /**
@@ -84,15 +166,16 @@ class Process implements ProcessInterface
     /**
      * {@inheritdoc}
      */
-    public function stop()
+    public function close()
     {
         $this->signal(SIGKILL);
+        $this->status = self::STATUS_TERMINATED;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getPid()
+    public function getPid(): int
     {
         return $this->pid;
     }
@@ -111,10 +194,10 @@ class Process implements ProcessInterface
     /**
      * {@inheritdoc}
      */
-    public function isRunning()
+    public function isRunning(): bool
     {
         //if process is not running, return false
-        if (!$this->running) {
+        if (self::STATUS_STARTED !== $this->status) {
             return false;
         }
         //if the process is running, update process status again
@@ -123,17 +206,15 @@ class Process implements ProcessInterface
     }
 
     /**
-     * Updates the status of the process
-     * @param bool $blocking
-     * @throws RuntimeException
+     * {@inheritdoc}
      */
-    protected function updateStatus($blocking = false)
+    protected function updateStatus(bool $blocking)
     {
         if (!$this->running) {
             return;
         }
         $options = $blocking ? 0 : WNOHANG | WUNTRACED;
-        $result = pcntl_waitpid($this->getPid(), $status, $options);
+        $result = pcntl_waitpid($this->getPid(), $this->statusInfo, $options);
         if ($result == -1) {
             throw new RuntimeException("Error waits on or returns the status of the process");
         } elseif ($result === 0) {
@@ -141,16 +222,107 @@ class Process implements ProcessInterface
         } else {
             //The process is terminated
             $this->running = false;
+            $this->status = self::STATUS_TERMINATED;
+
+            if (pcntl_wifexited($this->statusInfo)) {
+                $this->exitcode = pcntl_wexitstatus($this->statusInfo);
+            }
         }
     }
 
     /**
-     * Install signal handlers for the process.
+     * {@inheritdoc}
      */
-    protected function installSignalHandler()
+    public function terminate(int $signal = null): bool
     {
-        foreach ($this->signalHandlers as $signal => $signalHandler) {
-            pcntl_signal($signal, $signalHandler);
+        $this->status = self::STATUS_TERMINATED;
+        $this->signal($signal);
+    }
+
+    /**
+     * Ensures the process is terminated, throws a LogicException if the process has a status different than "terminated".
+     *
+     * @throws LogicException if the process is not yet terminated
+     */
+    private function requireProcessIsTerminated(string $functionName)
+    {
+        if (!$this->isTerminated()) {
+            throw new LogicException(sprintf('Process must be terminated before calling "%s()".', $functionName));
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getExitCode(): ?int
+    {
+        $this->updateStatus(false);
+
+        return $this->exitcode;
+    }
+
+    /**
+     * Returns true if the child process has been terminated by an uncaught signal.
+     *
+     * It always returns false on Windows.
+     *
+     * @return bool
+     *
+     * @throws LogicException In case the process is not terminated
+     */
+    public function hasBeenSignaled(): bool
+    {
+        $this->requireProcessIsTerminated(__FUNCTION__);
+
+        return pcntl_wifsignaled($this->statusInfo);
+    }
+
+    /**
+     * Returns the number of the signal that caused the child process to terminate its execution.
+     *
+     * It is only meaningful if hasBeenSignaled() returns true.
+     *
+     * @return int
+     *
+     * @throws RuntimeException In case --enable-sigchild is activated
+     * @throws LogicException   In case the process is not terminated
+     */
+    public function getTermSignal(): int
+    {
+        $this->requireProcessIsTerminated(__FUNCTION__);
+
+        return pcntl_wtermsig($this->statusInfo);
+    }
+
+    /**
+     * Returns true if the child process has been stopped by a signal.
+     *
+     * It always returns false on Windows.
+     *
+     * @return bool
+     *
+     * @throws LogicException In case the process is not terminated
+     */
+    public function hasBeenStopped(): bool
+    {
+        $this->requireProcessIsTerminated(__FUNCTION__);
+
+        return pcntl_wifstopped($this->statusInfo);
+    }
+
+    /**
+     * Returns the number of the signal that caused the child process to stop its execution.
+     *
+     * It is only meaningful if hasBeenStopped() returns true.
+     *
+     * @return int
+     *
+     * @throws LogicException In case the process is not terminated
+     */
+    public function getStopSignal(): int
+    {
+        $this->requireProcessIsTerminated(__FUNCTION__);
+
+        return pcntl_wstopsig($this->statusInfo);
     }
 }
