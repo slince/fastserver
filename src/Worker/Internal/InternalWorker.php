@@ -1,6 +1,6 @@
 <?php
 
-namespace FastServer\Socket\Worker\Internal;
+namespace FastServer\Worker\Internal;
 
 final class InternalWorker
 {

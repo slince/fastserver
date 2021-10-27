@@ -1,6 +1,14 @@
 {
     "name": "fastserver/fastserver",
     "description": "Fast server is secure TLS socket server.",
+    "keywords": ["event-loop", "async", "socket", "process"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Slince",
+            "email": "taosikai@yeah.net"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "FastServer\\": "./src"

@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace FastServer\Process;
 
-use Symfony\Component\Process\Exception\LogicException;
-use Symfony\Component\Process\Exception\RuntimeException;
+use FastServer\Exception\LogicException;
+use FastServer\Exception\RuntimeException;
 
 interface ProcessInterface
 {

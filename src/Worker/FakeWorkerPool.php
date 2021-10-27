@@ -16,13 +16,13 @@ namespace FastServer\Worker;
 use FastServer\ServerInterface;
 use React\EventLoop\LoopInterface;
 
-class ForkWorkerPool extends WorkerPool
+class FakeWorkerPool extends WorkerPool
 {
     /**
      * {@inheritdoc}
      */
     public function createWorker(LoopInterface $loop, ServerInterface $server)
     {
-        return new ForkWorker($loop, $server);
+        return new Worker($loop, $server);
     }
 }

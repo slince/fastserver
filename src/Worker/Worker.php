@@ -11,8 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer;
+namespace FastServer\Worker;
 
+use FastServer\ServerInterface;
 use React\EventLoop\LoopInterface;
 use React\Socket\ServerInterface as Socket;
 
@@ -63,16 +64,6 @@ class Worker
 
     public function restart()
     {
-    }
-
-    /**
-     * Register signal handler.
-     * @param $signal
-     * @param callable $handler
-     */
-    public function onSignal($signal, callable $handler)
-    {
-        $this->signals[$signal] = $handler;
     }
 
     /**

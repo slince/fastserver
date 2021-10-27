@@ -1,11 +1,20 @@
 <?php
 
-namespace FastServer\Socket\Worker;
+declare(strict_types=1);
+
+/*
+ * This file is part of the fastserver/fastserver package.
+ *
+ * (c) Slince <taosikai@yeah.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace FastServer\Worker;
 
 use React\EventLoop\LoopInterface;
-use React\Socket\ServerInterface as Socket;
 use React\Stream\CompositeStream;
-use React\Stream\DuplexResourceStream;
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
 use FastServer\Connection\Command\CommandFactory;
@@ -16,8 +25,7 @@ use FastServer\Exception\RuntimeException;
 use FastServer\Process\Process;
 use FastServer\Connection\Message;
 use FastServer\Connection\MessageParser;
-use FastServer\Socket\ServerInterface;
-use FastServer\Socket\Worker;
+use FastServer\ServerInterface;
 
 class ForkWorker extends Worker
 {

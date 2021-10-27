@@ -11,9 +11,8 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Socket\Worker\Command;
+namespace FastServer\Connection\Command;
 
-use FastServer\Connection\Command\CommandInterface;
 use FastServer\Connection\Message;
 
 class CLOSE implements CommandInterface

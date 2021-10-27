@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace FastServer;
 
 use Evenement\EventEmitter;
+use FastServer\Worker\Factory;
+use FastServer\Worker\WorkerPool;
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\ServerInterface as SocketServer;
@@ -29,7 +31,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     protected $options;
 
     /**
-     * @var WorkerPool|Worker
+     * @var WorkerPool
      */
     protected $pool;
 
@@ -192,10 +194,8 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     private function createWorkers(SocketServer $socket): WorkerPool
     {
-        $pool = new WorkerPool();
-        for ($i = 0; $i < $this->options['max_workers']; $i++) {
-            $pool->add(new Worker($this->loop, $this));
-        }
+        $pool = Factory::create($this->options['max_workers']);
+        $pool->resolve($this, $this->loop);
         return $pool;
     }
 

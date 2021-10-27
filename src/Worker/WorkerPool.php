@@ -11,25 +11,28 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer;
+namespace FastServer\Worker;
 
+use FastServer\ServerInterface;
 use React\EventLoop\LoopInterface;
 
 abstract class WorkerPool implements \IteratorAggregate, \Countable
 {
-    const TYPE_FORK = 'fork';
-    const TYPE_PROC = 'proc';
-    const TYPE_THREAD = 'parallel';
-    protected $type;
+    /**
+     * The capacity of the pool.
+     *
+     * @var int
+     */
+    protected $capacity;
 
     /**
      * @var Worker[]
      */
     protected $workers = [];
 
-    public function __construct(array $workers = [])
+    public function __construct(int $capacity)
     {
-        $this->workers = $workers;
+        $this->capacity = $capacity;
     }
 
     /**
@@ -78,6 +81,21 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         foreach ($this->workers as $worker) {
             $worker->start();
         }
+    }
+
+    /**
+     * Build worker pools.
+     *
+     * @param ServerInterface $server
+     * @param LoopInterface $loop
+     * @return $this
+     */
+    public function resolve(ServerInterface $server, LoopInterface $loop)
+    {
+        for ($i = 0; $i < $this->capacity, $i++;) {
+            $this->add($this->createWorker($loop, $server));
+        }
+        return $this;
     }
 
     abstract public function createWorker(LoopInterface $loop, ServerInterface $server);

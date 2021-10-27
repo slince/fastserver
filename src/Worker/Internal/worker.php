@@ -1,6 +1,6 @@
 <?php
 
-use FastServer\Socket\Worker\Internal\InternalWorker;
+use FastServer\Worker\Internal\InternalWorker;
 
 $config = json_decode($argv[1]) ?: [];
 print_r($config);
