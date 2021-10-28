@@ -5,7 +5,8 @@ include __DIR__ . '/vendor/autoload.php';
 $server = new \FastServer\Http\HttpServer();
 
 $server->configure([
-    'address' => '127.0.0.1:1234'
+    'address' => '127.0.0.1:1234',
+    'max_workers' => 4
 ]);
 
 $server->on('request', function(\Psr\Http\Message\ServerRequestInterface $request){

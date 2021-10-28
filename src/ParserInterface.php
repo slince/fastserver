@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace FastServer;
 
-interface MessageParserInterface
+interface ParserInterface
 {
     /**
      * Push incoming data to the parser.
