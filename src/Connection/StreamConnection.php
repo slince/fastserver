@@ -46,8 +46,8 @@ class StreamConnection implements ConnectionInterface
     {
         $parser = new MessageParser();
         $this->stream->once('data', function(string $chunk) use ($parser, $callback){
-            $messages = $parser->push($chunk)->evaluate();
-            foreach ($messages as $message) {
+            $parser->push($chunk);
+            foreach ($parser->evaluate() as $message) {
                 $callback($message, $this);
             }
         });

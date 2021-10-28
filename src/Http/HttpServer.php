@@ -19,7 +19,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Io\RequestHeaderParser;
 use React\Http\StreamingServer;
 use React\Socket\ConnectionInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class HttpServer extends TcpServer
 {

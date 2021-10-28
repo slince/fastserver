@@ -13,7 +13,9 @@ declare(strict_types=1);
 
 namespace FastServer\Connection;
 
-final class MessageParser
+use FastServer\ParserInterface;
+
+final class MessageParser implements ParserInterface
 {
     /**
      * @var string
@@ -32,22 +34,16 @@ final class MessageParser
     protected $meta;
 
     /**
-     * Push incoming data to the parser.
-     *
-     * @param string $chunk
-     * @return MessageParser
+     * {@inheritdoc}
      */
-    public function push(string $chunk): MessageParser
+    public function push(string $chunk)
     {
         $this->buffer .= $chunk;
         $this->length += strlen($chunk);
-        return $this;
     }
 
     /**
-     * Evaluate messages.
-     *
-     * @return Message[]
+     * {@inheritdoc}
      */
     public function evaluate(): array
     {
