@@ -41,12 +41,18 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     protected $socket;
 
     /**
+     * @var ParserFactoryInterface
+     */
+    protected $parserFactory;
+
+    /**
      * @var LoopInterface
      */
     protected $loop;
 
-    public function __construct(?LoopInterface $loop = null)
+    public function __construct(ParserFactoryInterface $parserFactory, ?LoopInterface $loop = null)
     {
+        $this->parserFactory = $parserFactory;
         if (null === $loop) {
             $loop = Loop::get();
         }
@@ -157,7 +163,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     public function handleConnection(ConnectionInterface $connection)
     {
         $this->emit('connection', [$connection]);
-        $parser = $this->createParser();
+        $parser = $this->parserFactory->createParser();
         $connection->on('data', function(string $chunk) use($connection, $parser){
             $parser->push($chunk);
             foreach ($parser->evaluate() as $message) {
@@ -213,10 +219,4 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     {
         // custom boot
     }
-
-    /**
-     * Gets the parser to parse message.
-     * @return ParserInterface
-     */
-    abstract protected function createParser(): ParserInterface;
 }

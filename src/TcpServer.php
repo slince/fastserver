@@ -21,17 +21,6 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 class TcpServer extends AbstractServer
 {
     /**
-     * @var ParserInterface
-     */
-    protected $parser;
-
-    public function __construct(ParserInterface $parser, ?LoopInterface $loop = null)
-    {
-        $this->parser = $parser;
-        parent::__construct($loop);
-    }
-
-    /**
      * {@inheritdoc}
      */
     protected function configureOptions(OptionsResolver $resolver)
