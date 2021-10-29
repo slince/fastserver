@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace FastServer\Http;
 
-use FastServer\BufferStream;
+use FastServer\Parser\BufferStream;
 use GuzzleHttp\Psr7\ServerRequest;
 use React\Promise\Deferred;
 use React\Promise\Promise;

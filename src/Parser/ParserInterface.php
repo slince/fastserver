@@ -11,7 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer;
+namespace FastServer\Parser;
+
+use React\Promise\PromiseInterface;
 
 interface ParserInterface
 {
@@ -25,7 +27,7 @@ interface ParserInterface
     /**
      * Evaluate messages.
      *
-     * @return array
+     * @return PromiseInterface
      */
-    public function evaluate(): array;
+    public function evaluate(): PromiseInterface;
 }

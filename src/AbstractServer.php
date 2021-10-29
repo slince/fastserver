@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace FastServer;
 
 use Evenement\EventEmitter;
+use FastServer\Parser\BufferStream;
+use FastServer\Parser\ParserFactoryInterface;
 use FastServer\Worker\Factory;
 use FastServer\Worker\WorkerPool;
 use React\EventLoop\Loop;
@@ -164,15 +166,13 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     {
         $this->emit('connection', [$connection]);
         $buffer = new BufferStream();
-        $connection->on('data', [$buffer, 'push']);
         $parser = $this->parserFactory->createParser($connection, $buffer);
-        $parser->evaluate()->
-//        $connection->on('data', function(string $chunk) use($connection, $parser){
-//            $parser->push($chunk);
-//            foreach ($parser->evaluate() as $message) {
-//                $this->emit('message', [$message, $connection]);
-//            }
-//        });
+        $connection->on('data', function(string $chunk) use($buffer, $parser, $connection){
+            $parser->evaluate()->done(function($message) use($connection){
+                $this->emit('message', [$message, $connection]);
+            });
+            $buffer->push($chunk);
+        });
     }
 
     /**
