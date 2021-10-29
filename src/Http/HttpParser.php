@@ -13,14 +13,14 @@ declare(strict_types=1);
 
 namespace FastServer\Http;
 
+use FastServer\ConnectionAwareInterface;
 use FastServer\Http\Exception\InvalidHeaderException;
 use FastServer\Parser\ParserInterface;
 use GuzzleHttp\Psr7\BufferStream;
 use GuzzleHttp\Psr7\ServerRequest;
-use React\Promise\Deferred;
 use React\Socket\ConnectionInterface;
 
-class HttpParser implements ParserInterface
+class HttpParser implements ParserInterface, ConnectionAwareInterface
 {
     /**
      * @var ConnectionInterface
@@ -45,7 +45,15 @@ class HttpParser implements ParserInterface
     /**
      * @var int|null
      */
-    protected $contentLength;
+    protected $contentLength = 0;
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setConnection(ConnectionInterface $connection)
+    {
+        $this->connection = $connection;
+    }
 
     public function push(string $chunk)
     {
@@ -75,25 +83,39 @@ class HttpParser implements ParserInterface
             $this->length -= $pos;
         }
 
+        // collect request body.
         if (null !== $this->request) {
             if (null === $this->contentLength) {
-
+                throw new InvalidHeaderException('The chunk model is not supported now.');
             } else if ($this->contentLength > 0) {
                 if ($this->length >= ($length = $this->contentLength + 4)) {
-                    $content = substr($this->buffer, 0, $length);
+                    $content = ltrim(substr($this->buffer, 0, $length), "\r\n");
+                    // reset buffer state
                     $this->buffer = substr($this->buffer, $length);
                     $this->length -= $length;
+                    $this->contentLength = null;
 
                     $body = new BufferStream();
                     $body->write($content);
+                    $requests[] = $this->request->withBody($body);
+                    $this->request = null;
                 }
             } else {
                 $body = new BufferStream();
+                $requests[] = $this->request->withBody($body);
+                $this->request = null;
             }
         }
+
+        // compute rest buffer.
+        if ($this->length > 0) {
+            $requests = array_merge($requests, $this->evaluate());
+        }
+
+        return $requests;
     }
 
-    protected function parserHeader(string $header)
+    protected function parserHeader(string $header): ServerRequest
     {
         if (!\preg_match('#^(?<method>[^ ]+) (?<target>[^ ]+) HTTP/(?<version>\d\.\d)#m', $header, $start)) {
             throw new InvalidHeaderException('Unable to parse invalid request-line');
@@ -104,7 +126,7 @@ class HttpParser implements ParserInterface
             throw new InvalidHeaderException('Received request with invalid protocol version', 505);
         }
 
-        $headers = Rfc7230::parseHeaders($header);
+        $headers = Rfc7230::parseHeaders(ltrim(strstr($header, "\r\n"), "\r\n") . "\r\n");
 
         // format all header fields into associative array
         $uri = $this->parseUri($headers, $start);
@@ -124,10 +146,9 @@ class HttpParser implements ParserInterface
         foreach ($headers as $header => $value) {
             // match `Host` request header
             if (strtolower($header) === 'host') {
-                $host = $value;
+                $host = $value[0];
             }
         }
-
         // scheme is `http` unless TLS is used
         $localParts = \parse_url($this->connection->getLocalAddress());
         if (isset($localParts['scheme']) && $localParts['scheme'] === 'tls') {

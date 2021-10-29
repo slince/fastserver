@@ -92,7 +92,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function resolve(ServerInterface $server, LoopInterface $loop)
     {
-        for ($i = 0; $i < $this->capacity, $i++;) {
+        for ($i = 0; $i < $this->capacity; $i++) {
             $this->add($this->createWorker($loop, $server));
         }
         return $this;

@@ -13,64 +13,15 @@ declare(strict_types=1);
 
 namespace FastServer\Http;
 
+use FastServer\Parser\ParserFactory;
 use FastServer\TcpServer;
-use GuzzleHttp\Psr7\ServerRequest;
-use Psr\Http\Message\ServerRequestInterface;
-use React\Http\Io\RequestHeaderParser;
-use React\Http\StreamingServer;
-use React\Socket\ConnectionInterface;
+use Psr\Log\LoggerInterface;
+use React\EventLoop\LoopInterface;
 
 final class HttpServer extends TcpServer
 {
-    /**
-     * @var RequestHeaderParser
-     */
-    protected $parser;
-
-    /**
-     * @var StreamingServer
-     */
-    protected $streamServer;
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function allowedEventNames(): array
+    public function __construct(LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
-        $eventNames = parent::allowedEventNames();
-        $eventNames[] = 'request';
-        return $eventNames;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function initialize()
-    {
-        $this->parser = new RequestHeaderParser();
-        $this->streamServer = new StreamingServer(function(ServerRequestInterface $request){
-            $this->emit('request', [$request]);
-        });
-        $this->parser->on('headers', function (ServerRequestInterface $request, ConnectionInterface $conn) {
-            $this->streamServer->handleRequest($conn, $request);
-        });
-
-        $this->parser->on('error', function(\Exception $e, ConnectionInterface $conn)  {
-            $this->emit('error', array($e));
-            // parsing failed => assume dummy request and send appropriate error
-            $this->streamServer->writeError(
-                $conn,
-                $e->getCode() !== 0 ? $e->getCode() : 400,
-                new ServerRequest('GET', '/')
-            );
-        });
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function handleConnection(ConnectionInterface $connection)
-    {
-        $this->parser->handle($connection);
+        parent::__construct(new ParserFactory(HttpParser::class), $logger, $loop);
     }
 }

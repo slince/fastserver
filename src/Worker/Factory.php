@@ -27,15 +27,15 @@ final class Factory
      */
     public static function create(int $capacity)
     {
-        if (function_exists('pcntl_fork')) {
-            return new ForkWorkerPool($capacity);
-        }
-        if (class_exists('\\parallel\\Runtime')) {
-            return new ParallelWorkerPool($capacity);
-        }
-        if (function_exists('proc_open')) {
-            return new ProcWorkerPool($capacity);
-        }
+//        if (function_exists('pcntl_fork')) {
+//            return new ForkWorkerPool($capacity);
+//        }
+//        if (class_exists('\\parallel\\Runtime')) {
+//            return new ParallelWorkerPool($capacity);
+//        }
+//        if (function_exists('proc_open')) {
+//            return new ProcWorkerPool($capacity);
+//        }
         // fake worker pool.
         return new FakeWorkerPool(1);
     }

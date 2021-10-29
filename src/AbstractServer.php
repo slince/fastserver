@@ -18,6 +18,8 @@ use FastServer\Parser\BufferStream;
 use FastServer\Parser\ParserFactoryInterface;
 use FastServer\Worker\Factory;
 use FastServer\Worker\WorkerPool;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\ServerInterface as SocketServer;
@@ -48,13 +50,22 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     protected $parserFactory;
 
     /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
      * @var LoopInterface
      */
     protected $loop;
 
-    public function __construct(ParserFactoryInterface $parserFactory, ?LoopInterface $loop = null)
+    public function __construct(ParserFactoryInterface $parserFactory, LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
         $this->parserFactory = $parserFactory;
+        if (null === $logger) {
+            $logger = new NullLogger();
+        }
+        $this->logger = $logger;
         if (null === $loop) {
             $loop = Loop::get();
         }
@@ -101,7 +112,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     protected function allowedEventNames(): array
     {
-        return ['start', 'end', 'connection'];
+        return ['start', 'end', 'connection', 'message'];
     }
 
     /**
@@ -148,17 +159,6 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     }
 
     /**
-     * Gets the worker pool.
-     *
-     * @return WorkerPool
-     * @internal
-     */
-    public function getPool(): WorkerPool
-    {
-        return $this->pool;
-    }
-
-    /**
      * @internal
      * @param ConnectionInterface $connection
      */
@@ -181,14 +181,14 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     {
         $this->boot();
         $this->emit('start', [$this]);
+        $this->logger->info(sprintf('The server is listen on %s', $this->options['address']) );
         $this->pool->run();
     }
 
     private function boot()
     {
-        $socket = $this->createSocketServer($this->options['address'], $this->loop);
-        $this->pool = $this->createWorkers($socket);
-        $this->socket = $socket;
+        $this->socket = $this->createSocketServer($this->options['address'], $this->loop);
+        $this->pool = $this->createWorkers();
         $this->initialize();
     }
 
@@ -204,10 +204,9 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     /**
      * Create worker pools.
      *
-     * @param SocketServer $socket
      * @return WorkerPool
      */
-    private function createWorkers(SocketServer $socket): WorkerPool
+    private function createWorkers(): WorkerPool
     {
         $pool = Factory::create($this->options['max_workers']);
         $pool->resolve($this, $this->loop);
