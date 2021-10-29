@@ -21,8 +21,7 @@ interface ParserFactoryInterface
      * Creates parser instance.
      *
      * @param ConnectionInterface $connection
-     * @param BufferStream $buffer
      * @return ParserInterface
      */
-    public function createParser(ConnectionInterface $connection, BufferStream $buffer): ParserInterface;
+    public function createParser(ConnectionInterface $connection): ParserInterface;
 }

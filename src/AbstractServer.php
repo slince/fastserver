@@ -165,13 +165,12 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     public function handleConnection(ConnectionInterface $connection)
     {
         $this->emit('connection', [$connection]);
-        $buffer = new BufferStream();
-        $parser = $this->parserFactory->createParser($connection, $buffer);
-        $connection->on('data', function(string $chunk) use($buffer, $parser, $connection){
-            $parser->evaluate()->done(function($message) use($connection){
+        $parser = $this->parserFactory->createParser($connection);
+        $connection->on('data', function(string $chunk) use($parser, $connection){
+            $parser->push($chunk);
+            foreach ($parser->evaluate() as $message) {
                 $this->emit('message', [$message, $connection]);
-            });
-            $buffer->push($chunk);
+            }
         });
     }
 

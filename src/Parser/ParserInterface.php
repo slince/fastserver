@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace FastServer\Parser;
 
-use React\Promise\PromiseInterface;
-
 interface ParserInterface
 {
     /**
@@ -27,7 +25,7 @@ interface ParserInterface
     /**
      * Evaluate messages.
      *
-     * @return PromiseInterface
+     * @return array
      */
-    public function evaluate(): PromiseInterface;
+    public function evaluate(): array;
 }
