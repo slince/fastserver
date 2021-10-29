@@ -14,12 +14,15 @@ declare(strict_types=1);
 
 namespace FastServer;
 
+use React\Socket\ConnectionInterface;
+
 interface ParserFactoryInterface
 {
     /**
      * Creates parser instance.
      *
+     * @param ConnectionInterface $connection
      * @return ParserInterface
      */
-    public function createParser(): ParserInterface;
+    public function createParser(ConnectionInterface $connection): ParserInterface;
 }
