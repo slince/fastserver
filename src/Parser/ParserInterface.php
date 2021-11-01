@@ -27,5 +27,5 @@ interface ParserInterface
      *
      * @return array
      */
-    public function evaluate(): array;
+    public function evaluate(): iterable;
 }

@@ -22,6 +22,9 @@ use React\Socket\ConnectionInterface;
 
 class HttpParser implements ParserInterface, ConnectionAwareInterface
 {
+    public const CRLF = "\r\n";
+    public const HEADER_BODY_DELIMITER = "\r\n\r\n";
+
     /**
      * @var ConnectionInterface
      */
@@ -64,12 +67,10 @@ class HttpParser implements ParserInterface, ConnectionAwareInterface
     /**
      * {@inheritdoc}
      */
-    public function evaluate(): array
+    public function evaluate(): iterable
     {
-        $requests = [];
-
         // parse http request header
-        if (null === $this->request && false !== ($pos = strpos($this->buffer, "\r\n\r\n"))) {
+        if (null === $this->request && false !== ($pos = strpos($this->buffer, static::HEADER_BODY_DELIMITER))) {
             $header = substr($this->buffer, 0, $pos);
             $this->request = $this->parserHeader($header);
             $this->contentLength = 0;
@@ -89,30 +90,40 @@ class HttpParser implements ParserInterface, ConnectionAwareInterface
                 throw new InvalidHeaderException('The chunk model is not supported now.');
             } else if ($this->contentLength > 0) {
                 if ($this->length >= ($length = $this->contentLength + 4)) {
-                    $content = ltrim(substr($this->buffer, 0, $length), "\r\n");
-                    // reset buffer state
-                    $this->buffer = substr($this->buffer, $length);
-                    $this->length -= $length;
-                    $this->contentLength = null;
-
-                    $body = new BufferStream();
-                    $body->write($content);
-                    $requests[] = $this->request->withBody($body);
-                    $this->request = null;
+                    yield $this->captureRequestWithBody($length);
                 }
             } else {
                 $body = new BufferStream();
-                $requests[] = $this->request->withBody($body);
-                $this->request = null;
+                $request = $this->request->withBody($body);
+                $this->resetState();
+                yield $request;
             }
         }
+    }
 
-        // compute rest buffer.
-        if ($this->length > 0) {
-            $requests = array_merge($requests, $this->evaluate());
+    protected function captureRequestWithBody(int $length)
+    {
+        $content = ltrim(substr($this->buffer, 0, $length), static::CRLF);
+        // reset buffer state
+        $this->buffer = substr($this->buffer, $length);
+        $this->length -= $length;
+
+        $body = new BufferStream();
+        $body->write($content);
+        $request = $this->request->withBody($body);
+        $this->resetState();
+        return $request;
+    }
+
+    protected function resetState()
+    {
+        $this->request = null;
+        $this->contentLength = null;
+
+        // Maybe reset buffer contains a full request.
+        if (false !== strpos($this->buffer, "\r\n\r\n")) {
+            $this->evaluate();
         }
-
-        return $requests;
     }
 
     protected function parserHeader(string $header): ServerRequest
@@ -126,7 +137,7 @@ class HttpParser implements ParserInterface, ConnectionAwareInterface
             throw new InvalidHeaderException('Received request with invalid protocol version', 505);
         }
 
-        $headers = Rfc7230::parseHeaders(ltrim(strstr($header, "\r\n"), "\r\n") . "\r\n");
+        $headers = Rfc7230::parseHeaders(ltrim(strstr($header, static::CRLF), static::CRLF) . static::CRLF);
 
         // format all header fields into associative array
         $uri = $this->parseUri($headers, $start);

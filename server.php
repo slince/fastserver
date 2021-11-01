@@ -23,7 +23,7 @@ $server->on('connection', function(ConnectionInterface $connection) use($logger)
 });
 
 $server->on('message', function(ServerRequestInterface $request){
-    var_dump((string)$request->getBody());
+//    var_dump((string)$request->getBody());
     var_dump($request->getHeaders());
     return new \React\Http\Response(200, [], 'hello');
 });
