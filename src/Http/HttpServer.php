@@ -15,27 +15,44 @@ namespace FastServer\Http;
 
 use FastServer\Parser\ParserFactory;
 use FastServer\TcpServer;
-use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
+use React\Socket\ConnectionInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class HttpServer extends TcpServer
 {
     /**
-     * @var RequestHandlerInterface
+     * @var ConnectionPool
      */
-    protected $requestHandler;
+    protected $connections;
 
     public function __construct(LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
         parent::__construct(new ParserFactory(HttpParser::class, HttpEmitter::class), $logger, $loop);
     }
-//
-//    protected function initialize()
-//    {
-//        $this->on('message', function($message, HttpEmitter $writer){
-//            $response = $this->requestHandler->handle($message);
-//            $writer->write($response);
-//        });
-//    }
+
+    protected function configureOptions(OptionsResolver $resolver)
+    {
+        parent::configureOptions($resolver);
+        $resolver->setDefaults([
+            'keepalive' => true,
+            'keepalive_timeout' => 120,
+            'keepalive_requests' => 1000
+        ]);
+    }
+
+    protected function initialize()
+    {
+        $this->connections = new ConnectionPool();
+        $this->on('message', function($message, $writer, ConnectionInterface $connection){
+            $this->connections->getMetadata($connection)->incrRequest();
+        });
+        $this->on('connection', function(ConnectionInterface $connection){
+            $this->connections->add($connection);
+        });
+        $this->on('close', function(ConnectionInterface $connection){
+            $this->connections->remove($connection);
+        });
+    }
 }

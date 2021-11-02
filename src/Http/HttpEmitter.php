@@ -3,7 +3,9 @@
 namespace FastServer\Http;
 
 use FastServer\Parser\WriterInterface;
+use GuzzleHttp\Psr7\BufferStream;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use React\Stream\WritableStreamInterface;
 
 final class HttpEmitter implements WriterInterface
@@ -23,9 +25,9 @@ final class HttpEmitter implements WriterInterface
     /**
      * {@inheritdoc}
      */
-    public function write($message)
+    public function write($response, $request)
     {
-        $this->emit($message);
+        $this->emit($response, $request);
     }
 
     /**
@@ -33,10 +35,14 @@ final class HttpEmitter implements WriterInterface
      *
      * @param ResponseInterface $response
      */
-    public function emit(ResponseInterface $response)
+    public function emit(ResponseInterface $response, ServerRequestInterface $request)
     {
+        $response = $this->handleResponse($request, $response);
+
         $this->emitStatusLine($response);
         $this->emitHeaders($response);
+
+        $this->writeLine(HttpParser::CRLF, false);
 
         $range = $this->parseContentRange($response->getHeaderLine('Content-Range'));
 
@@ -46,6 +52,74 @@ final class HttpEmitter implements WriterInterface
         }
 
         $this->emitBodyRange($range, $response);
+    }
+
+    /**
+     * @link https://github.com/reactphp/http/blob/master/src/Io/StreamingServer.php#L232
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    protected function handleResponse(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        // return early and close response body if connection is already closed
+        $body = $response->getBody();
+
+        $code = $response->getStatusCode();
+        $method = $request->getMethod();
+
+        // assign HTTP protocol version from request automatically
+        $version = $request->getProtocolVersion();
+        $response = $response->withProtocolVersion($version);
+
+        // assign default "X-Powered-By" header automatically
+        if (!$response->hasHeader('Server')) {
+            $response = $response->withHeader('Server', 'FastServer/1');
+        } elseif ($response->getHeaderLine('Server') === ''){
+            $response = $response->withoutHeader('Server');
+        }
+
+        // assign default "Date" header from current time automatically
+        if (!$response->hasHeader('Date')) {
+            // IMF-fixdate  = day-name "," SP date1 SP time-of-day SP GMT
+            $response = $response->withHeader('Date', gmdate('D, d M Y H:i:s') . ' GMT');
+        } elseif ($response->getHeaderLine('Date') === ''){
+            $response = $response->withoutHeader('Date');
+        }
+
+        // assign "Content-Length" and "Transfer-Encoding" headers automatically
+        $chunked = false;
+        if (($method === 'CONNECT' && $code >= 200 && $code < 300) || ($code >= 100 && $code < 200) || $code === 204) {
+            // 2xx response to CONNECT and 1xx and 204 MUST NOT include Content-Length or Transfer-Encoding header
+            $response = $response->withoutHeader('Content-Length')->withoutHeader('Transfer-Encoding');
+        } elseif ($body->getSize() !== null) {
+            // assign Content-Length header when using a "normal" buffered body string
+            $response = $response->withHeader('Content-Length', (string)$body->getSize())->withoutHeader('Transfer-Encoding');
+        } elseif (!$response->hasHeader('Content-Length') && $version === '1.1') {
+            // assign chunked transfer-encoding if no 'content-length' is given for HTTP/1.1 responses
+            $response = $response->withHeader('Transfer-Encoding', 'chunked');
+            $chunked = true;
+        } else {
+            // remove any Transfer-Encoding headers unless automatically enabled above
+            $response = $response->withoutHeader('Transfer-Encoding');
+        }
+
+        // assign "Connection" header automatically
+        if ($code === 101) {
+            // 101 (Switching Protocols) response uses Connection: upgrade header
+            $response = $response->withHeader('Connection', 'upgrade');
+        } else {
+            // remove any Connection headers unless automatically enabled above
+            $response = $response->withoutHeader('Connection');
+        }
+
+        // response to HEAD and 1xx, 204 and 304 responses MUST NOT include a body
+        // exclude status 101 (Switching Protocols) here for Upgrade request handling above
+        if ($method === 'HEAD' || $code === 100 || ($code > 101 && $code < 200) || $code === 204 || $code === 304) {
+            $response = $response->withBody(new BufferStream());
+        }
+
+        return $response;
     }
 
     /**
@@ -63,7 +137,7 @@ final class HttpEmitter implements WriterInterface
         $reasonPhrase = $response->getReasonPhrase();
         $statusCode   = $response->getStatusCode();
 
-        $this->writeChunk(sprintf(
+        $this->writeLine(sprintf(
             'HTTP/%s %d%s',
             $response->getProtocolVersion(),
             $statusCode,
@@ -82,9 +156,9 @@ final class HttpEmitter implements WriterInterface
     protected function emitHeaders(ResponseInterface $response)
     {
         foreach ($response->getHeaders() as $header => $values) {
-            $name  = $this->filterHeader($header);
+            $name = $this->filterHeader($header);
             foreach ($values as $value) {
-                $this->writeChunk(sprintf(
+                $this->writeLine(sprintf(
                     '%s: %s',
                     $name,
                     $value
@@ -108,15 +182,15 @@ final class HttpEmitter implements WriterInterface
         if ($body->isSeekable()) {
             $body->rewind();
         }
-
-        if (! $body->isReadable()) {
-            $this->writeChunk($body) ;
+        if (!$body->isReadable()) {
+            $this->writeLine($body) ;
             return;
         }
 
-        while (! $body->eof()) {
-            $this->writeChunk($body->read(self::MAX_BUFFER_LENGTH));
+        while (!$body->eof()) {
+            $this->writeLine($body->read(self::MAX_BUFFER_LENGTH), false);
         }
+        $this->writeLine('', true);
     }
 
     /**
@@ -140,7 +214,7 @@ final class HttpEmitter implements WriterInterface
         }
 
         if (! $body->isReadable()) {
-            $this->writeChunk(substr($body->getContents(), $first, $length));
+            $this->writeLine(substr($body->getContents(), $first, $length));
             return;
         }
 
@@ -150,11 +224,11 @@ final class HttpEmitter implements WriterInterface
             $contents   = $body->read(self::MAX_BUFFER_LENGTH);
             $remaining -= strlen($contents);
 
-            $this->writeChunk($contents);
+            $this->writeLine($contents);
         }
 
         if ($remaining > 0 && ! $body->eof()) {
-            $this->writeChunk($body->read($remaining));
+            $this->writeLine($body->read($remaining));
         }
     }
 
@@ -179,8 +253,12 @@ final class HttpEmitter implements WriterInterface
         ];
     }
 
-    protected function writeChunk(string $data)
+    protected function writeLine(string $data, bool $newLine = true)
     {
+        if ($newLine) {
+            $data .= HttpParser::CRLF;
+        }
+        echo $data;
         $this->stream->write($data);
     }
 }

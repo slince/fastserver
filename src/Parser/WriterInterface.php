@@ -7,7 +7,8 @@ interface WriterInterface
     /**
      * Writes message to the stream.
      *
-     * @param mixed $message response message.
+     * @param mixed $response response message.
+     * @param mixed $request request message.
      */
-    public function write($message);
+    public function write($response, $request);
 }

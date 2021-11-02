@@ -112,7 +112,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     protected function allowedEventNames(): array
     {
-        return ['start', 'end', 'connection', 'message'];
+        return ['start', 'end', 'connection', 'message', 'close'];
     }
 
     /**
@@ -172,6 +172,9 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
             foreach ($parser->evaluate() as $message) {
                 $this->emit('message', [$message, $writer, $connection]);
             }
+        });
+        $connection->on('close', function() use($connection){
+            $this->emit('close', [$connection]);
         });
     }
 

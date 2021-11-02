@@ -24,9 +24,11 @@ $server->on('connection', function(ConnectionInterface $connection) use($logger)
     $logger->info(sprintf('Accept connection from %s', $connection->getLocalAddress()));
 });
 
-$server->on('message', function(ServerRequestInterface $request, HttpEmitter $emitter){
-    print_r($request->getHeaders());
-    $emitter->write(new Response(200, [], "hello"));
+$i = 0;
+$server->on('message', function(ServerRequestInterface $request, HttpEmitter $emitter) use (&$i){
+//    print_r($request->getHeaders());
+    $emitter->write(new Response(200, [], "hello {$i}"), $request);
+    $i++;
 });
 
 $server->serve();
