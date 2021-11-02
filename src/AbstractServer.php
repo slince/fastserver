@@ -16,6 +16,7 @@ namespace FastServer;
 use Evenement\EventEmitter;
 use FastServer\Parser\BufferStream;
 use FastServer\Parser\ParserFactoryInterface;
+use FastServer\Parser\WriterInterface;
 use FastServer\Worker\Factory;
 use FastServer\Worker\WorkerPool;
 use Psr\Log\LoggerInterface;
@@ -167,15 +168,34 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $this->emit('connection', [$connection]);
         $parser = $this->parserFactory->createParser($connection);
         $writer = $this->parserFactory->createWriter($connection);
-        $connection->on('data', function(string $chunk) use($parser, $writer, $connection){
-            $parser->push($chunk);
-            foreach ($parser->evaluate() as $message) {
-                $this->emit('message', [$message, $writer, $connection]);
-            }
-        });
+        try {
+            $connection->on('data', function (string $chunk) use ($parser, $writer, $connection) {
+                $parser->push($chunk);
+                foreach ($parser->evaluate() as $message) {
+                    $this->emit('message', [$message, $writer, $connection]);
+                }
+            });
+        } catch (InvalidArgumentException $exception) {
+            $this->handleConnectionError($exception, $writer, $connection);
+        }
         $connection->on('close', function() use($connection){
             $this->emit('close', [$connection]);
         });
+    }
+
+    /**
+     * Handle connection error.
+     *
+     * @param InvalidArgumentException $exception
+     * @param WriterInterface $writer
+     * @param ConnectionInterface $connection
+     */
+    protected function handleConnectionError(
+        InvalidArgumentException $exception,
+        WriterInterface $writer,
+        ConnectionInterface $connection
+    ) {
+        $connection->end();
     }
 
     /**

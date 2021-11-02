@@ -1,5 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of the fastserver/fastserver package.
+ *
+ * (c) Slince <taosikai@yeah.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace FastServer\Http;
 
 use FastServer\Parser\WriterInterface;
@@ -25,7 +36,7 @@ final class HttpEmitter implements WriterInterface
     /**
      * {@inheritdoc}
      */
-    public function write($response, $request)
+    public function write($response, $request = null)
     {
         $this->emit($response, $request);
     }
@@ -34,10 +45,11 @@ final class HttpEmitter implements WriterInterface
      * Emit a psr7 response.
      *
      * @param ResponseInterface $response
+     * @param ServerRequestInterface|null $request
      */
-    public function emit(ResponseInterface $response, ServerRequestInterface $request)
+    public function emit(ResponseInterface $response, ?ServerRequestInterface $request = null)
     {
-        $response = $this->handleResponse($request, $response);
+        $response = $this->handleResponse($response, $request);
 
         $this->emitStatusLine($response);
         $this->emitHeaders($response);
@@ -56,21 +68,27 @@ final class HttpEmitter implements WriterInterface
 
     /**
      * @link https://github.com/reactphp/http/blob/master/src/Io/StreamingServer.php#L232
-     * @param ServerRequestInterface $request
+     *
      * @param ResponseInterface $response
+     * @param ServerRequestInterface|null $request
      * @return ResponseInterface
      */
-    protected function handleResponse(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    protected function handleResponse(ResponseInterface $response, ?ServerRequestInterface $request = null): ResponseInterface
     {
         // return early and close response body if connection is already closed
         $body = $response->getBody();
-
         $code = $response->getStatusCode();
-        $method = $request->getMethod();
 
-        // assign HTTP protocol version from request automatically
-        $version = $request->getProtocolVersion();
-        $response = $response->withProtocolVersion($version);
+        $method = 'GET';
+        $version = $response->getProtocolVersion();
+
+        if (null !== $request) {
+            $method = $request->getMethod();
+            // assign HTTP protocol version from request automatically
+            $version = $request->getProtocolVersion();
+            $response = $response->withProtocolVersion($version);
+        }
+
 
         // assign default "X-Powered-By" header automatically
         if (!$response->hasHeader('Server')) {
@@ -183,14 +201,14 @@ final class HttpEmitter implements WriterInterface
             $body->rewind();
         }
         if (!$body->isReadable()) {
-            $this->writeLine($body) ;
+            $this->writeLine((string)$body) ;
             return;
         }
 
         while (!$body->eof()) {
             $this->writeLine($body->read(self::MAX_BUFFER_LENGTH), false);
         }
-        $this->writeLine('', true);
+        $this->writeLine('');
     }
 
     /**
