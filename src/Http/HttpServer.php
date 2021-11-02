@@ -45,22 +45,37 @@ final class HttpServer extends TcpServer
     protected function initialize()
     {
         $this->connections = new ConnectionPool();
-        $this->on('message', function($message, $writer, ConnectionInterface $connection){
-            $this->connections->getMetadata($connection)->incrRequest();
-        });
         $this->on('connection', function(ConnectionInterface $connection){
             $this->connections->add($connection);
         });
         $this->on('close', function(ConnectionInterface $connection){
             $this->connections->remove($connection);
         });
-        $this->loop->addTimer(5, function(){
-
+        $this->on('message', function($message, $writer, ConnectionInterface $connection){
+            $this->connections->getMetadata($connection)->incrRequest();
         });
+        // Add a timer for connections.
+        if ($this->options['keepalive']) {
+            $this->loop->addTimer(5, [$this, 'closeExpiredConnections']);
+        }
     }
 
+    /**
+     * @internal
+     */
     public function closeExpiredConnections()
     {
-
+        $this->logger->info('Check expired connection');
+        /* @var ConnectionInterface $connection */
+        foreach ($this->connections as $connection) {
+            $metadata = $this->connections->getMetadata($connection);
+            $this->logger->info('Check expired connection' . $metadata->getConnection()->getLocalAddress());
+            if (
+                $metadata->getRequests() > $this->options['keepalive_requests']
+                || time() - $metadata->getCreatedAt()->getTimestamp() >= $this->options['keepalive_timeout']
+            ) {
+                $metadata->getConnection()->end();
+            }
+        }
     }
 }

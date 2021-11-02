@@ -42,4 +42,36 @@ class ConnectionMetadata
         $this->updatedAt = new \DateTime();
         $this->requests += 1;
     }
+
+    /**
+     * @return ConnectionInterface
+     */
+    public function getConnection(): ConnectionInterface
+    {
+        return $this->connection;
+    }
+
+    /**
+     * @return int
+     */
+    public function getRequests(): int
+    {
+        return $this->requests;
+    }
+
+    /**
+     * @return \DateTimeInterface
+     */
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * @return \DateTimeInterface
+     */
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
 }

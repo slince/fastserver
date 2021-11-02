@@ -4,8 +4,11 @@ namespace FastServer\Http;
 
 use React\Socket\ConnectionInterface;
 
-class ConnectionPool
+class ConnectionPool implements \IteratorAggregate
 {
+    /**
+     * @var \SplObjectStorage
+     */
     protected $connections;
 
     public function __construct()
@@ -26,5 +29,10 @@ class ConnectionPool
     public function getMetadata(ConnectionInterface $connection): ConnectionMetadata
     {
         return $this->connections->offsetGet($connection);
+    }
+
+    public function getIterator(): \Iterator
+    {
+        return $this->connections;
     }
 }

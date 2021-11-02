@@ -17,7 +17,9 @@ $server = new HttpServer($logger);
 
 $server->configure([
     'address' => '127.0.0.1:1234',
-    'max_workers' => 4
+    'max_workers' => 4,
+    'keepalive_timeout' => 10,
+    'keepalive_requests' => 2
 ]);
 
 $server->on('connection', function(ConnectionInterface $connection) use($logger){
