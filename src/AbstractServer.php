@@ -166,10 +166,11 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     {
         $this->emit('connection', [$connection]);
         $parser = $this->parserFactory->createParser($connection);
-        $connection->on('data', function(string $chunk) use($parser, $connection){
+        $writer = $this->parserFactory->createWriter($connection);
+        $connection->on('data', function(string $chunk) use($parser, $writer, $connection){
             $parser->push($chunk);
             foreach ($parser->evaluate() as $message) {
-                $this->emit('message', [$message, $connection]);
+                $this->emit('message', [$message, $writer, $connection]);
             }
         });
     }

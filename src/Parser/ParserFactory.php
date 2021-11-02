@@ -24,7 +24,12 @@ final class ParserFactory implements ParserFactoryInterface
      */
     protected $parserClass;
 
-    public function __construct(string $parserClass)
+    /**
+     * @var string
+     */
+    protected $writerClass;
+
+    public function __construct(string $parserClass, string $writerClass)
     {
         if (!class_exists($parserClass)) {
             throw new InvalidArgumentException(sprintf('The parser fqcn "%s" is not exists', $parserClass));
@@ -32,7 +37,14 @@ final class ParserFactory implements ParserFactoryInterface
         if (!is_subclass_of($parserClass, ParserInterface::class)) {
             throw new InvalidArgumentException(sprintf('The parser fqcn "%s" is not implements of %s', $parserClass, ParserInterface::class));
         }
+        if (!class_exists($writerClass)) {
+            throw new InvalidArgumentException(sprintf('The writer fqcn "%s" is not exists', $writerClass));
+        }
+        if (!is_subclass_of($writerClass, WriterInterface::class)) {
+            throw new InvalidArgumentException(sprintf('The writer fqcn "%s" is not implements of %s', $writerClass, WriterInterface::class));
+        }
         $this->parserClass = $parserClass;
+        $this->writerClass = $writerClass;
     }
 
     /**
@@ -45,5 +57,18 @@ final class ParserFactory implements ParserFactoryInterface
             $parser->setConnection($connection);
         }
         return $parser;
+    }
+
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createWriter(ConnectionInterface $connection): WriterInterface
+    {
+        $writer = new $this->writerClass($connection);
+        if ($writer instanceof ConnectionAwareInterface) {
+            $writer->setConnection($connection);
+        }
+        return $writer;
     }
 }

@@ -15,11 +15,9 @@ namespace FastServer\Http;
 
 use FastServer\Parser\ParserFactory;
 use FastServer\TcpServer;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
-use React\Socket\ConnectionInterface;
 
 final class HttpServer extends TcpServer
 {
@@ -30,14 +28,14 @@ final class HttpServer extends TcpServer
 
     public function __construct(LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
-        parent::__construct(new ParserFactory(HttpParser::class), $logger, $loop);
+        parent::__construct(new ParserFactory(HttpParser::class, HttpEmitter::class), $logger, $loop);
     }
-
-    protected function initialize()
-    {
-        $this->on('message', function($message, ConnectionInterface $connection){
-             $response = $this->requestHandler->handle($message);
-             $connection->write($response);
-        });
-    }
+//
+//    protected function initialize()
+//    {
+//        $this->on('message', function($message, HttpEmitter $writer){
+//            $response = $this->requestHandler->handle($message);
+//            $writer->write($response);
+//        });
+//    }
 }

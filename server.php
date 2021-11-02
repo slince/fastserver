@@ -1,10 +1,12 @@
 <?php
 
 use FastServer\Http\HttpServer;
+use FastServer\Http\HttpEmitter;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Socket\ConnectionInterface;
+use GuzzleHttp\Psr7\Response;
 
 include __DIR__ . '/vendor/autoload.php';
 
@@ -22,10 +24,9 @@ $server->on('connection', function(ConnectionInterface $connection) use($logger)
     $logger->info(sprintf('Accept connection from %s', $connection->getLocalAddress()));
 });
 
-$server->on('message', function(ServerRequestInterface $request){
-//    var_dump((string)$request->getBody());
-    var_dump($request->getHeaders());
-    return new \React\Http\Response(200, [], 'hello');
+$server->on('message', function(ServerRequestInterface $request, HttpEmitter $emitter){
+    print_r($request->getHeaders());
+    $emitter->write(new Response(200, [], "hello"));
 });
 
 $server->serve();

@@ -24,4 +24,12 @@ interface ParserFactoryInterface
      * @return ParserInterface
      */
     public function createParser(ConnectionInterface $connection): ParserInterface;
+
+    /**
+     * Creates writer instance.
+     *
+     * @param ConnectionInterface $connection
+     * @return WriterInterface
+     */
+    public function createWriter(ConnectionInterface $connection): WriterInterface;
 }

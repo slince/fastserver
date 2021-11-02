@@ -2,10 +2,11 @@
 
 namespace FastServer\Http;
 
+use FastServer\Parser\WriterInterface;
 use Psr\Http\Message\ResponseInterface;
 use React\Stream\WritableStreamInterface;
 
-final class HttpEmitter
+final class HttpEmitter implements WriterInterface
 {
     public const MAX_BUFFER_LENGTH = 8192;
 
@@ -17,6 +18,14 @@ final class HttpEmitter
     public function __construct(WritableStreamInterface $stream)
     {
         $this->stream = $stream;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function write($message)
+    {
+        $this->emit($message);
     }
 
     /**
@@ -54,7 +63,7 @@ final class HttpEmitter
         $reasonPhrase = $response->getReasonPhrase();
         $statusCode   = $response->getStatusCode();
 
-        $this->write(sprintf(
+        $this->writeChunk(sprintf(
             'HTTP/%s %d%s',
             $response->getProtocolVersion(),
             $statusCode,
@@ -75,7 +84,7 @@ final class HttpEmitter
         foreach ($response->getHeaders() as $header => $values) {
             $name  = $this->filterHeader($header);
             foreach ($values as $value) {
-                $this->write(sprintf(
+                $this->writeChunk(sprintf(
                     '%s: %s',
                     $name,
                     $value
@@ -101,12 +110,12 @@ final class HttpEmitter
         }
 
         if (! $body->isReadable()) {
-            $this->write($body) ;
+            $this->writeChunk($body) ;
             return;
         }
 
         while (! $body->eof()) {
-            $this->write($body->read(self::MAX_BUFFER_LENGTH));
+            $this->writeChunk($body->read(self::MAX_BUFFER_LENGTH));
         }
     }
 
@@ -131,7 +140,7 @@ final class HttpEmitter
         }
 
         if (! $body->isReadable()) {
-            $this->write(substr($body->getContents(), $first, $length));
+            $this->writeChunk(substr($body->getContents(), $first, $length));
             return;
         }
 
@@ -141,11 +150,11 @@ final class HttpEmitter
             $contents   = $body->read(self::MAX_BUFFER_LENGTH);
             $remaining -= strlen($contents);
 
-            $this->write($contents);
+            $this->writeChunk($contents);
         }
 
         if ($remaining > 0 && ! $body->eof()) {
-            $this->write($body->read($remaining));
+            $this->writeChunk($body->read($remaining));
         }
     }
 
@@ -170,7 +179,7 @@ final class HttpEmitter
         ];
     }
 
-    protected function write(string $data)
+    protected function writeChunk(string $data)
     {
         $this->stream->write($data);
     }
