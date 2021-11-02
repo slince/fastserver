@@ -56,7 +56,7 @@ final class HttpServer extends TcpServer
         });
         // Add a timer for connections.
         if ($this->options['keepalive']) {
-            $this->loop->addTimer(5, [$this, 'closeExpiredConnections']);
+            $this->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
         }
     }
 
