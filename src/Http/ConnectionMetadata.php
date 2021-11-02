@@ -39,6 +39,7 @@ class ConnectionMetadata
 
     public function incrRequest()
     {
+        $this->updatedAt = new \DateTime();
         $this->requests += 1;
     }
 }

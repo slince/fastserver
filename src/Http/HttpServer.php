@@ -54,5 +54,13 @@ final class HttpServer extends TcpServer
         $this->on('close', function(ConnectionInterface $connection){
             $this->connections->remove($connection);
         });
+        $this->loop->addTimer(5, function(){
+
+        });
+    }
+
+    public function closeExpiredConnections()
+    {
+
     }
 }
