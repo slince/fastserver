@@ -19,6 +19,7 @@ use FastServer\Parser\ParserInterface;
 use GuzzleHttp\Psr7\BufferStream;
 use GuzzleHttp\Psr7\ServerRequest;
 use React\Socket\ConnectionInterface;
+use React\Stream\DuplexStreamInterface;
 
 class HttpParser implements ParserInterface, StreamAwareInterface
 {
@@ -53,11 +54,14 @@ class HttpParser implements ParserInterface, StreamAwareInterface
     /**
      * {@inheritdoc}
      */
-    public function setConnection(ConnectionInterface $connection)
+    public function setStream(DuplexStreamInterface $stream)
     {
-        $this->connection = $connection;
+        $this->connection = $stream;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function push(string $chunk)
     {
         $this->buffer .= $chunk;

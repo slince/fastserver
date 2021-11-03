@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace FastServer\Http;
 
-use FastServer\Exception\InvalidArgumentException;
 use FastServer\Parser\ParserFactory;
 use FastServer\Parser\StreamingReader;
-use FastServer\Parser\WriterInterface;
 use FastServer\TcpServer;
 use GuzzleHttp\Psr7\Response;
 use React\Socket\ConnectionInterface;
@@ -66,7 +64,7 @@ final class HttpServer extends TcpServer
 
         $this->on('connection', function(ConnectionInterface $connection){
             $this->connections->add($connection);
-            $connection->on('close', function(ConnectionInterface $connection){
+            $connection->on('close', function() use($connection){
                 $this->connections->remove($connection);
             });
             $this->streamReader->listen($connection);

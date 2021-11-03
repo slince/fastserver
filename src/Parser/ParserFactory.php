@@ -55,7 +55,7 @@ final class ParserFactory implements ParserFactoryInterface
     {
         $parser = new $this->parserClass($stream);
         if ($parser instanceof StreamAwareInterface) {
-            $parser->setConnection($stream);
+            $parser->setStream($stream);
         }
         return $parser;
     }
@@ -67,7 +67,7 @@ final class ParserFactory implements ParserFactoryInterface
     {
         $writer = new $this->writerClass($stream);
         if ($writer instanceof StreamAwareInterface) {
-            $writer->setConnection($stream);
+            $writer->setStream($stream);
         }
         return $writer;
     }
