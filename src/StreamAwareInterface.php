@@ -13,13 +13,13 @@ declare(strict_types=1);
 
 namespace FastServer;
 
-use React\Socket\ConnectionInterface;
+use React\Stream\DuplexStreamInterface;
 
-interface ConnectionAwareInterface
+interface StreamAwareInterface
 {
     /**
-     * Sets connection instance.
-     * @param ConnectionInterface $connection
+     * Sets st instance.
+     * @param DuplexStreamInterface $stream
      */
-    public function setConnection(ConnectionInterface $connection);
+    public function setStream(DuplexStreamInterface $stream);
 }

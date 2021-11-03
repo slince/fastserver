@@ -15,11 +15,10 @@ namespace FastServer\Http;
 
 use FastServer\Exception\InvalidArgumentException;
 use FastServer\Parser\ParserFactory;
+use FastServer\Parser\StreamingReader;
 use FastServer\Parser\WriterInterface;
 use FastServer\TcpServer;
 use GuzzleHttp\Psr7\Response;
-use Psr\Log\LoggerInterface;
-use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -30,10 +29,10 @@ final class HttpServer extends TcpServer
      */
     protected $connections;
 
-    public function __construct(LoggerInterface $logger = null, ?LoopInterface $loop = null)
-    {
-        parent::__construct(new ParserFactory(HttpParser::class, HttpEmitter::class), $logger, $loop);
-    }
+    /**
+     * @var StreamingReader
+     */
+    protected $streamReader;
 
     /**
      * {@inheritdoc}
@@ -53,31 +52,36 @@ final class HttpServer extends TcpServer
      */
     protected function initialize()
     {
-        if (!$this->options['keepalive']) {
-            return;
-        }
         $this->connections = new ConnectionPool();
-        $this->on('message', function($message, $writer, ConnectionInterface $connection){
+
+        $this->streamReader = $this->createStreamReader();
+        $this->streamReader->on('message', function($message, $writer, ConnectionInterface $connection){
             $this->connections->getMetadata($connection)->incrRequest();
         });
+        $this->streamReader->on('error', function(\Exception $exception, $writer, ConnectionInterface $connection){
+            $response = new Response($exception->getCode() ?: 400, [], $exception->getMessage());
+            $writer->write($response);
+            $connection->end();
+        });
+
         $this->on('connection', function(ConnectionInterface $connection){
             $this->connections->add($connection);
+            $connection->on('close', function(ConnectionInterface $connection){
+                $this->connections->remove($connection);
+            });
+            $this->streamReader->listen($connection);
         });
-        $this->on('close', function(ConnectionInterface $connection){
-            $this->connections->remove($connection);
-        });
+
         // Add a timer for connections.
-        $this->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+        if ($this->options['keepalive']) {
+            $this->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+        }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function handleConnectionError(InvalidArgumentException $exception, WriterInterface $writer, ConnectionInterface $connection)
+    protected function createStreamReader(): StreamingReader
     {
-        $response = new Response($exception->getCode() ?: 400, [], $exception->getMessage());
-        $writer->write($response);
-        $connection->end();
+        $parserFactory = new ParserFactory(HttpParser::class, HttpEmitter::class);
+        return new StreamingReader($parserFactory);
     }
 
     /**

@@ -13,14 +13,14 @@ declare(strict_types=1);
 
 namespace FastServer\Http;
 
-use FastServer\ConnectionAwareInterface;
+use FastServer\StreamAwareInterface;
 use FastServer\Http\Exception\InvalidHeaderException;
 use FastServer\Parser\ParserInterface;
 use GuzzleHttp\Psr7\BufferStream;
 use GuzzleHttp\Psr7\ServerRequest;
 use React\Socket\ConnectionInterface;
 
-class HttpParser implements ParserInterface, ConnectionAwareInterface
+class HttpParser implements ParserInterface, StreamAwareInterface
 {
     public const CRLF = "\r\n";
     public const HEADER_BODY_DELIMITER = "\r\n\r\n";

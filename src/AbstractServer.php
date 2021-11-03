@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace FastServer;
 
 use Evenement\EventEmitter;
-use FastServer\Parser\ParserFactoryInterface;
 use FastServer\Parser\WriterInterface;
 use FastServer\Worker\Factory;
 use FastServer\Worker\WorkerPool;
@@ -45,11 +44,6 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     protected $socket;
 
     /**
-     * @var ParserFactoryInterface
-     */
-    protected $parserFactory;
-
-    /**
      * @var LoggerInterface
      */
     protected $logger;
@@ -59,9 +53,8 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     protected $loop;
 
-    public function __construct(ParserFactoryInterface $parserFactory, LoggerInterface $logger = null, ?LoopInterface $loop = null)
+    public function __construct(LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
-        $this->parserFactory = $parserFactory;
         if (null === $logger) {
             $logger = new NullLogger();
         }
@@ -165,57 +158,6 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     public function handleConnection(ConnectionInterface $connection)
     {
         $this->emit('connection', [$connection]);
-        $parser = $this->parserFactory->createParser($connection);
-        $writer = $this->parserFactory->createWriter($connection);
-        try {
-            $connection->on('data', function (string $chunk) use ($parser, $writer, $connection) {
-                $parser->push($chunk);
-                foreach ($parser->evaluate() as $message) {
-                    $this->handleMessage($message, $writer, $connection);
-                }
-            });
-        } catch (InvalidArgumentException $exception) {
-            $this->handleConnectionError($exception, $writer, $connection);
-        }
-        $connection->on('close', function() use($connection){
-            $this->handleClose($connection);
-        });
-    }
-
-    /**
-     * Handle the message.
-     *
-     * @param mixed $message
-     * @param WriterInterface $writer
-     * @param ConnectionInterface $connection
-     */
-    protected function handleMessage($message, WriterInterface $writer, ConnectionInterface $connection)
-    {
-        $this->emit('message', [$message, $writer, $connection]);
-    }
-
-    /**
-     * Handle connection close.
-     * @param ConnectionInterface $connection
-     */
-    protected function handleClose(ConnectionInterface $connection)
-    {
-        $this->emit('close', [$connection]);
-    }
-
-    /**
-     * Handle connection error.
-     *
-     * @param InvalidArgumentException $exception
-     * @param WriterInterface $writer
-     * @param ConnectionInterface $connection
-     */
-    protected function handleConnectionError(
-        InvalidArgumentException $exception,
-        WriterInterface $writer,
-        ConnectionInterface $connection
-    ) {
-        $connection->end();
     }
 
     /**

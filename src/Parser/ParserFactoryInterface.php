@@ -14,22 +14,23 @@ declare(strict_types=1);
 namespace FastServer\Parser;
 
 use React\Socket\ConnectionInterface;
+use React\Stream\DuplexStreamInterface;
 
 interface ParserFactoryInterface
 {
     /**
      * Creates parser instance.
      *
-     * @param ConnectionInterface $connection
+     * @param ConnectionInterface $stream
      * @return ParserInterface
      */
-    public function createParser(ConnectionInterface $connection): ParserInterface;
+    public function createParser(DuplexStreamInterface $stream): ParserInterface;
 
     /**
      * Creates writer instance.
      *
-     * @param ConnectionInterface $connection
+     * @param ConnectionInterface $stream
      * @return WriterInterface
      */
-    public function createWriter(ConnectionInterface $connection): WriterInterface;
+    public function createWriter(DuplexStreamInterface $stream): WriterInterface;
 }
