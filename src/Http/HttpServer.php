@@ -51,16 +51,6 @@ final class HttpServer extends TcpServer
     /**
      * {@inheritdoc}
      */
-    protected function handleConnectionError(InvalidArgumentException $exception, WriterInterface $writer, ConnectionInterface $connection)
-    {
-        $response = new Response($exception->getCode() ?: 400, [], $exception->getMessage());
-        $writer->write($response);
-        $connection->end();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     protected function initialize()
     {
         if (!$this->options['keepalive']) {
@@ -81,20 +71,30 @@ final class HttpServer extends TcpServer
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function handleConnectionError(InvalidArgumentException $exception, WriterInterface $writer, ConnectionInterface $connection)
+    {
+        $response = new Response($exception->getCode() ?: 400, [], $exception->getMessage());
+        $writer->write($response);
+        $connection->end();
+    }
+
+    /**
      * @internal
      */
     public function closeExpiredConnections()
     {
-        $this->logger->info('Check expired connection');
+        $this->logger->info('Checking expired connections.');
         /* @var ConnectionInterface $connection */
         foreach ($this->connections as $connection) {
             $metadata = $this->connections->getMetadata($connection);
-            $this->logger->info('Check expired connection' . $metadata->getConnection()->getLocalAddress());
             if (
                 $metadata->getRequests() > $this->options['keepalive_requests']
-                || time() - $metadata->getCreatedAt()->getTimestamp() >= $this->options['keepalive_timeout']
+                || $metadata->getAliveSeconds() >= $this->options['keepalive_timeout']
             ) {
-                $metadata->getConnection()->end();
+                $this->logger->info(sprintf('The connection %s is expired, close it.', $connection->getLocalAddress()));
+                $connection->end();
             }
         }
     }

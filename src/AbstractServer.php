@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace FastServer;
 
 use Evenement\EventEmitter;
-use FastServer\Parser\BufferStream;
 use FastServer\Parser\ParserFactoryInterface;
 use FastServer\Parser\WriterInterface;
 use FastServer\Worker\Factory;
@@ -172,15 +171,36 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
             $connection->on('data', function (string $chunk) use ($parser, $writer, $connection) {
                 $parser->push($chunk);
                 foreach ($parser->evaluate() as $message) {
-                    $this->emit('message', [$message, $writer, $connection]);
+                    $this->handleMessage($message, $writer, $connection);
                 }
             });
         } catch (InvalidArgumentException $exception) {
             $this->handleConnectionError($exception, $writer, $connection);
         }
         $connection->on('close', function() use($connection){
-            $this->emit('close', [$connection]);
+            $this->handleClose($connection);
         });
+    }
+
+    /**
+     * Handle the message.
+     *
+     * @param mixed $message
+     * @param WriterInterface $writer
+     * @param ConnectionInterface $connection
+     */
+    protected function handleMessage($message, WriterInterface $writer, ConnectionInterface $connection)
+    {
+        $this->emit('message', [$message, $writer, $connection]);
+    }
+
+    /**
+     * Handle connection close.
+     * @param ConnectionInterface $connection
+     */
+    protected function handleClose(ConnectionInterface $connection)
+    {
+        $this->emit('close', [$connection]);
     }
 
     /**

@@ -48,6 +48,9 @@ class ConnectionMetadata
         $this->createdAt = $this->updatedAt = new \DateTime();
     }
 
+    /**
+     * Incr request counter.
+     */
     public function incrRequest()
     {
         $this->updatedAt = new \DateTime();
@@ -55,6 +58,8 @@ class ConnectionMetadata
     }
 
     /**
+     * returns the connection.
+     *
      * @return ConnectionInterface
      */
     public function getConnection(): ConnectionInterface
@@ -63,6 +68,8 @@ class ConnectionMetadata
     }
 
     /**
+     * Gets the total requests.
+     *
      * @return int
      */
     public function getRequests(): int
@@ -71,6 +78,8 @@ class ConnectionMetadata
     }
 
     /**
+     * Gets create time.
+     *
      * @return \DateTimeInterface
      */
     public function getCreatedAt()
@@ -79,10 +88,22 @@ class ConnectionMetadata
     }
 
     /**
+     * Gets the update time.
+     *
      * @return \DateTimeInterface
      */
     public function getUpdatedAt()
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * Alive seconds.
+     *
+     * @return int
+     */
+    public function getAliveSeconds(): int
+    {
+        return time() - $this->createdAt->getTimestamp();
     }
 }
