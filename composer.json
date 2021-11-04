@@ -29,6 +29,7 @@
     },
     "suggest": {
         "ext-pcntl": "*",
-        "ext-posix": "*"
+        "ext-posix": "*",
+        "ext-parallel": "*"
     }
 }

@@ -20,6 +20,11 @@ use React\Socket\ServerInterface as Socket;
 class Worker
 {
     /**
+     * @var int
+     */
+    protected $id;
+
+    /**
      * @var ServerInterface
      */
     protected $server;
@@ -39,8 +44,9 @@ class Worker
      */
     protected $signals = [];
 
-    public function __construct(LoopInterface $loop, ServerInterface $server)
+    public function __construct(int $id, LoopInterface $loop, ServerInterface $server)
     {
+        $this->id = $id;
         $this->loop = $loop;
         $this->server = $server;
         $this->socket = $server->getSocket();

@@ -98,5 +98,5 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         return $this;
     }
 
-    abstract public function createWorker(LoopInterface $loop, ServerInterface $server);
+    abstract public function createWorker(int $id, LoopInterface $loop, ServerInterface $server);
 }

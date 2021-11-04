@@ -15,28 +15,24 @@ namespace FastServer\Worker;
 
 use parallel\Runtime as ParallelRuntime;
 use parallel\Channel;
-use React\EventLoop\LoopInterface;
-use FastServer\ServerInterface;
 
 class ParallelWorker extends Worker
 {
+    /**
+     * @var ParallelRuntime
+     */
     protected $runtime;
-
-    public function __construct(LoopInterface $loop, ServerInterface $server)
-    {
-        parent::__construct($loop, $server);
-    }
 
     public function start()
     {
+        $channel = new Channel();
         $this->runtime = new ParallelRuntime();
-        $this->runtime->run($this->createCallable());
+        $this->runtime->run($this->createCallable(), [$channel]);
     }
 
     protected function createCallable(): \Closure
     {
-        return function($id, Channel $channel){
-
+        return function(Channel $channel){
             $this->work();
         };
     }
