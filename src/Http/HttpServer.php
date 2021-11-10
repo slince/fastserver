@@ -13,10 +13,13 @@ declare(strict_types=1);
 
 namespace FastServer\Http;
 
+use FastServer\Http\Exception\InvalidHeaderException;
 use FastServer\Parser\ParserFactory;
 use FastServer\Parser\StreamingReader;
 use FastServer\TcpServer;
 use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -33,6 +36,11 @@ final class HttpServer extends TcpServer
     protected $streamReader;
 
     /**
+     * @var RequestHandlerInterface
+     */
+    protected $requestHandler;
+
+    /**
      * {@inheritdoc}
      */
     protected function configureOptions(OptionsResolver $resolver)
@@ -46,6 +54,22 @@ final class HttpServer extends TcpServer
     }
 
     /**
+     * Sets a request handler for the http server.
+     *
+     * @param callable|RequestHandlerInterface $requestHandler
+     */
+    public function handle($requestHandler)
+    {
+        if (is_callable($requestHandler)) {
+            $requestHandler = new CallableRequestHandler($requestHandler);
+        }
+        if (!$requestHandler instanceof RequestHandlerInterface) {
+            throw new InvalidHeaderException(sprintf('The request handler must be a valid callback or instance of %s', RequestHandlerInterface::class));
+        }
+        $this->requestHandler = $requestHandler;
+    }
+
+    /**
      * {@inheritdoc}
      */
     protected function initialize()
@@ -53,8 +77,14 @@ final class HttpServer extends TcpServer
         $this->connections = new ConnectionPool();
 
         $this->streamReader = $this->createStreamReader();
-        $this->streamReader->on('message', function($message, $writer, ConnectionInterface $connection){
+        $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
             $this->connections->getMetadata($connection)->incrRequest();
+            $this->emit('message', [$request, $connection]);
+            $response = $this->requestHandler->handle($request);
+            $writer->write($response);
+            if (!$this->options['keepalive'] || 0 === strcasecmp($request->getHeaderLine('connection'), 'Close')) {
+                $connection->end();
+            }
         });
         $this->streamReader->on('error', function(\Exception $exception, $writer, ConnectionInterface $connection){
             $response = new Response($exception->getCode() ?: 400, [], $exception->getMessage());

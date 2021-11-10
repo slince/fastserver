@@ -31,12 +31,12 @@ final class Factory
 //            return new ForkWorkerPool($capacity);
 //        }
 //        if (class_exists('\\parallel\\Runtime')) {
-            return new ParallelWorkerPool($capacity);
-//        }
+//            return new ParallelWorkerPool($capacity);
+////        }
 //        if (function_exists('proc_open')) {
 //            return new ProcWorkerPool($capacity);
 //        }
         // fake worker pool.
-//        return new FakeWorkerPool(1);
+        return new FakeWorkerPool(1);
     }
 }

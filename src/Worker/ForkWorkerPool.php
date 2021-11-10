@@ -21,7 +21,7 @@ class ForkWorkerPool extends WorkerPool
     /**
      * {@inheritdoc}
      */
-    public function createWorker(LoopInterface $loop, ServerInterface $server)
+    public function createWorker(int $id, LoopInterface $loop, ServerInterface $server)
     {
         return new ForkWorker($loop, $server);
     }

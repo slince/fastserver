@@ -19,18 +19,21 @@ $server->configure([
     'address' => '127.0.0.1:1234',
     'max_workers' => 4,
     'keepalive_timeout' => 10,
-    'keepalive_requests' => 2
+    'keepalive_requests' => 100
 ]);
+
 
 $server->on('connection', function(ConnectionInterface $connection) use($logger){
     $logger->info(sprintf('Accept connection from %s', $connection->getLocalAddress()));
 });
 
 $i = 0;
-$server->on('message', function(ServerRequestInterface $request, HttpEmitter $emitter) use (&$i){
+
+$server->handle(function(ServerRequestInterface $request) use(&$i){
 //    print_r($request->getHeaders());
-    $emitter->write(new Response(200, [], "hello {$i}"), $request);
     $i++;
+    return new Response(200, [], "hello {$i}");
 });
+
 
 $server->serve();

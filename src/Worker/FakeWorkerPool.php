@@ -21,8 +21,8 @@ class FakeWorkerPool extends WorkerPool
     /**
      * {@inheritdoc}
      */
-    public function createWorker(LoopInterface $loop, ServerInterface $server)
+    public function createWorker(int $id, LoopInterface $loop, ServerInterface $server)
     {
-        return new Worker($loop, $server);
+        return new Worker($id, $loop, $server);
     }
 }
