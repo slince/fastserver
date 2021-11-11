@@ -16,7 +16,7 @@ $server = new FastServer\TcpServer($logger);
 
 $server->configure([
     'address' => '127.0.0.1:4567',
-    'max_workers' => 2,
+    'max_workers' => 4,
 ]);
 
 $i = 0;
