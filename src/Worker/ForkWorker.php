@@ -22,11 +22,9 @@ use React\Stream\WritableResourceStream;
 use FastServer\Bridge\Command\CommandFactory;
 use FastServer\Bridge\Command\CommandInterface;
 use FastServer\Bridge\BridgeInterface;
-use FastServer\Bridge\StreamBridge;
 use FastServer\Exception\RuntimeException;
 use FastServer\Process\Process;
 use FastServer\Bridge\Message;
-use FastServer\Bridge\MessageParser;
 use FastServer\ServerInterface;
 
 class ForkWorker extends Worker
@@ -100,14 +98,15 @@ class ForkWorker extends Worker
     public function createCallable(): \Closure
     {
         return function($stdin, $stdout, $stderr){
+
             $this->inChildProcess = true;
 
-            $connection = new StreamBridge(new CompositeStream(
+            $bridge = BridgeFactory::createBridge(new CompositeStream(
                 new ReadableResourceStream($stdin, $this->loop),
                 new WritableResourceStream($stdout, $this->loop)
             ));
 
-            $this->listenCommands($connection);
+            $this->listenCommands($bridge);
 
             $this->work();
 
@@ -115,18 +114,15 @@ class ForkWorker extends Worker
         };
     }
 
-    protected function listenCommands(BridgeInterface $connection)
+    protected function listenCommands(BridgeInterface $bridge)
     {
-        $connection->on('message', function(Message $message, BridgeInterface $connection){
+        $bridge->listen(function(Message $message, BridgeInterface $bridge){
             $command = $this->commands->createCommand($message);
-            $this->handleCommand($command, $connection);
+            $this->handleCommand($command, $bridge);
         });
-
-        $parser = new MessageParser($connection);
-        $parser->parse();
     }
 
-    protected function handleCommand(CommandInterface $command, BridgeInterface $connection)
+    protected function handleCommand(CommandInterface $command, BridgeInterface $bridge)
     {
         switch ($command->getCommandId()) {
             case 'CLOSE':

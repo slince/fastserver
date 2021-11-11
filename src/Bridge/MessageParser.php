@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace FastServer\Bridge;
 
-use FastServer\ParserInterface;
+use FastServer\Parser\ParserInterface;
 
 final class MessageParser implements ParserInterface
 {

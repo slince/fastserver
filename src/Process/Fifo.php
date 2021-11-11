@@ -18,37 +18,46 @@ use FastServer\Exception\RuntimeException;
 
 final class Fifo
 {
+    /**
+     * @var string
+     */
     protected $pathname;
 
-    protected $mode;
-
+    /**
+     * @var int
+     */
     protected $permission;
 
     protected $stream;
 
-    public function __construct($pathname, $mode, $permission = 0666)
+    public function __construct($pathname, $permission = 0666)
     {
-        if (($exists = file_exists($pathname)) && filetype($pathname) !== 'fifo') {
-            throw new InvalidArgumentException("The file already exists, but is not a valid fifo file");
+        if (($exists = file_exists($pathname)) && 'fifo' !== filetype($pathname)) {
+            throw new InvalidArgumentException(sprintf('The file "%s" already exists, but is not a valid fifo file', $pathname));
         }
         if (!$exists && !posix_mkfifo($pathname, $permission)) {
-            throw new RuntimeException("Cannot create the fifo file");
+            throw new RuntimeException(sprintf('Cannot create the fifo file "%s"', $pathname));
         }
         $this->pathname = $pathname;
-        $this->mode = $mode;
         $this->permission = $permission;
     }
 
-    public function getStream()
+    /**
+     * Open the fifo.
+     *
+     * @param string $mode
+     * @return false|resource
+     */
+    public function open(string $mode)
     {
         if (!is_null($this->stream)) {
             return $this->stream;
         }
-        return $this->stream = fopen($this->pathname, $this->mode);
+        return $this->stream = fopen($this->pathname, $mode);
     }
 
     /**
-     * {@inheritdoc}
+     * Close the fifo.
      */
     public function close()
     {

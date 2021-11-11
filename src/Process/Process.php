@@ -71,9 +71,9 @@ class Process extends AbstractProcess
         return function_exists('pcntl_signal');
     }
 
-    protected function createFifo(string $suffix = null): string
+    protected function createFifo(string $suffix = null): Fifo
     {
-        return sys_get_temp_dir() . '/' . 'sl_' . mt_rand(0, 999) . $suffix . '.pipe';
+        return new Fifo(sys_get_temp_dir() . '/sl_' . mt_rand(0, 999) . $suffix . '.pipe');
     }
 
     /**
@@ -91,17 +91,17 @@ class Process extends AbstractProcess
             $this->pid = $pid;
             $this->running = true;
             $this->status = self::STATUS_STARTED;
-            $this->stdin = (new Fifo($this->stdinFifo, 'w'))->getStream();
-            $this->stdout = (new Fifo($this->stdoutFifo, 'r'))->getStream();
-            $this->stderr = (new Fifo($this->stderr, 'r'))->getStream();
+            $this->stdin = $this->stdinFifo->open('w');
+            $this->stdout = $this->stdoutFifo->open('r');
+            $this->stderr = $this->stderrFifo->open('r');
             $this->updateStatus($blocking);
         } else {
             $this->isChildProcess = true;
             $this->pid = posix_getpid();
             $this->installSignalHandlers();
-            $stdin = (new Fifo($this->stdinFifo, 'r'))->getStream();
-            $stdout = (new Fifo($this->stdoutFifo, 'w'))->getStream();
-            $stderr = (new Fifo($this->stderr, 'w'))->getStream();
+            $stdin = $this->stdinFifo->open('r');
+            $stdout = $this->stdoutFifo->open('w');
+            $stderr = $this->stderrFifo->open('w');
             try {
                 $exitCode = call_user_func($this->callback, $stdin, $stdout, $stderr);
             } catch (\Exception $e) {
