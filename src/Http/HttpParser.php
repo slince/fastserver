@@ -92,20 +92,14 @@ class HttpParser implements ParserInterface, StreamAwareInterface
         if (null !== $this->request) {
             if (null === $this->contentLength) {
                 throw new InvalidHeaderException('The chunk model is not supported now.');
-            } else if ($this->contentLength > 0) {
-                if ($this->length >= ($length = $this->contentLength + 4)) {
-                    yield $this->captureRequestWithBody($length);
-                }
-            } else {
-                $body = new BufferStream();
-                $request = $this->request->withBody($body);
+            } else if ($this->length >= ($length = $this->contentLength + 4)) {
+                yield $this->captureRequestBody($length);
                 $this->resetState();
-                yield $request;
             }
         }
     }
 
-    protected function captureRequestWithBody(int $length)
+    protected function captureRequestBody(int $length)
     {
         $content = ltrim(substr($this->buffer, 0, $length), static::CRLF);
         // reset buffer state
@@ -114,9 +108,7 @@ class HttpParser implements ParserInterface, StreamAwareInterface
 
         $body = new BufferStream();
         $body->write($content);
-        $request = $this->request->withBody($body);
-        $this->resetState();
-        return $request;
+        return $this->request->withBody($body);
     }
 
     protected function resetState()

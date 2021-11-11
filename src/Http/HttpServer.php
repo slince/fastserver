@@ -81,8 +81,12 @@ final class HttpServer extends TcpServer
             $this->connections->getMetadata($connection)->incrRequest();
             $this->emit('message', [$request, $connection]);
             $response = $this->requestHandler->handle($request);
+            $keepalive = $this->options['keepalive'] && 0 !== strcasecmp($request->getHeaderLine('connection'), 'close');
+            if ($keepalive) {
+                $response = $response->withHeader('Connection', 'Keep-Alive');
+            }
             $writer->write($response);
-            if (!$this->options['keepalive'] || 0 === strcasecmp($request->getHeaderLine('connection'), 'Close')) {
+            if (!$keepalive) {
                 $connection->end();
             }
         });
@@ -93,9 +97,11 @@ final class HttpServer extends TcpServer
         });
 
         $this->on('connection', function(ConnectionInterface $connection){
+            var_dump('add connection');
             $this->connections->add($connection);
             $connection->on('close', function() use($connection){
                 $this->connections->remove($connection);
+                var_dump('close connection');
             });
             $this->streamReader->listen($connection);
         });
@@ -117,7 +123,7 @@ final class HttpServer extends TcpServer
      */
     public function closeExpiredConnections()
     {
-        $this->logger->info('Checking expired connections.');
+        $this->logger->info(sprintf('Checking expired connections(%d).', count($this->connections)));
         /* @var ConnectionInterface $connection */
         foreach ($this->connections as $connection) {
             $metadata = $this->connections->getMetadata($connection);
@@ -125,7 +131,7 @@ final class HttpServer extends TcpServer
                 $metadata->getRequests() > $this->options['keepalive_requests']
                 || $metadata->getAliveSeconds() >= $this->options['keepalive_timeout']
             ) {
-                $this->logger->info(sprintf('The connection %s is expired, close it.', $connection->getLocalAddress()));
+                $this->logger->info(sprintf('The connection %s is expired, close it.', $connection->getRemoteAddress()));
                 $connection->end();
             }
         }

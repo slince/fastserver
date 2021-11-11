@@ -126,9 +126,6 @@ final class HttpEmitter implements WriterInterface
         if ($code === 101) {
             // 101 (Switching Protocols) response uses Connection: upgrade header
             $response = $response->withHeader('Connection', 'upgrade');
-        } else {
-            // remove any Connection headers unless automatically enabled above
-            $response = $response->withoutHeader('Connection');
         }
 
         // response to HEAD and 1xx, 204 and 304 responses MUST NOT include a body

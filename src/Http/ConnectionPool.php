@@ -15,7 +15,7 @@ namespace FastServer\Http;
 
 use React\Socket\ConnectionInterface;
 
-class ConnectionPool implements \IteratorAggregate
+class ConnectionPool implements \IteratorAggregate, \Countable
 {
     /**
      * @var \SplObjectStorage
@@ -45,5 +45,10 @@ class ConnectionPool implements \IteratorAggregate
     public function getIterator(): \Iterator
     {
         return $this->connections;
+    }
+
+    public function count(): int
+    {
+        return count($this->connections);
     }
 }
