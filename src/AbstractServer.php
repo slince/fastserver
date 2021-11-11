@@ -169,6 +169,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $this->emit('start', [$this]);
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']) );
         $this->pool->run();
+        $this->loop->stop();
     }
 
     private function boot()

@@ -97,18 +97,16 @@ final class HttpServer extends TcpServer
         });
 
         $this->on('connection', function(ConnectionInterface $connection){
-            var_dump('add connection');
             $this->connections->add($connection);
             $connection->on('close', function() use($connection){
                 $this->connections->remove($connection);
-                var_dump('close connection');
             });
             $this->streamReader->listen($connection);
         });
 
         // Add a timer for connections.
         if ($this->options['keepalive']) {
-            $this->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+//            $this->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
         }
     }
 

@@ -182,7 +182,7 @@ class Process extends AbstractProcess
     /**
      * {@inheritdoc}
      */
-    public function signal($signal)
+    public function signal(int $signal)
     {
         if (!$this->running) {
             throw new RuntimeException("The process is not currently running");
