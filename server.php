@@ -21,15 +21,22 @@ $server->configure([
 
 $i = 0;
 
-$server->on('connection', function(ConnectionInterface $connection){
-    $connection->on('data', function(string $data) use($connection){
-        $connection->write($data);
+$server->on('connection', function(ConnectionInterface $connection) use(&$i){
+    $connection->on('data', function(string $data) use($connection, &$i){
+        $content = "hello {$i}";
+        $length = strlen($content);
+        $message = <<<EOT
+HTTP/1.1 200 OK
+Server: FastServer/1
+Date: Thu, 11 Nov 2021 11:02:13 GMT
+Content-Length: {$length}
+
+{$content}
+EOT;
+
+        $connection->end($message);
+        $i++;
     });
 });
-$server->handle(function(ServerRequestInterface $request) use(&$i){
-    $i++;
-    return new Response(200, [], "hello {$i}");
-});
-
 
 $server->serve();
