@@ -23,6 +23,6 @@ class ForkWorkerPool extends WorkerPool
      */
     public function createWorker(int $id, LoopInterface $loop, ServerInterface $server)
     {
-        return new ForkWorker($loop, $server);
+        return new ForkWorker($id, $loop, $server);
     }
 }

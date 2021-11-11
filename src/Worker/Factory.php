@@ -27,9 +27,9 @@ final class Factory
      */
     public static function create(int $capacity)
     {
-//        if (function_exists('pcntl_fork')) {
-//            return new ForkWorkerPool($capacity);
-//        }
+        if (function_exists('pcntl_fork')) {
+            return new ForkWorkerPool($capacity);
+        }
 //        if (class_exists('\\parallel\\Runtime')) {
 //            return new ParallelWorkerPool($capacity);
 ////        }

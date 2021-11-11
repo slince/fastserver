@@ -51,9 +51,9 @@ class ForkWorker extends Worker
 
     protected $inChildProcess = false;
 
-    public function __construct(LoopInterface $loop, ServerInterface $server)
+    public function __construct(int $id, LoopInterface $loop, ServerInterface $server)
     {
-        parent::__construct($loop, $server);
+        parent::__construct($id, $loop, $server);
         $this->commands = $this->createCommandFactory();
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
