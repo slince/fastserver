@@ -53,6 +53,26 @@ class Worker
     }
 
     /**
+     * Return the worker id.
+     *
+     * @return int
+     */
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    /**
+     * Return the worker pid.
+     *
+     * @return int
+     */
+    public function getPid(): int
+    {
+        return getmypid();
+    }
+
+    /**
      * Starts the worker.
      */
     public function start()
@@ -67,6 +87,7 @@ class Worker
      */
     public function close()
     {
+        // ignore this
     }
 
     /**
@@ -74,6 +95,7 @@ class Worker
      */
      public function work()
      {
+         $this->server->setWorker($this);
          $this->socket->on('connection', [$this->server, 'handleConnection']);
          $this->socket->on('error', [$this->server, 'handleError']);
      }

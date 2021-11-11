@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace FastServer;
 
 use Evenement\EventEmitter;
-use FastServer\Parser\WriterInterface;
 use FastServer\Worker\Factory;
 use FastServer\Worker\WorkerPool;
 use Psr\Log\LoggerInterface;
@@ -52,6 +51,11 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      * @var LoopInterface
      */
     protected $loop;
+
+    /**
+     * @var Worker\Worker
+     */
+    protected $worker;
 
     public function __construct(LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
@@ -152,11 +156,23 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     }
 
     /**
+     * {@internal}
+     */
+    public function setWorker(Worker\Worker $worker)
+    {
+        $this->worker = $worker;
+    }
+
+    /**
+     * The method may be executed in child process for some worker type.
+     *
      * @internal
      * @param ConnectionInterface $connection
      */
     public function handleConnection(ConnectionInterface $connection)
     {
+        $this->logger->debug(sprintf('Worker [%s] [%s] Accept connection from %s', $this->worker->getId(),
+            $this->worker->getPid(), $connection->getLocalAddress()));
         $this->emit('connection', [$connection]);
     }
 

@@ -1,20 +1,34 @@
 <?php
 
-use Workerman\Worker;
+use FastServer\Http\HttpServer;
+use FastServer\Http\HttpEmitter;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Psr\Http\Message\ServerRequestInterface;
+use React\Socket\ConnectionInterface;
+use GuzzleHttp\Psr7\Response;
 
-require_once __DIR__ . '/vendor/autoload.php';
+include __DIR__ . '/vendor/autoload.php';
 
-$http_worker = new Worker('http://0.0.0.0:2345');
+$logger = new Logger("fastserver");
+$logger->pushHandler(new StreamHandler(STDOUT));
 
-// 4 processes
-$http_worker->count = 4;
+$server = new HttpServer($logger);
 
-// Emitted when data received
-$http_worker->onMessage = function ($connection, $request) {
+$server->configure([
+    'address' => '127.0.0.1:1234',
+    'max_workers' => 4,
+    'keepalive' => false,
+    'keepalive_timeout' => 3600,
+    'keepalive_requests' => 100
+]);
 
-    // Send data to client
-    $connection->send("Hello World" . get_class($connection));
-};
+$i = 0;
 
-// Run all workers
-Worker::runAll();
+$server->handle(function(ServerRequestInterface $request) use(&$i){
+    $i++;
+    return new Response(200, [], "hello {$i}");
+});
+
+
+$server->serve();

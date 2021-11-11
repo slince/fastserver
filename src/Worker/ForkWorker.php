@@ -58,6 +58,11 @@ class ForkWorker extends Worker
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
 
+    public function getPid(): int
+    {
+        return $this->process->getPid();
+    }
+
     public function start()
     {
         $this->process = new Process($this->createCallable());
