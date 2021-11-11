@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace FastServer\Handler;
 
-use FastServer\Connection\Command\CommandInterface;
-use FastServer\Connection\ConnectionInterface;
+use FastServer\Bridge\Command\CommandInterface;
+use FastServer\Bridge\BridgeInterface;
 use FastServer\Exception\InvalidArgumentException;
 
 final class DelegatingHandler implements HandlerInterface
@@ -32,7 +32,7 @@ final class DelegatingHandler implements HandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function handle(CommandInterface $command, ConnectionInterface $connection)
+    public function handle(CommandInterface $command, BridgeInterface $connection)
     {
         if (null === $loader = $this->resolver->resolve($command)) {
             throw new InvalidArgumentException(sprintf('Cannot find handler for command type: "%s"',

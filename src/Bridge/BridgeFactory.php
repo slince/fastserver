@@ -11,20 +11,20 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Connection;
+namespace FastServer\Bridge;
 
 use React\Stream\DuplexStreamInterface;
 
-final class ConnectionFactory
+final class BridgeFactory
 {
     /**
      * Creates the connection for the given stream.
      *
      * @param DuplexStreamInterface $stream
-     * @return ConnectionInterface
+     * @return BridgeInterface
      */
-    public static function createConnection(DuplexStreamInterface $stream): ConnectionInterface
+    public static function createBridge(DuplexStreamInterface $stream): BridgeInterface
     {
-        return new StreamConnection($stream);
+        return new StreamBridge($stream);
     }
 }

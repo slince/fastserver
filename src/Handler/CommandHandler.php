@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace FastServer\Handler;
 
-use FastServer\Connection\Command\CommandInterface;
+use FastServer\Bridge\Command\CommandInterface;
 
 abstract class CommandHandler implements HandlerInterface
 {

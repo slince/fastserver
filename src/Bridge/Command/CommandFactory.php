@@ -11,10 +11,10 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Connection\Command;
+namespace FastServer\Bridge\Command;
 
 use FastServer\Exception\BadMessageException;
-use FastServer\Connection\Message;
+use FastServer\Bridge\Message;
 
 final class CommandFactory
 {

@@ -11,11 +11,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Connection;
+namespace FastServer\Bridge;
 
-use FastServer\Connection\Command\CommandInterface;
+use FastServer\Bridge\Command\CommandInterface;
 
-interface ConnectionInterface
+interface BridgeInterface
 {
     /**
      * Writes a request for the given command over the connection.

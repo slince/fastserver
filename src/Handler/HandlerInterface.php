@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace FastServer\Handler;
 
-use FastServer\Connection\Command\CommandInterface;
-use FastServer\Connection\ConnectionInterface;
+use FastServer\Bridge\Command\CommandInterface;
+use FastServer\Bridge\BridgeInterface;
 
 interface HandlerInterface
 {
@@ -22,9 +22,9 @@ interface HandlerInterface
      * Handling the command.
      *
      * @param CommandInterface $command
-     * @param ConnectionInterface $connection
+     * @param BridgeInterface $connection
      */
-    public function handle(CommandInterface $command, ConnectionInterface $connection);
+    public function handle(CommandInterface $command, BridgeInterface $connection);
 
     /**
      * Returns whether this class supports the given command.

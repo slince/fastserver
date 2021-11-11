@@ -11,12 +11,12 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Connection;
+namespace FastServer\Bridge;
 
 use React\Stream\DuplexStreamInterface;
-use FastServer\Connection\Command\CommandInterface;
+use FastServer\Bridge\Command\CommandInterface;
 
-class StreamConnection implements ConnectionInterface
+class StreamBridge implements BridgeInterface
 {
     /**
      * @var DuplexStreamInterface
