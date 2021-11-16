@@ -96,6 +96,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     {
         $resolver
             ->setDefaults([
+                'reuseport' => false,
                 'max_workers' => 1,
                 'event_names' => $this->allowedEventNames()
             ])
@@ -170,11 +171,14 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
         $this->pool->run();
         $this->socket->close();
+        $this->pool->wait();
     }
 
     private function boot()
     {
-        $this->socket = $this->createSocketServer($this->options['address'], $this->loop);
+        if (!$this->options['reuseport']) {
+            $this->socket = $this->createSocketServer($this->options['address'], $this->loop);
+        }
         $this->pool = $this->createWorkers();
         $this->initialize();
     }

@@ -112,7 +112,8 @@ class Process extends AbstractProcess
     }
 
     /**
-     * Registers a callback for some signals
+     * Registers a callback for some signals (trigger in child process, not current process).
+     *
      * @param int|array $signals a signal or an array of signals
      * @param callable|int $handler
      */
