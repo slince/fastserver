@@ -134,22 +134,6 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function pause()
-    {
-        $this->socket && $this->socket->pause();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function resume()
-    {
-        $this->socket && $this->socket->resume();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getSocket(): SocketServer
     {
         return $this->socket;
@@ -184,11 +168,8 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $this->boot();
         $this->emit('start', [$this]);
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
-        var_dump('close');
         $this->pool->run();
         $this->socket->close();
-        $this->loop->stop();
-        var_dump('final');
     }
 
     private function boot()
