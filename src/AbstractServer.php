@@ -20,7 +20,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
-use React\Socket\ServerInterface as SocketServer;
+use React\Socket\ServerInterface as Socket;
 use FastServer\Exception\InvalidArgumentException;
 use React\EventLoop\LoopInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -38,7 +38,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     protected $pool;
 
     /**
-     * @var SocketServer
+     * @var Socket
      */
     protected $socket;
 
@@ -135,7 +135,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function getSocket(): SocketServer
+    public function getSocket(): Socket
     {
         return $this->socket;
     }
@@ -177,20 +177,11 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     private function boot()
     {
         if (!$this->options['reuseport']) {
-            $this->socket = $this->createSocketServer($this->options['address'], $this->loop);
+            $this->socket = $this->createSocket();
         }
         $this->pool = $this->createWorkers();
         $this->initialize();
     }
-
-    /**
-     * Creates socket server for the given address.
-     *
-     * @param string $address
-     * @param LoopInterface $loop
-     * @return SocketServer
-     */
-    abstract protected function createSocketServer(string $address, LoopInterface $loop);
 
     /**
      * Create worker pools.

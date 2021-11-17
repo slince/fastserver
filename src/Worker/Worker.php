@@ -49,7 +49,6 @@ class Worker
         $this->id = $id;
         $this->loop = $loop;
         $this->server = $server;
-        $this->socket = $server->getSocket();
     }
 
     /**
@@ -96,6 +95,11 @@ class Worker
      public function work()
      {
          $this->server->setWorker($this);
+         if ($this->server->getOption('reuseport')) {
+             $this->socket = $this->server->createSocket();
+         } else {
+             $this->socket = $this->server->getSocket();
+         }
          $this->socket->on('connection', [$this->server, 'handleConnection']);
          $this->socket->on('error', [$this->server, 'handleError']);
      }

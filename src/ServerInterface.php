@@ -60,4 +60,10 @@ interface ServerInterface
      * {@internal}
      */
     public function getSocket(): Socket;
+
+    /**
+     * Creates a socket for the server.
+     * @return Socket
+     */
+    public function createSocket();
 }

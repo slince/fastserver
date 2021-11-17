@@ -13,9 +13,8 @@ declare(strict_types=1);
 
 namespace FastServer;
 
-use React\EventLoop\LoopInterface;
 use React\Socket\SecureServer;
-use React\Socket\TcpServer as SocketServer;
+use React\Socket\TcpServer as Socket;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class TcpServer extends AbstractServer
@@ -36,11 +35,14 @@ class TcpServer extends AbstractServer
     /**
      * {@inheritdoc}
      */
-    protected function createSocketServer(string $address, LoopInterface $loop)
+    public function createSocket()
     {
-        $server = new SocketServer($address, $loop, $this->options['tcp_context']);
+        if ($this->options['reuseport']) {
+            $this->options['tcp_context']['so_reuseport'] = true;
+        }
+        $server = new Socket($this->options['address'], $this->loop, $this->options['tcp_context']);
         if ($this->options['tls']) {
-            $server = new SecureServer($server, $loop, $this->options['tls_context']);
+            $server = new SecureServer($server, $this->loop, $this->options['tls_context']);
         }
         return $server;
     }
