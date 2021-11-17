@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace FastServer;
 
-use React\EventLoop\LoopInterface;
 use React\Socket\UnixServer as SocketServer;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -33,8 +32,8 @@ class UnixServer extends AbstractServer
     /**
      * {@inheritdoc}
      */
-    protected function createSocketServer(string $address, LoopInterface $loop)
+    public function createSocket()
     {
-        return new SocketServer($address, $loop, $this->options['unix_context']);
+        return new SocketServer($this->options['address'], $this->loop, $this->options['unix_context']);
     }
 }
