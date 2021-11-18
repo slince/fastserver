@@ -16,7 +16,7 @@ $logger->pushHandler(new StreamHandler(STDOUT, 'info'));
 $server = new HttpServer($logger);
 
 $server->configure([
-    'address' => '127.0.0.1:1234',
+    'address' => '127.0.0.1:2345',
     'max_workers' => 4,
     'keepalive' => true,
     'keepalive_timeout' => 3600,

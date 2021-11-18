@@ -191,7 +191,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     private function createWorkers(): WorkerPool
     {
         $pool = Factory::create($this->options['max_workers']);
-        $pool->resolve($this, $this->loop);
+        $pool->configure($this->loop, $this->logger, $this);
         return $pool;
     }
 

@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace FastServer\Worker;
 
 use FastServer\ServerInterface;
+use Psr\Log\LoggerInterface;
+use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 
 abstract class WorkerPool implements \IteratorAggregate, \Countable
@@ -30,9 +32,31 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     protected $workers = [];
 
+    /**
+     * @var LoopInterface
+     */
+    protected $loop;
+
+    /**
+     * @var ServerInterface
+     */
+    protected $server;
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
     public function __construct(int $capacity)
     {
         $this->capacity = $capacity;
+    }
+
+    public function configure(LoopInterface $loop, LoggerInterface $logger, ServerInterface $server)
+    {
+        $this->loop = $loop;
+        $this->logger = $logger;
+        $this->server = $server;
     }
 
     /**
@@ -43,6 +67,16 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     public function add(Worker $worker)
     {
         $this->workers[] = $worker;
+    }
+
+    public function getWorker(int $pid): ?Worker
+    {
+        foreach ($this->workers as $worker) {
+            if ($pid === $worker->getPid()) {
+                return $worker;
+            }
+        }
+        return null;
     }
 
     /**
@@ -85,17 +119,12 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
 
     /**
      * Build worker pools.
-     *
-     * @param ServerInterface $server
-     * @param LoopInterface $loop
-     * @return $this
      */
-    public function resolve(ServerInterface $server, LoopInterface $loop)
+    public function build()
     {
         for ($i = 0; $i < $this->capacity; $i++) {
-            $this->add($this->createWorker($i, $loop, $server));
+            $this->add($this->createWorker($i, $this->loop, $this->server));
         }
-        return $this;
     }
 
     abstract public function createWorker(int $id, LoopInterface $loop, ServerInterface $server);

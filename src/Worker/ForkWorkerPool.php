@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace FastServer\Worker;
 
+use FastServer\Process\GlobalProcess;
+use FastServer\Process\StatusInfo;
 use FastServer\ServerInterface;
 use React\EventLoop\LoopInterface;
 
@@ -24,5 +26,23 @@ class ForkWorkerPool extends WorkerPool
     public function createWorker(int $id, LoopInterface $loop, ServerInterface $server)
     {
         return new ForkWorker($id, $loop, $server);
+    }
+
+    public function wait()
+    {
+        $process = GlobalProcess::get();
+        $process->wait([$this, 'waitWorkers']);
+    }
+
+    public function waitWorkers(int $pid, StatusInfo $status)
+    {
+        var_dump($pid, $status->hasBeenExited(), $status->hasBeenSignaled(), $status->hasBeenStopped());
+        return;
+        $worker = $this->getWorker($pid);
+        $this->remove($worker);
+        $alternative = $this->createWorker($worker->getId(), $this->loop, $this->server);
+        $this->add($alternative);
+        $worker->start();
+        $this->logger->info(sprintf('The worker %d is exited and new one has been start', $worker->getId()));
     }
 }
