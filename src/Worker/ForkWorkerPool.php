@@ -36,6 +36,9 @@ class ForkWorkerPool extends WorkerPool
 
     public function waitWorkers(int $pid, StatusInfo $status)
     {
+        if ($pid === -1) {
+//            return;
+        }
         var_dump($pid, $status->hasBeenExited(), $status->hasBeenSignaled(), $status->hasBeenStopped());
         return;
         $worker = $this->getWorker($pid);
