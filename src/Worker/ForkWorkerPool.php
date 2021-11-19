@@ -36,16 +36,14 @@ class ForkWorkerPool extends WorkerPool
 
     public function waitWorkers(int $pid, StatusInfo $status)
     {
-        if ($pid === -1) {
-//            return;
+        if (-1 === $pid) {
+            return;
         }
-        var_dump($pid, $status->hasBeenExited(), $status->hasBeenSignaled(), $status->hasBeenStopped());
-        return;
         $worker = $this->getWorker($pid);
         $this->remove($worker);
         $alternative = $this->createWorker($worker->getId(), $this->loop, $this->server);
         $this->add($alternative);
-        $worker->start();
-        $this->logger->info(sprintf('The worker %d is exited and new one has been start', $worker->getId()));
+        $alternative->start();
+        $this->logger->info(sprintf('The worker[%d] %d is exited and new one[%d] has been start', $pid, $worker->getId(), $alternative->getPid()));
     }
 }

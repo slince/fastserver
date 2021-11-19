@@ -114,7 +114,6 @@ class ForkWorker extends Worker
             $this->listenCommands($bridge);
 
             $this->work();
-
             $this->loop->run();
         };
     }
