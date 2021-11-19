@@ -127,5 +127,13 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         }
     }
 
+    /**
+     * create a worker instance.
+     *
+     * @param int $id
+     * @param LoopInterface $loop
+     * @param ServerInterface $server
+     * @return Worker
+     */
     abstract public function createWorker(int $id, LoopInterface $loop, ServerInterface $server);
 }

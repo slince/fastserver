@@ -49,6 +49,9 @@ class ForkWorkerPool extends WorkerPool
         $process->wait([$this, 'waitWorkers']);
     }
 
+    /**
+     * {@internal}
+     */
     public function onSignal(int $signal)
     {
         switch ($signal) {
