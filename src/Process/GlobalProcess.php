@@ -14,6 +14,11 @@ final class GlobalProcess
      */
     protected static $process;
 
+    public function __construct()
+    {
+        pcntl_async_signals(true);
+    }
+
     public static function get(): GlobalProcess
     {
         if (null === self::$process) {
