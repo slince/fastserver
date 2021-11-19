@@ -61,6 +61,7 @@ class ForkWorkerPool extends WorkerPool
             case \SIGINT:
             case \SIGTERM:
                 $this->close();
+                exit(0);
                 break;
             case SIGQUIT:
                 $this->restart();

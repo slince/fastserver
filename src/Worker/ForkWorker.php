@@ -97,8 +97,6 @@ class ForkWorker extends Worker
                 $this->handleClose(false);
             });
             $process->signal(\SIGHUP, function(){
-                var_dump('收到信号', SIGHUP);
-                return;
                 $this->handleClose(true);
             });
 
