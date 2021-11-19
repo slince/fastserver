@@ -31,6 +31,10 @@ class ForkWorkerPool extends WorkerPool
     public function wait()
     {
         $process = GlobalProcess::get();
+        pcntl_async_signals(true);
+        $process->signal(SIGUSR1, function(){
+            var_dump('收到信号');
+        });
         $process->wait([$this, 'waitWorkers']);
     }
 

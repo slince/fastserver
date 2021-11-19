@@ -15,6 +15,7 @@ namespace FastServer\Worker;
 
 use FastServer\Bridge\BridgeFactory;
 use FastServer\Bridge\Command\CLOSE;
+use FastServer\Process\GlobalProcess;
 use React\EventLoop\LoopInterface;
 use React\Stream\CompositeStream;
 use React\Stream\ReadableResourceStream;
@@ -66,9 +67,6 @@ class ForkWorker extends Worker
     public function start()
     {
         $this->process = new Process($this->createCallable());
-        if ($this->isSupportSignal) {
-            $this->registerSignals();
-        }
         $this->process->start(false);
         $this->control = BridgeFactory::createBridge(new CompositeStream(
             new ReadableResourceStream($this->process->stdout, $this->loop),
@@ -87,24 +85,20 @@ class ForkWorker extends Worker
         parent::close();
     }
 
-    protected function registerSignals()
-    {
-        foreach ($this->signals as $signal => $handler) {
-            $this->process->registerSignal($signal, $handler);
-        }
-        $this->process->registerSignal([SIGINT, SIGTERM], function(){
-            $this->handleClose(false);
-        });
-        $this->process->registerSignal([SIGHUP], function(){
-            $this->handleClose(true);
-        });
-    }
-
-    public function createCallable(): \Closure
+    protected function createCallable(): \Closure
     {
         return function($stdin, $stdout, $stderr){
 
             $this->inChildProcess = true;
+
+            $process = GlobalProcess::get();
+
+            $process->signal(\SIGTERM, function(){
+                $this->handleClose(false);
+            });
+            $process->signal(\SIGHUP, function(){
+                $this->handleClose(true);
+            });
 
             $bridge = BridgeFactory::createBridge(new CompositeStream(
                 new ReadableResourceStream($stdin, $this->loop),
@@ -114,6 +108,7 @@ class ForkWorker extends Worker
             $this->listenCommands($bridge);
 
             $this->work();
+
             $this->loop->run();
         };
     }

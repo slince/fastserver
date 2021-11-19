@@ -43,7 +43,7 @@ class Process extends AbstractProcess
     /**
      * @var array
      */
-    protected $signalHandlers;
+    protected $signalHandlers = [];
 
     protected $isChildProcess = false;
 

@@ -42,7 +42,6 @@ final class GlobalProcess
                 // ignore logic.
             };
         }
-//        pcntl_async_signals(true);
         while (true) {
             $pid = \pcntl_waitpid(-1, $status);
             $statusInfo = new StatusInfo($status);
