@@ -35,9 +35,9 @@ final class GlobalProcess
         return $this->pid;
     }
 
-    public function signal(int $signal, callable $callback)
+    public function signal(int $signal, callable $callback, bool $restartSyscalls = true)
     {
-        pcntl_signal($signal, $callback);
+        pcntl_signal($signal, $callback, $restartSyscalls);
     }
 
     public function wait(callable $callback = null)
@@ -48,7 +48,7 @@ final class GlobalProcess
             };
         }
         while (true) {
-            $pid = \pcntl_waitpid(-1, $status);
+            $pid = \pcntl_wait($status);
             $statusInfo = new StatusInfo($status);
             call_user_func($callback, $pid, $statusInfo);
         }

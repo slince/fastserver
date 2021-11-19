@@ -21,6 +21,13 @@ use React\EventLoop\LoopInterface;
 class ForkWorkerPool extends WorkerPool
 {
     /**
+     * Whether the pool is closing.
+     *
+     * @var bool
+     */
+    protected $closing = false;
+
+    /**
      * {@inheritdoc}
      */
     public function createWorker(int $id, LoopInterface $loop, ServerInterface $server)
@@ -31,13 +38,30 @@ class ForkWorkerPool extends WorkerPool
     public function wait()
     {
         $process = GlobalProcess::get();
-        $process->signal(SIGHUP, function(){
-            var_dump('收到信号', SIGHUP);
-        });
-//        while(true) {
-//            sleep(2);
-//        }
+
+        // grace close
+        $process->signal(\SIGHUP, function(){
+            $this->close(true);
+        }, false);
+        $process->signal(\SIGINT, [$this, 'close'], false);
+        $process->signal(\SIGTERM, [$this, 'close'], false);
+        $process->signal(\SIGUSR1, [$this, 'restart'], false);
         $process->wait([$this, 'waitWorkers']);
+    }
+
+    public function close($grace = false)
+    {
+        $this->closing = true;
+        foreach ($this->workers as $worker) {
+            $worker->close($grace);
+        }
+    }
+
+    public function restart($grace = false)
+    {
+        foreach ($this->workers as $worker) {
+            $worker->close($grace);
+        }
     }
 
     public function waitWorkers(int $pid, StatusInfo $status)
@@ -48,6 +72,9 @@ class ForkWorkerPool extends WorkerPool
         }
         $worker = $this->getWorker($pid);
         $this->remove($worker);
+        if ($this->closing) {
+            return;
+        }
         $alternative = $this->createWorker($worker->getId(), $this->loop, $this->server);
         $this->add($alternative);
         $alternative->start();

@@ -84,7 +84,7 @@ class Worker
      *
      * {@internal}
      */
-    public function close()
+    public function close(bool $grace = false)
     {
         // ignore this
     }
