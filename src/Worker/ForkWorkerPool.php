@@ -40,13 +40,32 @@ class ForkWorkerPool extends WorkerPool
         $process = GlobalProcess::get();
 
         // grace close
-        $process->signal(\SIGHUP, function(){
-            $this->close(true);
-        }, false);
-        $process->signal(\SIGINT, [$this, 'close'], false);
-        $process->signal(\SIGTERM, [$this, 'close'], false);
-        $process->signal(\SIGUSR1, [$this, 'restart'], false);
+        $process->signal(\SIGHUP, [$this, 'onSignal'], false);
+        $process->signal(\SIGINT, [$this, 'onSignal'], false);
+        $process->signal(\SIGTERM, [$this, 'onSignal'], false);
+        $process->signal(\SIGQUIT, [$this, 'onSignal'], false);
+        $process->signal(\SIGUSR1, [$this, 'onSignal'], false);
+
         $process->wait([$this, 'waitWorkers']);
+    }
+
+    public function onSignal(int $signal)
+    {
+        switch ($signal) {
+            case \SIGHUP:
+                $this->close(true);
+                break;
+            case \SIGINT:
+            case \SIGTERM:
+                $this->close();
+                break;
+            case SIGQUIT:
+                $this->restart();
+                break;
+            case \SIGUSR1:
+                $this->restart(true);
+                break;
+        }
     }
 
     public function close($grace = false)
