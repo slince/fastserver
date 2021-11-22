@@ -16,6 +16,7 @@ namespace FastServer\Worker;
 use FastServer\Process\GlobalProcess;
 use FastServer\Process\StatusInfo;
 use FastServer\ServerInterface;
+use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 
 class ForkWorkerPool extends WorkerPool
@@ -30,9 +31,9 @@ class ForkWorkerPool extends WorkerPool
     /**
      * {@inheritdoc}
      */
-    public function createWorker(int $id, LoopInterface $loop, ServerInterface $server)
+    public function createWorker(int $id, LoopInterface $loop, LoggerInterface $logger, ServerInterface $server)
     {
-        return new ForkWorker($id, $loop, $server);
+        return new ForkWorker($id, $loop, $logger, $server);
     }
 
     public function wait()
@@ -61,7 +62,6 @@ class ForkWorkerPool extends WorkerPool
             case \SIGINT:
             case \SIGTERM:
                 $this->close();
-                exit(0);
                 break;
             case SIGQUIT:
                 $this->restart();
@@ -89,16 +89,27 @@ class ForkWorkerPool extends WorkerPool
 
     public function waitWorkers(int $pid, StatusInfo $status)
     {
-        var_dump($pid, $status->hasBeenExited(), $status->hasBeenStopped(), $status->hasBeenSignaled());
         if (-1 === $pid) {
+            $this->logger->info('Invalid signal.');
+            sleep(10000);
             return;
         }
         $worker = $this->getWorker($pid);
-        $this->remove($worker);
-        if ($this->closing) {
+        if (null === $worker) {
+            $this->logger->info(sprintf('The worker[%d] is not found. and the pool has [%d] workers', $pid, $this->count()));
             return;
         }
-        $alternative = $this->createWorker($worker->getId(), $this->loop, $this->server);
+        $this->remove($worker);
+        if ($this->closing) {
+            var_dump(count($this->workers));
+            if (0 === count($this->workers)) {
+                $this->logger->info('All workers has been exited, close the server.');
+                exit();
+            }
+            return;
+        }
+        exit('end');
+        $alternative = $this->createWorker($worker->getId(), $this->loop, $this->logger, $this->server);
         $this->add($alternative);
         $alternative->start();
         $this->logger->info(sprintf('The worker[%d] %d is exited and new one[%d] has been start', $pid, $worker->getId(), $alternative->getPid()));

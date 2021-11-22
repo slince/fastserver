@@ -16,6 +16,7 @@ namespace FastServer\Worker;
 use FastServer\Bridge\BridgeFactory;
 use FastServer\Bridge\Command\CLOSE;
 use FastServer\Process\GlobalProcess;
+use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 use React\Stream\CompositeStream;
 use React\Stream\ReadableResourceStream;
@@ -52,9 +53,9 @@ class ForkWorker extends Worker
 
     protected $inChildProcess = false;
 
-    public function __construct(int $id, LoopInterface $loop, ServerInterface $server)
+    public function __construct(int $id, LoopInterface $loop, LoggerInterface $logger, ServerInterface $server)
     {
-        parent::__construct($id, $loop, $server);
+        parent::__construct($id, $loop, $logger, $server);
         $this->commands = $this->createCommandFactory();
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
@@ -91,12 +92,10 @@ class ForkWorker extends Worker
 
             $this->inChildProcess = true;
 
-            $process = GlobalProcess::get();
-
-            $process->signal(\SIGTERM, function(){
+            $this->loop->addSignal(\SIGTERM, function(){
                 $this->handleClose(false);
             });
-            $process->signal(\SIGHUP, function(){
+            $this->loop->addSignal(\SIGHUP, function(){
                 $this->handleClose(true);
             });
 
@@ -138,10 +137,12 @@ class ForkWorker extends Worker
         if (!$this->inChildProcess) {
             throw new RuntimeException('The action can only be executed in child process.');
         }
+        $this->logger->info('Receive close command.');
         if ($grace) {
             $this->loop->stop();
+        } else {
+            exit(0);
         }
-        exit(0);
     }
 
     /**

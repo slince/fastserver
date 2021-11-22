@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace FastServer\Worker;
 
 use FastServer\ServerInterface;
+use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 use React\Socket\ServerInterface as Socket;
 
@@ -40,14 +41,15 @@ class Worker
     protected $loop;
 
     /**
-     * @var callable[]
+     * @var LoggerInterface
      */
-    protected $signals = [];
+    protected $logger;
 
-    public function __construct(int $id, LoopInterface $loop, ServerInterface $server)
+    public function __construct(int $id, LoopInterface $loop, LoggerInterface $logger, ServerInterface $server)
     {
         $this->id = $id;
         $this->loop = $loop;
+        $this->logger = $logger;
         $this->server = $server;
     }
 
