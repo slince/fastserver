@@ -59,7 +59,7 @@ class ForkWorkerPool extends WorkerPool
             case \SIGHUP:
                 $this->close(true);
                 break;
-            case \SIGINT:
+//            case \SIGINT:
             case \SIGTERM:
                 $this->close();
                 break;
