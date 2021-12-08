@@ -17,8 +17,8 @@ $server = new HttpServer($logger);
 
 $server->configure([
     'address' => '127.0.0.1:2345',
-    'max_workers' => 1,
-    'reuseport' => true,
+    'max_workers' => 32,
+    'reuseport' => false,
     'keepalive' => true,
     'keepalive_timeout' => 3600,
     'keepalive_requests' => 10000
@@ -31,8 +31,4 @@ $server->handle(function(ServerRequestInterface $request) use(&$i){
     return new Response(200, [], "hello {$i}");
 });
 
-
-//$server->on('message', function($message, ConnectionInterface $connection) use($logger){
-//    $logger->info($connection->getLocalAddress() . '*' . $connection->getRemoteAddress());
-//});
 $server->serve();

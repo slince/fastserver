@@ -1,5 +1,19 @@
 <?php
 
+
+class A{
+    public $a = 123;
+}
+
+$a = new A();
+$b = $a;
+
+$b = new A();
+$b->a = 456;
+
+var_dump($a->a, $b->a);
+
+exit;
 define('FORK_NUMS', 5);
 $pids = array();
 

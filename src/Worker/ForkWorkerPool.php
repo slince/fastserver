@@ -36,14 +36,8 @@ class ForkWorkerPool extends WorkerPool
     public function wait()
     {
         $process = GlobalProcess::get();
-
         // grace close
-        $process->signal(\SIGHUP, [$this, 'onSignal'], false);
-//        $process->signal(\SIGINT, [$this, 'onSignal'], false);
-        $process->signal(\SIGTERM, [$this, 'onSignal'], false);
-        $process->signal(\SIGQUIT, [$this, 'onSignal'], false);
-        $process->signal(\SIGUSR1, [$this, 'onSignal'], false);
-
+        $process->signal([\SIGINT, \SIGTERM, \SIGQUIT, \SIGHUP, \SIGUSR1, SIGUSR2], [$this, 'onSignal'], false);
         $process->wait([$this, 'waitWorkers']);
     }
 
@@ -53,37 +47,37 @@ class ForkWorkerPool extends WorkerPool
     public function onSignal(int $signal)
     {
         switch ($signal) {
+            case \SIGINT:
+            case \SIGTERM:
+            case \SIGQUIT:
+                $this->close();
+                break;
             case \SIGHUP:
                 $this->close(true);
                 break;
-//            case \SIGINT:
-            case \SIGTERM:
-                $this->close();
-                break;
-            case SIGQUIT:
+            case \SIGUSR1:
                 $this->restart();
                 break;
-            case \SIGUSR1:
+            case \SIGUSR2:
                 $this->restart(true);
                 break;
         }
     }
 
-    public function close($grace = false)
+    public function close($graceful = false)
     {
         $this->status = self::STATUS_CLOSING;
-        var_dump('close worker');
-        sleep(2);
         foreach ($this->workers as $worker) {
-            $worker->close($grace);
+            $worker->close($graceful);
         }
     }
 
-    public function restart($grace = false)
+    public function restart($graceful = false)
     {
-        $this->logger->info(sprintf('Restart %d workers.', count($this->workers)));
+        $message = sprintf('Restart %d workers', count($this->workers)) . $graceful ? ' gracefully.' : '.';
+        $this->logger->info($message);
         foreach ($this->workers as $worker) {
-            $worker->close($grace);
+            $worker->close($graceful);
         }
     }
 

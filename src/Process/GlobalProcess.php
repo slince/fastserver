@@ -35,9 +35,12 @@ final class GlobalProcess
         return $this->pid;
     }
 
-    public function signal(int $signal, callable $callback, bool $restartSyscalls = true)
+    public function signal($signals, callable $callback, bool $restartSyscalls = true)
     {
-        pcntl_signal($signal, $callback, $restartSyscalls);
+        $signals = (array)$signals;
+        foreach ($signals as $signal) {
+            pcntl_signal($signal, $callback, $restartSyscalls);
+        }
     }
 
     public function wait(callable $callback = null)
