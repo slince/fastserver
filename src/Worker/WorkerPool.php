@@ -83,13 +83,11 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     /**
      * Set dependency instance.
      *
-     * @param LoopInterface $loop
      * @param LoggerInterface $logger
      * @param ServerInterface $server
      */
-    public function configure(LoopInterface $loop, LoggerInterface $logger, ServerInterface $server)
+    public function configure(LoggerInterface $logger, ServerInterface $server)
     {
-        $this->loop = $loop;
         $this->logger = $logger;
         $this->server = $server;
     }

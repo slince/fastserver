@@ -1,31 +1,22 @@
 <?php
 
+include __DIR__ . '/vendor/autoload.php';
 
-class A{
-    public $a = 123;
-}
+$loop = \React\EventLoop\Loop::get();
+$server = new \React\Socket\SocketServer('tcp://127.0.0.1:1234', [], $loop);
 
-$a = new A();
-$b = $a;
+const WORKER_NUM = 3;
 
-$b = new A();
-$b->a = 456;
+for ($i = 0; $i <= WORKER_NUM; $i++) {
+    $pid = pcntl_fork();
+    if (-1 === $pid) {
+        exit('fork error');
+    } elseif ($pid) {
 
-var_dump($a->a, $b->a);
-
-exit;
-define('FORK_NUMS', 5);
-$pids = array();
-
-//Create 5 sub-processes
-for($i = 0; $i < FORK_NUMS; ++$i) {
-    $pids[$i] = pcntl_fork();
-    if($pids[$i] == -1) {
-        die('fork error');
-    } else if ($pids[$i]) {
-        pcntl_wait($status);
     } else {
-        echo getmypid() , " {$i} \r\n";
-        exit;
+        $loop->run();
     }
+
 }
+
+pcntl_wait($status);

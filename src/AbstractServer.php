@@ -48,25 +48,16 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     protected $logger;
 
     /**
-     * @var LoopInterface
-     */
-    protected $loop;
-
-    /**
      * @var Worker\Worker
      */
     protected $worker;
 
-    public function __construct(LoggerInterface $logger = null, ?LoopInterface $loop = null)
+    public function __construct(LoggerInterface $logger = null)
     {
         if (null === $logger) {
             $logger = new NullLogger();
         }
         $this->logger = $logger;
-        if (null === $loop) {
-            $loop = Loop::get();
-        }
-        $this->loop = $loop;
     }
 
     /**
@@ -202,7 +193,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     private function createWorkers(): WorkerPool
     {
         $pool = WorkerFactory::create($this->options['max_workers']);
-        $pool->configure($this->loop, $this->logger, $this);
+        $pool->configure($this->logger, $this);
         $pool->build();
         return $pool;
     }
