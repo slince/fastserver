@@ -21,12 +21,6 @@ use React\EventLoop\LoopInterface;
 
 class ForkWorkerPool extends WorkerPool
 {
-    /**
-     * Whether the pool is closing.
-     *
-     * @var bool
-     */
-    protected $closing = false;
 
     /**
      * {@inheritdoc}
@@ -36,13 +30,16 @@ class ForkWorkerPool extends WorkerPool
         return new ForkWorker($id, $loop, $logger, $server);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function wait()
     {
         $process = GlobalProcess::get();
 
         // grace close
         $process->signal(\SIGHUP, [$this, 'onSignal'], false);
-        $process->signal(\SIGINT, [$this, 'onSignal'], false);
+//        $process->signal(\SIGINT, [$this, 'onSignal'], false);
         $process->signal(\SIGTERM, [$this, 'onSignal'], false);
         $process->signal(\SIGQUIT, [$this, 'onSignal'], false);
         $process->signal(\SIGUSR1, [$this, 'onSignal'], false);
@@ -55,6 +52,7 @@ class ForkWorkerPool extends WorkerPool
      */
     public function onSignal(int $signal)
     {
+        return;
         switch ($signal) {
             case \SIGHUP:
                 $this->close(true);
@@ -74,7 +72,7 @@ class ForkWorkerPool extends WorkerPool
 
     public function close($grace = false)
     {
-        $this->closing = true;
+        $this->status = self::STATUS_CLOSING;
         foreach ($this->workers as $worker) {
             $worker->close($grace);
         }
@@ -100,15 +98,12 @@ class ForkWorkerPool extends WorkerPool
             return;
         }
         $this->remove($worker);
-        if ($this->closing) {
-            var_dump(count($this->workers));
+        if (self::STATUS_CLOSING === $this->status) {
             if (0 === count($this->workers)) {
                 $this->logger->info('All workers has been exited, close the server.');
-                exit();
             }
             return;
         }
-        exit('end');
         $alternative = $this->createWorker($worker->getId(), $this->loop, $this->logger, $this->server);
         $this->add($alternative);
         $alternative->start();

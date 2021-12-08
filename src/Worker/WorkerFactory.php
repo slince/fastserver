@@ -13,11 +13,10 @@ declare(strict_types=1);
 
 namespace FastServer\Worker;
 
-final class Factory
+final class WorkerFactory
 {
     const TYPE_FORK = 'fork';
     const TYPE_PROC = 'proc';
-    const TYPE_THREAD = 'parallel';
 
     /**
      * Creates a worker pool.
@@ -30,12 +29,9 @@ final class Factory
         if (function_exists('pcntl_fork')) {
             return new ForkWorkerPool($capacity);
         }
-//        if (class_exists('\\parallel\\Runtime')) {
-//            return new ParallelWorkerPool($capacity);
-////        }
-//        if (function_exists('proc_open')) {
-//            return new ProcWorkerPool($capacity);
-//        }
+        if (function_exists('proc_open')) {
+            return new ProcWorkerPool($capacity);
+        }
         // fake worker pool.
         return new FakeWorkerPool(1);
     }

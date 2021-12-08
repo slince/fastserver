@@ -273,7 +273,6 @@ final class HttpEmitter implements WriterInterface
         if ($newLine) {
             $data .= HttpParser::CRLF;
         }
-//        echo $data;
         $this->stream->write($data);
     }
 }

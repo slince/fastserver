@@ -21,6 +21,34 @@ use React\EventLoop\LoopInterface;
 abstract class WorkerPool implements \IteratorAggregate, \Countable
 {
     /**
+     * process status,running
+     * @var string
+     */
+    const STATUS_READY = 'ready';
+
+    /**
+     * process status,running
+     * @var string
+     */
+    const STATUS_STARTED = 'started';
+
+    /**
+     * closing.
+     */
+    const STATUS_CLOSING = 'closing';
+
+    /**
+     * process status,terminated
+     * @var string
+     */
+    const STATUS_TERMINATED = 'terminated';
+
+    /**
+     * @var string
+     */
+    protected $status = self::STATUS_READY;
+
+    /**
      * The capacity of the pool.
      *
      * @var int
@@ -52,6 +80,13 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         $this->capacity = $capacity;
     }
 
+    /**
+     * Set dependency instance.
+     *
+     * @param LoopInterface $loop
+     * @param LoggerInterface $logger
+     * @param ServerInterface $server
+     */
     public function configure(LoopInterface $loop, LoggerInterface $logger, ServerInterface $server)
     {
         $this->loop = $loop;
@@ -69,6 +104,12 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         $this->workers[] = $worker;
     }
 
+    /**
+     * Gets the worker by its process id.
+     *
+     * @param int $pid
+     * @return Worker|null
+     */
     public function getWorker(int $pid): ?Worker
     {
         foreach ($this->workers as $worker) {
@@ -112,6 +153,8 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function run()
     {
+        $this->status = self::STATUS_STARTED;
+
         foreach ($this->workers as $worker) {
             $worker->start();
         }
@@ -137,4 +180,9 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      * @return Worker
      */
     abstract public function createWorker(int $id, LoopInterface $loop, LoggerInterface $logger, ServerInterface $server);
+
+    /**
+     * Wait
+     */
+    abstract public function wait();
 }

@@ -15,7 +15,6 @@ namespace FastServer\Worker;
 
 use FastServer\Bridge\BridgeFactory;
 use FastServer\Bridge\Command\CLOSE;
-use FastServer\Process\GlobalProcess;
 use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 use React\Stream\CompositeStream;

@@ -17,7 +17,7 @@ $server = new HttpServer($logger);
 
 $server->configure([
     'address' => '127.0.0.1:2345',
-    'max_workers' => 200,
+    'max_workers' => 0,
     'reuseport' => true,
     'keepalive' => true,
     'keepalive_timeout' => 3600,
@@ -27,7 +27,6 @@ $server->configure([
 $i = 0;
 
 $server->handle(function(ServerRequestInterface $request) use(&$i){
-//    print_r($request->getHeaders());
     $i++;
     return new Response(200, [], "hello {$i}");
 });

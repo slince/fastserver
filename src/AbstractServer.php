@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace FastServer;
 
 use Evenement\EventEmitter;
-use FastServer\Worker\Factory;
+use FastServer\Worker\WorkerFactory;
 use FastServer\Worker\WorkerPool;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -192,7 +192,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     private function createWorkers(): WorkerPool
     {
-        $pool = Factory::create($this->options['max_workers']);
+        $pool = WorkerFactory::create($this->options['max_workers']);
         $pool->configure($this->loop, $this->logger, $this);
         $pool->build();
         return $pool;
