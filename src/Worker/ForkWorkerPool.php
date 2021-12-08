@@ -21,7 +21,7 @@ use React\EventLoop\LoopInterface;
 
 class ForkWorkerPool extends WorkerPool
 {
-
+    protected $index = 0;
     /**
      * {@inheritdoc}
      */
@@ -52,7 +52,6 @@ class ForkWorkerPool extends WorkerPool
      */
     public function onSignal(int $signal)
     {
-        return;
         switch ($signal) {
             case \SIGHUP:
                 $this->close(true);
@@ -73,6 +72,8 @@ class ForkWorkerPool extends WorkerPool
     public function close($grace = false)
     {
         $this->status = self::STATUS_CLOSING;
+        var_dump('close worker');
+        sleep(2);
         foreach ($this->workers as $worker) {
             $worker->close($grace);
         }
@@ -80,6 +81,7 @@ class ForkWorkerPool extends WorkerPool
 
     public function restart($grace = false)
     {
+        $this->logger->info(sprintf('Restart %d workers.', count($this->workers)));
         foreach ($this->workers as $worker) {
             $worker->close($grace);
         }
@@ -88,11 +90,20 @@ class ForkWorkerPool extends WorkerPool
     public function waitWorkers(int $pid, StatusInfo $status)
     {
         if (-1 === $pid) {
+            if ($this->index > 2) {
+                var_dump('max index');
+                exit;
+            }
             $this->logger->info('Invalid signal.');
-            sleep(10000);
+            var_dump($status->hasBeenSignaled(), $status->hasBeenStopped(), $status->hasBeenExited());
+            var_dump($status->getStatusCode(), $status->getStopSignal(), $status->getTermSignal());
+//            sleep(10000);
+            $this->index ++;
             return;
         }
+        var_dump('pid:' . $pid);
         $worker = $this->getWorker($pid);
+        var_dump('worker null', is_null($worker));
         if (null === $worker) {
             $this->logger->info(sprintf('The worker[%d] is not found. and the pool has [%d] workers', $pid, $this->count()));
             return;
@@ -101,6 +112,7 @@ class ForkWorkerPool extends WorkerPool
         if (self::STATUS_CLOSING === $this->status) {
             if (0 === count($this->workers)) {
                 $this->logger->info('All workers has been exited, close the server.');
+                $this->server->stop();
             }
             return;
         }

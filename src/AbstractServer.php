@@ -185,6 +185,12 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $this->initialize();
     }
 
+    public function stop()
+    {
+        $this->emit('stop');
+        exit();
+    }
+
     /**
      * Create worker pools.
      *

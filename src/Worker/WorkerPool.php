@@ -127,7 +127,8 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function remove(Worker $worker)
     {
-        if ($index = array_search($worker, $this->workers) !== false) {
+        $index = array_search($worker, $this->workers);
+        if (false !== $index) {
             unset($this->workers[$index]);
         }
     }
