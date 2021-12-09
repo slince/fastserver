@@ -98,9 +98,9 @@ class Worker
      {
          $this->server->setWorker($this);
          if ($this->server->getOption('reuseport')) {
-             $this->socket = $this->server->createSocket();
+             $socket = $this->server->createSocket();
          } else {
-             $this->socket = $this->server->getSocket();
+             $socket = $this->server->getSocket();
          }
          $this->socket->on('connection', [$this->server, 'handleConnection']);
          $this->socket->on('error', [$this->server, 'handleError']);

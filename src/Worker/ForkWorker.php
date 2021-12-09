@@ -16,7 +16,7 @@ namespace FastServer\Worker;
 use FastServer\Bridge\BridgeFactory;
 use FastServer\Bridge\Command\CLOSE;
 use Psr\Log\LoggerInterface;
-use React\EventLoop\ExtEventLoop;
+use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\Stream\CompositeStream;
 use React\Stream\ReadableResourceStream;
@@ -64,11 +64,17 @@ class ForkWorker extends Worker
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getPid(): int
     {
         return $this->process->getPid();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function start()
     {
         $this->process = new Process($this->createCallable());
@@ -79,23 +85,20 @@ class ForkWorker extends Worker
         ));
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function close(bool $grace = false)
     {
-        // 如果支持信号，优先使用信号
-        if ($this->isSupportSignal) {
-            $this->process->signal($grace ? SIGHUP : SIGTERM);
-        } else {
-            $this->control->executeCommand(new CLOSE($grace));
-        }
-        parent::close();
+        $this->process->signal($grace ? \SIGHUP : \SIGTERM);
     }
 
     protected function createCallable(): \Closure
     {
         return function($stdin, $stdout, $stderr){
-            if ($this->loop instanceof ExtEventLoop) {
-                $this->loop->getEventBase()->reInit();
-            }
+            // Reset loop instance.
+            $this->loop = Loop::get();
+
             $this->inChildProcess = true;
 
             $this->loop->addSignal(\SIGTERM, function(){
@@ -110,20 +113,15 @@ class ForkWorker extends Worker
                 new WritableResourceStream($stdout, $this->loop)
             ));
 
-            $this->listenCommands($bridge);
+            $bridge->listen(function(Message $message, BridgeInterface $bridge){
+                $command = $this->commands->createCommand($message);
+                $this->handleCommand($command, $bridge);
+            });
 
             $this->work();
 
             $this->loop->run();
         };
-    }
-
-    protected function listenCommands(BridgeInterface $bridge)
-    {
-        $bridge->listen(function(Message $message, BridgeInterface $bridge){
-            $command = $this->commands->createCommand($message);
-            $this->handleCommand($command, $bridge);
-        });
     }
 
     protected function handleCommand(CommandInterface $command, BridgeInterface $bridge)
@@ -135,14 +133,9 @@ class ForkWorker extends Worker
         }
     }
 
-    /**
-     * {@internal}
-     */
-    public function handleClose(bool $grace)
+    protected function handleClose(bool $grace)
     {
-        if (!$this->inChildProcess) {
-            throw new RuntimeException('The action can only be executed in child process.');
-        }
+        $this->requireInChildProcess();
         $this->logger->info('Receive close command.');
         if ($grace) {
             $this->loop->stop();
@@ -151,15 +144,17 @@ class ForkWorker extends Worker
         }
     }
 
-    /**
-     * Create command factory for the server.
-     *
-     * @return CommandFactory
-     */
     protected function createCommandFactory(): CommandFactory
     {
         return new CommandFactory([
             'CLOSE' => CLOSE::class,
         ]);
+    }
+
+    protected function requireInChildProcess()
+    {
+        if (!$this->inChildProcess) {
+            throw new RuntimeException('The action can only be executed in child process.');
+        }
     }
 }

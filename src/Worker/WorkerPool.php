@@ -152,11 +152,12 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     /**
      * Build worker pools.
      */
-    public function build()
+    public function build(): WorkerPool
     {
         for ($i = 0; $i < $this->capacity; $i++) {
             $this->add($this->createWorker($i));
         }
+        return $this;
     }
 
     /**

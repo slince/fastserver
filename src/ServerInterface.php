@@ -13,8 +13,9 @@ declare(strict_types=1);
 
 namespace FastServer;
 
+use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
-use React\Socket\ServerInterface as Socket;
+use React\Socket\ServerInterface as SocketServer;
 
 interface ServerInterface
 {
@@ -59,11 +60,18 @@ interface ServerInterface
     /**
      * {@internal}
      */
-    public function getSocket(): Socket;
+    public function getSocket();
 
     /**
-     * Creates a socket for the server.
-//     * @return Socket
+     * Creates a raw socket resource.
      */
     public function createSocket();
+
+    /**
+     * Create a socket server.
+     *
+     * @param resource $socket
+     * @return SocketServer
+     */
+    public function createSocketServer($socket, LoopInterface $loop);
 }
