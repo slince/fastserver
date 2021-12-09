@@ -172,6 +172,17 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     }
 
     /**
+     * Close all workers.
+     * @param bool $graceful
+     */
+    protected function closeWorkers(bool $graceful)
+    {
+        foreach ($this->workers as $worker) {
+            $worker->close($graceful);
+        }
+    }
+
+    /**
      * create a worker instance.
      *
      * @param int $id

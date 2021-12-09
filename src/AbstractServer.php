@@ -183,12 +183,12 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         }
         $this->pool = $this->createWorkers();
         $this->initialize();
-        set_error_handler(function(){
-            $this->pool->close();
+        register_shutdown_function(function($err){
+//            $this->pool->close();
         });
     }
 
-    public function stop()
+    public function quit()
     {
         restore_error_handler();
         $this->emit('stop');

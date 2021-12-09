@@ -22,6 +22,7 @@ use React\EventLoop\LoopInterface;
 class ForkWorkerPool extends WorkerPool
 {
     protected $index = 0;
+
     /**
      * {@inheritdoc}
      */
@@ -35,10 +36,19 @@ class ForkWorkerPool extends WorkerPool
      */
     public function wait()
     {
-        $process = GlobalProcess::get();
-        // grace close
-        $process->signal([\SIGINT, \SIGTERM, \SIGQUIT, \SIGHUP, \SIGUSR1, SIGUSR2], [$this, 'onSignal'], false);
-        $process->wait([$this, 'waitWorkers']);
+        $this->loop->addSignal(\SIGINT, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGTERM, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGQUIT, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGHUP, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGUSR1, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGUSR2, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGCHLD, [$this, 'onSignal']);
+        $this->loop->run();
+
+//        $process = GlobalProcess::get();
+//        // grace close
+//        $process->signal([\SIGINT, \SIGTERM, \SIGQUIT, \SIGHUP, \SIGUSR1, SIGUSR2], [$this, 'onSignal'], false);
+//        $process->wait([$this, 'watchWorkers']);
     }
 
     /**
@@ -50,69 +60,72 @@ class ForkWorkerPool extends WorkerPool
             case \SIGINT:
             case \SIGTERM:
             case \SIGQUIT:
-                $this->close();
-                break;
             case \SIGHUP:
-                $this->close(true);
+                $this->close(\SIGHUP === $signal);
                 break;
             case \SIGUSR1:
-                $this->restart();
-                break;
             case \SIGUSR2:
-                $this->restart(true);
+                $this->restart(\SIGUSR2 === $signal);
+                break;
+            case \SIGCHLD:
+                $pid = \pcntl_wait($status);
+                $statusInfo = new StatusInfo($status);
+                var_dump('sigchildall', $pid);
+                $this->watchWorkers($pid, $statusInfo);
                 break;
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function close($graceful = false)
     {
         $this->status = self::STATUS_CLOSING;
-        foreach ($this->workers as $worker) {
-            $worker->close($graceful);
-        }
+        $this->closeWorkers($graceful);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function restart($graceful = false)
     {
         $message = sprintf('Restart %d workers', count($this->workers)) . $graceful ? ' gracefully.' : '.';
         $this->logger->info($message);
-        foreach ($this->workers as $worker) {
-            $worker->close($graceful);
-        }
+        $this->closeWorkers($graceful);
     }
 
-    public function waitWorkers(int $pid, StatusInfo $status)
+    public function watchWorkers(int $pid, StatusInfo $status)
     {
         if (-1 === $pid) {
-            if ($this->index > 2) {
-                var_dump('max index');
-                exit;
-            }
-            $this->logger->info('Invalid signal.');
-            var_dump($status->hasBeenSignaled(), $status->hasBeenStopped(), $status->hasBeenExited());
-            var_dump($status->getStatusCode(), $status->getStopSignal(), $status->getTermSignal());
-//            sleep(10000);
-            $this->index ++;
             return;
         }
-        var_dump('pid:' . $pid);
         $worker = $this->getWorker($pid);
-        var_dump('worker null', is_null($worker));
         if (null === $worker) {
             $this->logger->info(sprintf('The worker[%d] is not found. and the pool has [%d] workers', $pid, $this->count()));
             return;
         }
         $this->remove($worker);
         if (self::STATUS_CLOSING === $this->status) {
-            if (0 === count($this->workers)) {
-                $this->logger->info('All workers has been exited, close the server.');
-                $this->server->stop();
-            }
+            $this->watchClosing();
             return;
         }
-        $alternative = $this->createWorker($worker->getId(), $this->loop, $this->logger, $this->server);
+        $this->createAlternative($worker);
+    }
+
+    protected function watchClosing()
+    {
+        if (0 === count($this->workers)) {
+            $this->logger->info('All workers has been exited, close the server.');
+            $this->server->quit();
+        }
+    }
+
+    protected function createAlternative(Worker $original)
+    {
+        $alternative = $this->createWorker($original->getId(), $this->loop, $this->logger, $this->server);
         $this->add($alternative);
         $alternative->start();
-        $this->logger->info(sprintf('The worker[%d] %d is exited and new one[%d] has been start', $pid, $worker->getId(), $alternative->getPid()));
+        $this->logger->info(sprintf('The worker[%d] %d is exited and new one[%d] has been start', $original->getPid(), $original->getId(), $alternative->getPid()));
     }
 }
