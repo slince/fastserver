@@ -90,7 +90,7 @@ class ForkWorker extends Worker
     {
         return function($stdin, $stdout, $stderr){
             if ($this->loop instanceof ExtEventLoop) {
-                eventbase();
+                $this->loop->getEventBase()->reInit();
             }
             $this->inChildProcess = true;
 
