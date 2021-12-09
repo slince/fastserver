@@ -51,11 +51,15 @@ class ForkWorker extends Worker
      */
     protected $isSupportSignal = false;
 
+    /**
+     * Whether in the child process.
+     * @var bool
+     */
     protected $inChildProcess = false;
 
-    public function __construct(int $id, LoopInterface $loop, LoggerInterface $logger, ServerInterface $server)
+    public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
     {
-        parent::__construct($id, $loop, $logger, $server);
+        parent::__construct($id, $server, $loop, $logger);
         $this->commands = $this->createCommandFactory();
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
@@ -126,7 +130,7 @@ class ForkWorker extends Worker
     {
         switch ($command->getCommandId()) {
             case 'CLOSE':
-                $this->handleClose($command->isGrace());
+                $this->handleClose($command->isGraceful());
                 break;
         }
     }

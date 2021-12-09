@@ -13,6 +13,9 @@ declare(strict_types=1);
 
 namespace FastServer\Worker;
 
+use FastServer\ServerInterface;
+use Psr\Log\LoggerInterface;
+
 final class WorkerFactory
 {
     const TYPE_FORK = 'fork';
@@ -24,15 +27,15 @@ final class WorkerFactory
      * @param int $capacity
      * @return WorkerPool
      */
-    public static function create(int $capacity)
+    public static function create(int $capacity, ServerInterface $server, LoggerInterface $logger)
     {
         if (function_exists('pcntl_fork')) {
-            return new ForkWorkerPool($capacity);
+            return new ForkWorkerPool($capacity, $server, $logger);
         }
         if (function_exists('proc_open')) {
-            return new ProcWorkerPool($capacity);
+            return new ProcWorkerPool($capacity, $server, $logger);
         }
         // fake worker pool.
-        return new FakeWorkerPool(1);
+        return new FakeWorkerPool(1, $server, $logger);
     }
 }

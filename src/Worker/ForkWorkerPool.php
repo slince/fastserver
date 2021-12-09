@@ -13,11 +13,7 @@ declare(strict_types=1);
 
 namespace FastServer\Worker;
 
-use FastServer\Process\GlobalProcess;
 use FastServer\Process\StatusInfo;
-use FastServer\ServerInterface;
-use Psr\Log\LoggerInterface;
-use React\EventLoop\LoopInterface;
 
 class ForkWorkerPool extends WorkerPool
 {
@@ -26,15 +22,21 @@ class ForkWorkerPool extends WorkerPool
     /**
      * {@inheritdoc}
      */
-    public function createWorker(int $id, LoopInterface $loop, LoggerInterface $logger, ServerInterface $server)
+    public function createWorker(int $id): Worker
     {
-        return new ForkWorker($id, $loop, $logger, $server);
+        return new ForkWorker($id, $this->server, $this->loop, $this->logger);
     }
 
     /**
      * {@inheritdoc}
      */
     public function wait()
+    {
+        $this->installSignals();
+        $this->loop->run();
+    }
+
+    protected function installSignals()
     {
         $this->loop->addSignal(\SIGINT, [$this, 'onSignal']);
         $this->loop->addSignal(\SIGTERM, [$this, 'onSignal']);
@@ -43,12 +45,6 @@ class ForkWorkerPool extends WorkerPool
         $this->loop->addSignal(\SIGUSR1, [$this, 'onSignal']);
         $this->loop->addSignal(\SIGUSR2, [$this, 'onSignal']);
         $this->loop->addSignal(\SIGCHLD, [$this, 'onSignal']);
-        $this->loop->run();
-
-//        $process = GlobalProcess::get();
-//        // grace close
-//        $process->signal([\SIGINT, \SIGTERM, \SIGQUIT, \SIGHUP, \SIGUSR1, SIGUSR2], [$this, 'onSignal'], false);
-//        $process->wait([$this, 'watchWorkers']);
     }
 
     /**
@@ -123,7 +119,7 @@ class ForkWorkerPool extends WorkerPool
 
     protected function createAlternative(Worker $original)
     {
-        $alternative = $this->createWorker($original->getId(), $this->loop, $this->logger, $this->server);
+        $alternative = $this->createWorker($original->getId());
         $this->add($alternative);
         $alternative->start();
         $this->logger->info(sprintf('The worker[%d] %d is exited and new one[%d] has been start', $original->getPid(), $original->getId(), $alternative->getPid()));

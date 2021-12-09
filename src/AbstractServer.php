@@ -22,7 +22,6 @@ use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\ServerInterface as Socket;
 use FastServer\Exception\InvalidArgumentException;
-use React\EventLoop\LoopInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 abstract class AbstractServer extends EventEmitter implements ServerInterface
@@ -52,7 +51,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     protected $worker;
 
-    public function __construct(LoggerInterface $logger = null)
+    public function __construct(?LoggerInterface $logger = null)
     {
         if (null === $logger) {
             $logger = new NullLogger();
@@ -175,15 +174,13 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $this->pool = $this->createWorkers();
         $this->initialize();
         register_shutdown_function(function($err){
-//            $this->pool->close();
+            $this->pool->close();
         });
     }
 
     public function quit()
     {
-        restore_error_handler();
         $this->emit('stop');
-        Loop::stop();
         exit();
     }
 
@@ -194,8 +191,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     private function createWorkers(): WorkerPool
     {
-        $pool = WorkerFactory::create($this->options['max_workers']);
-        $pool->configure($this->logger, $this);
+        $pool = WorkerFactory::create($this->options['max_workers'], $this->logger, $this);
         $pool->build();
         return $pool;
     }

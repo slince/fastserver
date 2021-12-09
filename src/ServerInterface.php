@@ -63,7 +63,7 @@ interface ServerInterface
 
     /**
      * Creates a socket for the server.
-     * @return Socket
+//     * @return Socket
      */
     public function createSocket();
 }

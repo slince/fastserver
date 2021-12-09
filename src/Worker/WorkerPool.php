@@ -15,6 +15,7 @@ namespace FastServer\Worker;
 
 use FastServer\ServerInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 
@@ -75,20 +76,10 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     protected $logger;
 
-    public function __construct(int $capacity)
+    public function __construct(int $capacity, ServerInterface $server, ?LoggerInterface $logger = null)
     {
         $this->capacity = $capacity;
-    }
-
-    /**
-     * Set dependency instance.
-     *
-     * @param LoggerInterface $logger
-     * @param ServerInterface $server
-     */
-    public function configure(LoggerInterface $logger, ServerInterface $server)
-    {
-        $this->logger = $logger;
+        $this->logger = $logger ?? new NullLogger();
         $this->server = $server;
     }
 
@@ -153,7 +144,6 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     public function run()
     {
         $this->status = self::STATUS_STARTED;
-
         foreach ($this->workers as $worker) {
             $worker->start();
         }
@@ -165,7 +155,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     public function build()
     {
         for ($i = 0; $i < $this->capacity; $i++) {
-            $this->add($this->createWorker($i, $this->loop, $this->logger, $this->server));
+            $this->add($this->createWorker($i));
         }
     }
 
@@ -184,12 +174,9 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      * create a worker instance.
      *
      * @param int $id
-     * @param LoopInterface $loop
-     * @param LoggerInterface $logger
-     * @param ServerInterface $server
      * @return Worker
      */
-    abstract public function createWorker(int $id, LoopInterface $loop, LoggerInterface $logger, ServerInterface $server);
+    abstract public function createWorker(int $id): Worker;
 
     /**
      * Wait

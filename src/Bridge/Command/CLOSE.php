@@ -21,19 +21,19 @@ class CLOSE implements CommandInterface
      * Close gracefully
      * @var bool
      */
-    protected $grace = false;
+    protected $graceful = false;
 
-    public function __construct(bool $grace)
+    public function __construct(bool $graceful)
     {
-        $this->grace = $grace;
+        $this->graceful = $graceful;
     }
 
     /**
      * @return bool
      */
-    public function isGrace(): bool
+    public function isGraceful(): bool
     {
-        return $this->grace;
+        return $this->graceful;
     }
 
     /**
@@ -49,9 +49,7 @@ class CLOSE implements CommandInterface
      */
     public function createMessage(): Message
     {
-        return new Message(Message::PAYLOAD_CONTROL, [
-            'grace' => $this->grace
-        ]);
+        return new Message(Message::PAYLOAD_CONTROL, ['graceful' => $this->graceful]);
     }
 
     /**
@@ -59,6 +57,6 @@ class CLOSE implements CommandInterface
      */
     public static function fromMessage(Message $message): CommandInterface
     {
-        return new static($message->getArgument('grace'));
+        return new static($message->getArgument('graceful'));
     }
 }
