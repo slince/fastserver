@@ -24,52 +24,7 @@ class ForkWorkerPool extends WorkerPool
      */
     public function createWorker(int $id): Worker
     {
-        return new ForkWorker($id, $this->server, $this->loop, $this->logger);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function wait()
-    {
-        $this->installSignals();
-        $this->loop->run();
-    }
-
-    protected function installSignals()
-    {
-        $this->loop->addSignal(\SIGINT, [$this, 'onSignal']);
-        $this->loop->addSignal(\SIGTERM, [$this, 'onSignal']);
-        $this->loop->addSignal(\SIGQUIT, [$this, 'onSignal']);
-        $this->loop->addSignal(\SIGHUP, [$this, 'onSignal']);
-        $this->loop->addSignal(\SIGUSR1, [$this, 'onSignal']);
-        $this->loop->addSignal(\SIGUSR2, [$this, 'onSignal']);
-        $this->loop->addSignal(\SIGCHLD, [$this, 'onSignal']);
-    }
-
-    /**
-     * {@internal}
-     */
-    public function onSignal(int $signal)
-    {
-        switch ($signal) {
-            case \SIGINT:
-            case \SIGTERM:
-            case \SIGQUIT:
-            case \SIGHUP:
-                $this->close(\SIGHUP === $signal);
-                break;
-            case \SIGUSR1:
-            case \SIGUSR2:
-                $this->restart(\SIGUSR2 === $signal);
-                break;
-            case \SIGCHLD:
-                $pid = \pcntl_wait($status);
-                $statusInfo = new StatusInfo($status);
-                var_dump('sigchildall', $pid);
-                $this->watchWorkers($pid, $statusInfo);
-                break;
-        }
+        return new ForkWorker($id, $this->server, $this->logger, $this->loop);
     }
 
     /**
@@ -91,7 +46,7 @@ class ForkWorkerPool extends WorkerPool
         $this->closeWorkers($graceful);
     }
 
-    public function watchWorkers(int $pid, StatusInfo $status)
+    public function removeWorker(int $pid)
     {
         if (-1 === $pid) {
             return;

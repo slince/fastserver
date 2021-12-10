@@ -167,7 +167,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         if (null !== $this->socket) {
             $this->socket->close();
         }
-        $this->pool->wait();
+        $this->loop->run();
     }
 
     private function boot()
@@ -176,10 +176,48 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
             $this->socket = $this->createSocket();
         }
         $this->pool = $this->createWorkers();
+        $this->installSignals();
         $this->initialize();
         register_shutdown_function(function($err){
             $this->pool->close();
         });
+    }
+
+    protected function installSignals()
+    {
+        $this->loop->addSignal(\SIGINT, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGTERM, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGQUIT, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGHUP, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGUSR1, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGUSR2, [$this, 'onSignal']);
+        $this->loop->addSignal(\SIGCHLD, [$this, 'onSignal']);
+    }
+
+    /**
+     * {@internal}
+     */
+    public function onSignal(int $signal)
+    {
+        switch ($signal) {
+            case \SIGINT:
+            case \SIGTERM:
+            case \SIGQUIT:
+            case \SIGHUP:
+                $this->pool->close(\SIGHUP === $signal);
+                break;
+            case \SIGUSR1:
+            case \SIGUSR2:
+                $this->pool->restart(\SIGUSR2 === $signal);
+                break;
+            case \SIGCHLD:
+                $pid = \pcntl_wait($status);
+                if ($pid <= 0) {
+                    return;
+                }
+                $this->pool->removeWorker($pid);
+                break;
+        }
     }
 
     /**
@@ -198,7 +236,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
      */
     private function createWorkers(): WorkerPool
     {
-        $pool = WorkerFactory::create($this->options['max_workers'], $this, $this->logger);
+        $pool = WorkerFactory::create($this->options['max_workers'], $this, $this->logger, $this->loop);
         return $pool->build();
     }
 

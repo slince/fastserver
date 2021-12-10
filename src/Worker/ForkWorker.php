@@ -16,7 +16,7 @@ namespace FastServer\Worker;
 use FastServer\Communicator\CommunicatorFactory;
 use FastServer\Communicator\Command\CLOSE;
 use Psr\Log\LoggerInterface;
-use React\EventLoop\Loop;
+use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use React\Stream\CompositeStream;
 use React\Stream\ReadableResourceStream;
@@ -57,9 +57,9 @@ class ForkWorker extends Worker
      */
     protected $inChildProcess = false;
 
-    public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
+    public function __construct(int $id, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
     {
-        parent::__construct($id, $server, $loop, $logger);
+        parent::__construct($id, $server, $logger, $loop);
         $this->commands = $this->createCommandFactory();
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
@@ -97,7 +97,7 @@ class ForkWorker extends Worker
     {
         return function($stdin, $stdout, $stderr){
             // Reset loop instance.
-            $this->loop = Loop::get();
+            $this->loop = Factory::create();
 
             $this->inChildProcess = true;
 

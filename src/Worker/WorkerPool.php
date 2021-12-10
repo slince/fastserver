@@ -179,9 +179,4 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      * @return Worker
      */
     abstract public function createWorker(int $id): Worker;
-
-    /**
-     * Wait
-     */
-    abstract public function wait();
 }
