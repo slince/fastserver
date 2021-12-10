@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace FastServer\Http;
 
+use FastServer\ConnectionPool;
 use FastServer\Http\Exception\InvalidHeaderException;
+use FastServer\Http\Parser\HttpEmitter;
+use FastServer\Http\Parser\HttpParser;
 use FastServer\Parser\ParserFactory;
 use FastServer\Parser\StreamingReader;
 use FastServer\TcpServer;

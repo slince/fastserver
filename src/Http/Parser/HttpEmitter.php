@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Http;
+namespace FastServer\Http\Parser;
 
 use FastServer\Parser\WriterInterface;
 use GuzzleHttp\Psr7\BufferStream;
