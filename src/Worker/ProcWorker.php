@@ -17,9 +17,9 @@ use React\EventLoop\LoopInterface;
 use React\Stream\CompositeStream;
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
-use FastServer\Bridge\Command\CommandFactory;
-use FastServer\Bridge\BridgeInterface;
-use FastServer\Bridge\StreamBridge;
+use FastServer\Communicator\Command\CommandFactory;
+use FastServer\Communicator\CommunicatorInterface;
+use FastServer\Communicator\StreamCommunicator;
 use FastServer\Process\Process;
 use FastServer\Process\ProcProcess;
 use FastServer\ServerInterface;
@@ -37,7 +37,7 @@ class ProcWorker extends Worker
     protected $process;
 
     /**
-     * @var BridgeInterface
+     * @var CommunicatorInterface
      */
     protected $control;
 
@@ -63,7 +63,7 @@ class ProcWorker extends Worker
         $entryFile = __DIR__ . '/Internal/worker.php';
         $this->process = new ProcProcess(sprintf("php %s --configuration %s", $entryFile, json_encode($config)));
         $this->process->start(false);
-        $this->control = new StreamBridge(new CompositeStream(
+        $this->control = new StreamCommunicator(new CompositeStream(
             new ReadableResourceStream($this->process->stdout, $this->loop),
             new WritableResourceStream($this->process->stdin, $this->loop),
         ));

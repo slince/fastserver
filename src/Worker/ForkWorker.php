@@ -13,20 +13,20 @@ declare(strict_types=1);
 
 namespace FastServer\Worker;
 
-use FastServer\Bridge\BridgeFactory;
-use FastServer\Bridge\Command\CLOSE;
+use FastServer\Communicator\CommunicatorFactory;
+use FastServer\Communicator\Command\CLOSE;
 use Psr\Log\LoggerInterface;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\Stream\CompositeStream;
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
-use FastServer\Bridge\Command\CommandFactory;
-use FastServer\Bridge\Command\CommandInterface;
-use FastServer\Bridge\BridgeInterface;
+use FastServer\Communicator\Command\CommandFactory;
+use FastServer\Communicator\Command\CommandInterface;
+use FastServer\Communicator\CommunicatorInterface;
 use FastServer\Exception\RuntimeException;
 use FastServer\Process\Process;
-use FastServer\Bridge\Message;
+use FastServer\Communicator\Message;
 use FastServer\ServerInterface;
 
 class ForkWorker extends Worker
@@ -42,7 +42,7 @@ class ForkWorker extends Worker
     protected $process;
 
     /**
-     * @var BridgeInterface
+     * @var CommunicatorInterface
      */
     protected $control;
 
@@ -79,7 +79,7 @@ class ForkWorker extends Worker
     {
         $this->process = new Process($this->createCallable());
         $this->process->start(false);
-        $this->control = BridgeFactory::createBridge(new CompositeStream(
+        $this->control = CommunicatorFactory::createCommunicator(new CompositeStream(
             new ReadableResourceStream($this->process->stdout, $this->loop),
             new WritableResourceStream($this->process->stdin, $this->loop)
         ));
@@ -108,14 +108,14 @@ class ForkWorker extends Worker
                 $this->handleClose(true);
             });
 
-            $bridge = BridgeFactory::createBridge(new CompositeStream(
+            $communicator = CommunicatorFactory::createCommunicator(new CompositeStream(
                 new ReadableResourceStream($stdin, $this->loop),
                 new WritableResourceStream($stdout, $this->loop)
             ));
 
-            $bridge->listen(function(Message $message, BridgeInterface $bridge){
+            $communicator->listen(function(Message $message, CommunicatorInterface $communicator){
                 $command = $this->commands->createCommand($message);
-                $this->handleCommand($command, $bridge);
+                $this->handleCommand($command, $communicator);
             });
 
             $this->work();
@@ -124,7 +124,7 @@ class ForkWorker extends Worker
         };
     }
 
-    protected function handleCommand(CommandInterface $command, BridgeInterface $bridge)
+    protected function handleCommand(CommandInterface $command, CommunicatorInterface $communicator)
     {
         switch ($command->getCommandId()) {
             case 'CLOSE':

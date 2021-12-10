@@ -11,11 +11,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Bridge\Handler;
+namespace FastServer\Communicator\Handler;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
-use FastServer\Bridge\Command\CommandInterface;
+use FastServer\Communicator\Command\CommandInterface;
 
 final class HandlerResolver
 {

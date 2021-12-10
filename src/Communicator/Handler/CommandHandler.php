@@ -11,9 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Bridge\Handler;
+namespace FastServer\Communicator\Handler;
 
-use FastServer\Bridge\Command\CommandInterface;
+use FastServer\Communicator\Command\CommandInterface;
 
 abstract class CommandHandler implements HandlerInterface
 {

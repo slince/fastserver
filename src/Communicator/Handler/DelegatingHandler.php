@@ -11,10 +11,10 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Bridge\Handler;
+namespace FastServer\Communicator\Handler;
 
-use FastServer\Bridge\Command\CommandInterface;
-use FastServer\Bridge\BridgeInterface;
+use FastServer\Communicator\Command\CommandInterface;
+use FastServer\Communicator\CommunicatorInterface;
 use FastServer\Exception\InvalidArgumentException;
 
 final class DelegatingHandler implements HandlerInterface
@@ -32,7 +32,7 @@ final class DelegatingHandler implements HandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function handle(CommandInterface $command, BridgeInterface $connection)
+    public function handle(CommandInterface $command, CommunicatorInterface $connection)
     {
         if (null === $loader = $this->resolver->resolve($command)) {
             throw new InvalidArgumentException(sprintf('Cannot find handler for command type: "%s"',

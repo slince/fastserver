@@ -11,10 +11,10 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Bridge\Handler;
+namespace FastServer\Communicator\Handler;
 
-use FastServer\Bridge\Command\CommandInterface;
-use FastServer\Bridge\BridgeInterface;
+use FastServer\Communicator\Command\CommandInterface;
+use FastServer\Communicator\CommunicatorInterface;
 
 interface HandlerInterface
 {
@@ -22,9 +22,9 @@ interface HandlerInterface
      * Handling the command.
      *
      * @param CommandInterface $command
-     * @param BridgeInterface $connection
+     * @param CommunicatorInterface $connection
      */
-    public function handle(CommandInterface $command, BridgeInterface $connection);
+    public function handle(CommandInterface $command, CommunicatorInterface $connection);
 
     /**
      * Returns whether this class supports the given command.

@@ -11,9 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace FastServer\Bridge\Command;
+namespace FastServer\Communicator\Command;
 
-use FastServer\Bridge\Message;
+use FastServer\Communicator\Message;
 
 interface CommandInterface
 {
