@@ -15,6 +15,7 @@ namespace FastServer\Worker;
 
 use FastServer\ServerInterface;
 use Psr\Log\LoggerInterface;
+use React\EventLoop\LoopInterface;
 
 final class WorkerFactory
 {
@@ -25,17 +26,20 @@ final class WorkerFactory
      * Creates a worker pool.
      *
      * @param int $capacity
+     * @param ServerInterface $server
+     * @param LoggerInterface $logger
+     * @param LoopInterface $loop
      * @return WorkerPool
      */
-    public static function create(int $capacity, ServerInterface $server, LoggerInterface $logger)
+    public static function create(int $capacity, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
     {
         if (function_exists('pcntl_fork')) {
-            return new ForkWorkerPool($capacity, $server, $logger);
+            return new ForkWorkerPool($capacity, $server, $logger, $loop);
         }
         if (function_exists('proc_open')) {
-            return new ProcWorkerPool($capacity, $server, $logger);
+            return new ProcWorkerPool($capacity, $server, $logger, $loop);
         }
         // fake worker pool.
-        return new FakeWorkerPool(1, $server, $logger);
+        return new FakeWorkerPool(1, $server, $logger, $loop);
     }
 }

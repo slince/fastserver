@@ -48,6 +48,12 @@ interface ServerInterface
     public function serve();
 
     /**
+     * Close the server and exit.
+     * @return void
+     */
+    public function quit();
+
+    /**
      * {@internal}
      */
     public function handleConnection(ConnectionInterface $connection);

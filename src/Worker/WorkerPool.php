@@ -76,11 +76,12 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     protected $logger;
 
-    public function __construct(int $capacity, ServerInterface $server, ?LoggerInterface $logger = null)
+    public function __construct(int $capacity, ServerInterface $server, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
         $this->capacity = $capacity;
-        $this->logger = $logger ?? new NullLogger();
         $this->server = $server;
+        $this->logger = $logger ?? new NullLogger();
+        $this->loop = $loop ?? Loop::get();
     }
 
     /**

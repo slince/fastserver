@@ -18,6 +18,8 @@ use FastServer\Worker\WorkerFactory;
 use FastServer\Worker\WorkerPool;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use React\EventLoop\Loop;
+use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\ServerInterface as Socket;
 use FastServer\Exception\InvalidArgumentException;
@@ -46,16 +48,19 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     protected $logger;
 
     /**
+     * @var LoopInterface
+     */
+    protected $loop;
+
+    /**
      * @var Worker\Worker
      */
     protected $worker;
 
-    public function __construct(?LoggerInterface $logger = null)
+    public function __construct(?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
-        if (null === $logger) {
-            $logger = new NullLogger();
-        }
-        $this->logger = $logger;
+        $this->logger = $logger ?? new NullLogger();
+        $this->loop = $loop ?? Loop::get();
     }
 
     /**
@@ -177,10 +182,13 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         });
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function quit()
     {
         $this->emit('stop');
-        exit();
+        $this->loop->stop();
     }
 
     /**
