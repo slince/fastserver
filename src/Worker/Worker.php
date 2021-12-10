@@ -102,7 +102,8 @@ class Worker
          } else {
              $socket = $this->server->getSocket();
          }
-         $this->socket->on('connection', [$this->server, 'handleConnection']);
-         $this->socket->on('error', [$this->server, 'handleError']);
+         $server = $this->server->createSocketServer($socket, $this->loop);
+         $server->on('connection', [$this->server, 'handleConnection']);
+         $server->on('error', [$this->server, 'handleError']);
      }
 }

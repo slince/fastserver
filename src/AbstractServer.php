@@ -178,8 +178,8 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
         $this->pool = $this->createWorkers();
         $this->installSignals();
         $this->initialize();
-        register_shutdown_function(function($err){
-            $this->pool->close();
+        register_shutdown_function(function(){
+//            $this->pool->close();
         });
     }
 
@@ -212,7 +212,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
                 break;
             case \SIGCHLD:
                 $pid = \pcntl_wait($status);
-                if ($pid <= 0) {
+                if (-1 === $pid) {
                     return;
                 }
                 $this->pool->removeWorker($pid);
