@@ -15,7 +15,7 @@ namespace FastServer\Parser;
 
 use Evenement\EventEmitter;
 use FastServer\Exception\InvalidArgumentException;
-use React\Stream\DuplexStreamInterface;
+use React\Stream\DuplexStreamInterface as Stream;
 
 final class StreamingReader extends EventEmitter
 {
@@ -29,7 +29,11 @@ final class StreamingReader extends EventEmitter
         $this->parserFactory = $parserFactory;
     }
 
-    public function listen(DuplexStreamInterface $stream)
+    /**
+     * Parse a message from stream end emit an event.
+     * @param Stream $stream
+     */
+    public function listen(Stream $stream)
     {
         $parser = $this->parserFactory->createParser($stream);
         $writer = $this->parserFactory->createWriter($stream);

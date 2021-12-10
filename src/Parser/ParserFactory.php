@@ -15,8 +15,7 @@ namespace FastServer\Parser;
 
 use FastServer\StreamAwareInterface;
 use FastServer\Exception\InvalidArgumentException;
-use React\Socket\ConnectionInterface;
-use React\Stream\DuplexStreamInterface;
+use React\Stream\DuplexStreamInterface as Stream;
 
 final class ParserFactory implements ParserFactoryInterface
 {
@@ -51,7 +50,7 @@ final class ParserFactory implements ParserFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function createParser(DuplexStreamInterface $stream): ParserInterface
+    public function createParser(Stream $stream): ParserInterface
     {
         $parser = new $this->parserClass($stream);
         if ($parser instanceof StreamAwareInterface) {
@@ -63,7 +62,7 @@ final class ParserFactory implements ParserFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function createWriter(DuplexStreamInterface $stream): WriterInterface
+    public function createWriter(Stream $stream): WriterInterface
     {
         $writer = new $this->writerClass($stream);
         if ($writer instanceof StreamAwareInterface) {

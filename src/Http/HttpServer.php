@@ -64,7 +64,7 @@ final class HttpServer extends TcpServer
     public function handle($requestHandler)
     {
         if (is_callable($requestHandler)) {
-            $requestHandler = new CallableRequestHandler($requestHandler);
+            $requestHandler = new RequestHandler($requestHandler);
         }
         if (!$requestHandler instanceof RequestHandlerInterface) {
             throw new InvalidHeaderException(sprintf('The request handler must be a valid callback or instance of %s', RequestHandlerInterface::class));
