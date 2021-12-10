@@ -18,7 +18,6 @@ use FastServer\Worker\WorkerFactory;
 use FastServer\Worker\WorkerPool;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\ServerInterface as Socket;
 use FastServer\Exception\InvalidArgumentException;
@@ -133,7 +132,7 @@ abstract class AbstractServer extends EventEmitter implements ServerInterface
     /**
      * {@internal}
      */
-    public function setWorker(Worker\Worker $worker)
+    public function bindWorkerContext(Worker\Worker $worker)
     {
         $this->worker = $worker;
     }

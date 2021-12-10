@@ -96,7 +96,7 @@ class Worker
      */
      public function work()
      {
-         $this->server->setWorker($this);
+         $this->server->bindWorkerContext($this);
          if ($this->server->getOption('reuseport')) {
              $socket = $this->server->createSocket();
          } else {
