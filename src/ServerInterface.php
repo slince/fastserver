@@ -77,6 +77,7 @@ interface ServerInterface
      * Create a socket server.
      *
      * @param resource $socket
+     * @param LoopInterface $loop
      * @return SocketServer
      */
     public function createSocketServer($socket, LoopInterface $loop): SocketServer;
