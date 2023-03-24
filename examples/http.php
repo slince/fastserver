@@ -6,7 +6,7 @@ use Monolog\Handler\StreamHandler;
 use Psr\Http\Message\ServerRequestInterface;
 use GuzzleHttp\Psr7\Response;
 
-include __DIR__ . '/vendor/autoload.php';
+include __DIR__ . '/../vendor/autoload.php';
 
 $logger = new Logger("fastserver");
 $logger->pushHandler(new StreamHandler(STDOUT, 'info'));

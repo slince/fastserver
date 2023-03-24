@@ -41,7 +41,7 @@ class TcpServer extends AbstractServer
         if ($this->options['reuseport']) {
             $this->options['tcp_context']['so_reuseport'] = true;
         }
-        return \FastServer\Socket\TcpServer::createSocket($this->options['address'], $this->options['tcp_context']);
+        return Socket\TcpServer::createSocket($this->options['address'], $this->options['tcp_context']);
     }
 
     /**

@@ -20,14 +20,6 @@ use React\Socket\ServerInterface as SocketServer;
 interface ServerInterface
 {
     /**
-     * Add an event listener.
-     *
-     * @param string $event
-     * @param callable $listener
-     */
-    public function on($event, callable $listener);
-
-    /**
      * Configure the server.
      *
      * @param array $options
@@ -35,12 +27,20 @@ interface ServerInterface
     public function configure(array $options);
 
     /**
+     * Add an event listener.
+     *
+     * @param string $event
+     * @param callable $listener
+     */
+    public function on(string $event, callable $listener);
+
+    /**
      * Gets the specific option.
      *
      * @param string $name
      * @return mixed
      */
-    public function getOption(string $name);
+    public function getOption(string $name): mixed;
 
     /**
      * Start the server.
@@ -51,7 +51,7 @@ interface ServerInterface
      * Close the server and exit.
      * @return void
      */
-    public function quit();
+    public function quit(): void;
 
     /**
      * {@internal}
@@ -79,5 +79,5 @@ interface ServerInterface
      * @param resource $socket
      * @return SocketServer
      */
-    public function createSocketServer($socket, LoopInterface $loop);
+    public function createSocketServer($socket, LoopInterface $loop): SocketServer;
 }
