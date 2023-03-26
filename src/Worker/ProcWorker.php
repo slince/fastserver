@@ -13,10 +13,12 @@ declare(strict_types=1);
 
 namespace FastServer\Worker;
 
+use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 use React\Stream\CompositeStream;
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
+use FastServer\Communicator\Command;
 use FastServer\Communicator\Command\CommandFactory;
 use FastServer\Communicator\CommunicatorInterface;
 use FastServer\Communicator\StreamCommunicator;
@@ -29,39 +31,42 @@ class ProcWorker extends Worker
     /**
      * @var CommandFactory
      */
-    protected $commands;
+    protected CommandFactory $commands;
 
     /**
      * @var ProcProcess
      */
-    protected $process;
+    protected ProcProcess $process;
 
     /**
      * @var CommunicatorInterface
      */
-    protected $control;
+    protected CommunicatorInterface $control;
 
     /**
      * @var bool
      */
-    protected $isSupportSignal = false;
+    protected bool $isSupportSignal = false;
 
-    protected $inChildProcess = false;
+    protected bool $inChildProcess = false;
 
-    public function __construct(LoopInterface $loop, ServerInterface $server)
+    public function __construct(int $id, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
     {
-        parent::__construct($loop, $server);
+        parent::__construct($id, $server, $logger, $loop);
         $this->commands = $this->createCommandFactory();
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
 
-    public function start()
+    /**
+     * {@inheritdoc}
+     */
+    public function start(): void
     {
         $config = [
             'address' => $this->server->getOption('address')
         ];
         $entryFile = __DIR__ . '/Internal/worker.php';
-        $this->process = new ProcProcess(sprintf("php %s --configuration %s", $entryFile, json_encode($config)));
+        $this->process = new ProcProcess(sprintf("php %s --config %s", $entryFile, json_encode($config)));
         $this->process->start(false);
         $this->control = new StreamCommunicator(new CompositeStream(
             new ReadableResourceStream($this->process->stdout, $this->loop),

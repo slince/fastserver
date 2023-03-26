@@ -23,27 +23,27 @@ class Worker
     /**
      * @var int
      */
-    protected $id;
+    protected int $id;
 
     /**
      * @var ServerInterface
      */
-    protected $server;
+    protected ServerInterface $server;
 
     /**
      * @var Socket
      */
-    protected $socket;
+    protected Socket $socket;
 
     /**
      * @var LoopInterface
      */
-    protected $loop;
+    protected LoopInterface $loop;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     public function __construct(int $id, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
     {
@@ -76,7 +76,7 @@ class Worker
     /**
      * Starts the worker.
      */
-    public function start()
+    public function start(): void
     {
         $this->work();
     }
@@ -86,7 +86,7 @@ class Worker
      *
      * {@internal}
      */
-    public function close(bool $grace = false)
+    public function close(bool $grace = false): void
     {
         // ignore this
     }
@@ -94,7 +94,7 @@ class Worker
     /**
      * @internal
      */
-     public function work()
+     public function work(): void
      {
          $this->server->bindWorkerContext($this);
          if ($this->server->getOption('reuseport')) {

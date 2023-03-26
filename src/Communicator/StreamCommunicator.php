@@ -21,7 +21,7 @@ class StreamCommunicator implements CommunicatorInterface
     /**
      * @var DuplexStreamInterface
      */
-    protected $stream;
+    protected DuplexStreamInterface $stream;
 
     public function __construct(DuplexStreamInterface $stream)
     {
