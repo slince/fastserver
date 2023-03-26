@@ -34,28 +34,28 @@ class ForkWorker extends Worker
     /**
      * @var CommandFactory
      */
-    protected $commands;
+    protected CommandFactory $commands;
 
     /**
      * @var Process
      */
-    protected $process;
+    protected Process $process;
 
     /**
      * @var CommunicatorInterface
      */
-    protected $control;
+    protected CommunicatorInterface $control;
 
     /**
      * @var bool
      */
-    protected $isSupportSignal = false;
+    protected bool $isSupportSignal = false;
 
     /**
      * Whether in the child process.
      * @var bool
      */
-    protected $inChildProcess = false;
+    protected bool $inChildProcess = false;
 
     public function __construct(int $id, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
     {
@@ -75,7 +75,7 @@ class ForkWorker extends Worker
     /**
      * {@inheritdoc}
      */
-    public function start()
+    public function start(): void
     {
         $this->process = new Process($this->createCallable());
         $this->process->start(false);
@@ -88,7 +88,7 @@ class ForkWorker extends Worker
     /**
      * {@inheritdoc}
      */
-    public function close(bool $grace = false)
+    public function close(bool $grace = false): void
     {
         $this->process->signal($grace ? \SIGHUP : \SIGTERM);
     }

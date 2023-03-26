@@ -20,7 +20,7 @@ class ConnectionPool implements \IteratorAggregate, \Countable
     /**
      * @var \SplObjectStorage
      */
-    protected $connections;
+    protected \SplObjectStorage $connections;
 
     public function __construct()
     {
