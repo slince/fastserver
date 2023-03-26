@@ -20,27 +20,27 @@ class ConnectionMetadata
     /**
      * @var ConnectionInterface
      */
-    protected $connection;
+    protected ConnectionInterface $connection;
 
     /**
      * Created time.
      *
      * @var \DateTimeInterface
      */
-    protected $createdAt;
+    protected \DateTimeInterface $createdAt;
 
     /**
      * Update time.
      *
      * @var \DateTimeInterface
      */
-    protected $updatedAt;
+    protected \DateTimeInterface $updatedAt;
 
     /**
      * total requests of the connection.
      * @var int
      */
-    protected $requests = 0;
+    protected int $requests = 0;
 
     public function __construct(ConnectionInterface $connection)
     {
@@ -51,7 +51,7 @@ class ConnectionMetadata
     /**
      * Incr request counter.
      */
-    public function incrRequest()
+    public function incrRequest(): void
     {
         $this->updatedAt = new \DateTime();
         $this->requests += 1;
@@ -82,7 +82,7 @@ class ConnectionMetadata
      *
      * @return \DateTimeInterface
      */
-    public function getCreatedAt()
+    public function getCreatedAt(): \DateTimeInterface
     {
         return $this->createdAt;
     }
@@ -92,7 +92,7 @@ class ConnectionMetadata
      *
      * @return \DateTimeInterface
      */
-    public function getUpdatedAt()
+    public function getUpdatedAt(): \DateTimeInterface
     {
         return $this->updatedAt;
     }
