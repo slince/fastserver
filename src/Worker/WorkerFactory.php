@@ -31,15 +31,16 @@ final class WorkerFactory
      * @param LoopInterface $loop
      * @return WorkerPool
      */
-    public static function create(int $capacity, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
+    public static function create(int $capacity, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop): WorkerPool
     {
+        $type = 'fake';
         if (function_exists('pcntl_fork')) {
-            return new ForkWorkerPool($capacity, $server, $logger, $loop);
+            $type = self::TYPE_FORK;
         }
         if (function_exists('proc_open')) {
-            return new ProcWorkerPool($capacity, $server, $logger, $loop);
+            $type = self::TYPE_PROC;
         }
         // fake worker pool.
-        return new FakeWorkerPool(1, $server, $logger, $loop);
+        return new WorkerPool($type, $capacity, $server, $logger, $loop);
     }
 }

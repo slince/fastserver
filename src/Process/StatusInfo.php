@@ -10,7 +10,7 @@ final class StatusInfo
     /**
      * @var int
      */
-    protected $status;
+    protected int $status;
 
     public function __construct(int $status)
     {

@@ -38,7 +38,7 @@ class TcpServer extends AbstractServer
      */
     public function createSocket()
     {
-        if ($this->options['reuseport']) {
+        if ($this->options['reuse_port']) {
             $this->options['tcp_context']['so_reuseport'] = true;
         }
         return Socket\TcpServer::createSocket($this->options['address'], $this->options['tcp_context']);
@@ -47,7 +47,7 @@ class TcpServer extends AbstractServer
     /**
      * {@inheritdoc}
      */
-    public function createSocketServer($socket, LoopInterface $loop)
+    public function createSocketServer($socket, LoopInterface $loop): \React\Socket\ServerInterface
     {
         $server = new SocketServer($this->options['address'], $loop, $this->options['tcp_context']);
         if ($this->options['tls']) {

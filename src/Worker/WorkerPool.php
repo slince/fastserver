@@ -19,8 +19,13 @@ use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 
-abstract class WorkerPool implements \IteratorAggregate, \Countable
+final class WorkerPool implements \IteratorAggregate, \Countable
 {
+
+    const WORKER_PROC = 'proc';
+    const WORKER_FORK = 'fork';
+    const WORKER_FAKE = 'fake';
+
     /**
      * process status,running
      * @var string
@@ -47,37 +52,40 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     /**
      * @var string
      */
-    protected $status = self::STATUS_READY;
+    protected string $status = self::STATUS_READY;
+
+    protected string $type;
 
     /**
      * The capacity of the pool.
      *
      * @var int
      */
-    protected $capacity;
+    protected int $capacity;
 
     /**
      * @var Worker[]
      */
-    protected $workers = [];
+    protected array $workers = [];
 
     /**
      * @var LoopInterface
      */
-    protected $loop;
+    protected LoopInterface $loop;
 
     /**
      * @var ServerInterface
      */
-    protected $server;
+    protected ServerInterface $server;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
-    public function __construct(int $capacity, ServerInterface $server, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
+    public function __construct(string $type, int $capacity, ServerInterface $server, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
+        $this->type = $type;
         $this->capacity = $capacity;
         $this->server = $server;
         $this->logger = $logger ?? new NullLogger();
@@ -178,5 +186,12 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      * @param int $id
      * @return Worker
      */
-    abstract public function createWorker(int $id): Worker;
+    public function createWorker(int $id): Worker
+    {
+        return match($this->type) {
+            'proc' => new ProcWorker($id),
+            'fork' => new ForkWorker($id),
+            default => new Worker($id)
+        };
+    }
 }
