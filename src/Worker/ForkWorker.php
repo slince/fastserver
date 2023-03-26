@@ -17,6 +17,7 @@ use FastServer\Communicator\CommunicatorFactory;
 use FastServer\Communicator\Command\CLOSE;
 use Psr\Log\LoggerInterface;
 use React\EventLoop\Factory;
+use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\Stream\CompositeStream;
 use React\Stream\ReadableResourceStream;
@@ -97,7 +98,7 @@ class ForkWorker extends Worker
     {
         return function($stdin, $stdout, $stderr){
             // Reset loop instance.
-            $this->loop = Factory::create();
+            $this->loop = Loop::get();
 
             $this->inChildProcess = true;
 
