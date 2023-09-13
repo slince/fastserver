@@ -21,12 +21,6 @@ use Wave\Process\Fork\Fifo;
 class Process extends AbstractProcess
 {
     /**
-     * Whether the process is running
-     * @var bool
-     */
-    protected bool $running = false;
-
-    /**
      * @var \Closure
      */
     protected \Closure $callback;
@@ -100,14 +94,12 @@ class Process extends AbstractProcess
             throw new RuntimeException("Could not fork");
         } elseif ($pid) { //Records the pid of the child process
             $this->pid = $pid;
-            $this->running = true;
             $this->status = self::STATUS_STARTED;
             $this->stdin = $this->stdinFifo->open('w');
             $this->stdout = $this->stdoutFifo->open('r');
             $this->stderr = $this->stderrFifo->open('r');
             $this->updateStatus($blocking);
         } else {
-            $this->pid = posix_getpid();
             $stdin = $this->stdinFifo->open('r');
             $stdout = $this->stdoutFifo->open('w');
             $stderr = $this->stderrFifo->open('w');
@@ -167,7 +159,7 @@ class Process extends AbstractProcess
         }
         //if the process is running, update process status again
         $this->updateStatus(false);
-        return $this->running;
+        return self::STATUS_STARTED === $this->status;
     }
 
     /**
@@ -175,7 +167,7 @@ class Process extends AbstractProcess
      */
     protected function updateStatus(bool $blocking): void
     {
-        if (!$this->running) {
+        if (self::STATUS_STARTED !== $this->status) {
             return;
         }
         $options = $blocking ? 0 : WNOHANG | WUNTRACED;
@@ -183,10 +175,9 @@ class Process extends AbstractProcess
         if ($result == -1) {
             throw new RuntimeException("Error waits on or returns the status of the process");
         } elseif ($result === 0) {
-            $this->running = true;
+            $this->status = self::STATUS_STARTED;
         } else {
             //The process is terminated
-            $this->running = false;
             $this->status = self::STATUS_TERMINATED;
 
             if (pcntl_wifexited($this->statusInfo)) {
