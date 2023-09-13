@@ -1,0 +1,12 @@
+{
+    "autoload": {
+        "Wave\\": "./src"
+    },
+    "require": {
+        "php": ">=8.2",
+        "react/socket": "^1.14",
+        "react/http": "^1.9",
+        "ext-pcntl": "*",
+        "ext-posix": "*"
+    }
+}

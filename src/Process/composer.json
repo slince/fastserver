@@ -1,0 +1,11 @@
+{
+    "name": "wave/process",
+    "autoload": {
+        "Wave\\Process\\": "./"
+    },
+    "require": {
+        "php": ">=8.2",
+        "react/socket": "^1.14",
+        "react/http": "^1.9"
+    }
+}
