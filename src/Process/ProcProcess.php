@@ -13,9 +13,6 @@ declare(strict_types=1);
 
 namespace Wave\Process;
 
-use Wave\Exception\LogicException;
-use Wave\Exception\RuntimeException;
-
 final class ProcProcess extends AbstractProcess
 {
     /**

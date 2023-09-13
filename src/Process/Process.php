@@ -18,7 +18,7 @@ use Wave\Process\Exception\RuntimeException;
 use Wave\Process\Fork\CurrentProcess;
 use Wave\Process\Fork\Fifo;
 
-class Process extends AbstractProcess
+final class Process extends AbstractProcess
 {
     /**
      * @var \Closure
@@ -142,7 +142,7 @@ class Process extends AbstractProcess
      */
     public function signal(int $signal): void
     {
-        if (!$this->running) {
+        if (!$this->isRunning()) {
             throw new RuntimeException("The process is not currently running");
         }
         posix_kill($this->getPid(), $signal);
