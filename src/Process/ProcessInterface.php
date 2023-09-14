@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace Wave\Process;
 
-use Wave\Exception\LogicException;
-use Wave\Exception\RuntimeException;
+use Wave\Process\Exception\LogicException;
+use Wave\Process\Exception\RuntimeException;
 
 interface ProcessInterface
 {
@@ -41,7 +41,7 @@ interface ProcessInterface
      *
      * @param bool $blocking
      */
-    public function start(bool $blocking = true): void;
+    public function run(bool $blocking = true): void;
 
     /**
      * Wait for the process exit.

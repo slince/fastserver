@@ -7,6 +7,7 @@
         "react/socket": "^1.14",
         "react/http": "^1.9",
         "ext-pcntl": "*",
-        "ext-posix": "*"
+        "ext-posix": "*",
+        "symfony/process": "^6.3"
     }
 }
