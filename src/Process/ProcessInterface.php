@@ -38,10 +38,8 @@ interface ProcessInterface
 
     /**
      * Starts the process.
-     *
-     * @param bool $blocking
      */
-    public function run(bool $blocking = true): void;
+    public function start(): void;
 
     /**
      * Wait for the process exit.

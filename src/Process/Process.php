@@ -84,7 +84,7 @@ final class Process extends AbstractProcess
     /**
      * {@inheritdoc}
      */
-    public function start(bool $blocking = true): void
+    public function start(): void
     {
         if ($this->isRunning()) {
             throw new RuntimeException("The process is already running");
@@ -98,7 +98,7 @@ final class Process extends AbstractProcess
             $this->stdin = $this->stdinFifo->open('w');
             $this->stdout = $this->stdoutFifo->open('r');
             $this->stderr = $this->stderrFifo->open('r');
-            $this->updateStatus($blocking);
+            $this->updateStatus(false);
         } else {
             $stdin = $this->stdinFifo->open('r');
             $stdout = $this->stdoutFifo->open('w');
@@ -117,7 +117,7 @@ final class Process extends AbstractProcess
      */
     public function wait(): void
     {
-        $this->isRunning() && $this->updateStatus(true);
+        $this->updateStatus(true);
     }
 
     /**
