@@ -11,8 +11,15 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Wave\Process\Exception;
+namespace Waveman\Server;
 
-class LogicException extends \LogicException
+use React\Stream\DuplexStreamInterface;
+
+interface StreamAwareInterface
 {
+    /**
+     * Sets st instance.
+     * @param DuplexStreamInterface $stream
+     */
+    public function setStream(DuplexStreamInterface $stream);
 }

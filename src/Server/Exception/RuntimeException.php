@@ -1,6 +1,6 @@
 <?php
 
-namespace Wave\Process\Exception;
+namespace Waveman\Server\Exception;
 
 class RuntimeException extends \RuntimeException
 {

@@ -1,0 +1,11 @@
+{
+    "name": "waveman/http",
+    "autoload": {
+        "Wave\\Http\\": "./"
+    },
+    "require": {
+        "php": ">=8.2",
+        "waveman/server": "*@dev",
+        "psr/http-server-handler": "^1.0"
+    }
+}
