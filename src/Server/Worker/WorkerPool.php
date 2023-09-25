@@ -13,18 +13,16 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Worker;
 
-use FastServer\ServerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
+use Waveman\Server\ServerInterface;
 
 final class WorkerPool implements \IteratorAggregate, \Countable
 {
-
     const WORKER_PROC = 'proc';
     const WORKER_FORK = 'fork';
-    const WORKER_FAKE = 'fake';
 
     /**
      * process status,running
@@ -123,7 +121,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      *
      * @param Worker $worker
      */
-    public function remove(Worker $worker)
+    public function remove(Worker $worker): void
     {
         $index = array_search($worker, $this->workers);
         if (false !== $index) {
@@ -150,7 +148,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
     /**
      * Starts the work pool.
      */
-    public function run()
+    public function run(): void
     {
         $this->status = self::STATUS_STARTED;
         foreach ($this->workers as $worker) {
@@ -173,7 +171,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      * Close all workers.
      * @param bool $graceful
      */
-    protected function closeWorkers(bool $graceful)
+    protected function closeWorkers(bool $graceful): void
     {
         foreach ($this->workers as $worker) {
             $worker->close($graceful);

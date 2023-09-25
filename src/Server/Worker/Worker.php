@@ -67,19 +67,22 @@ class Worker
         return getmypid();
     }
 
-    /**
-     * Starts the worker.
-     */
-    public function start(): void
+    protected function run(): void
     {
         if ($this->server->getOption('reuseport')) {
             $socket = $this->server->createSocket();
         } else {
             $socket = $this->server->getSocket();
         }
-        $server = $this->server->createSocketServer($socket, $this->loop);
-        $server->on('connection', [$this->server, 'handleConnection']);
-        $server->on('error', [$this->server, 'handleError']);
+        $socket->on('connection', [$this->server, 'handleConnection']);
+        $socket->on('error', [$this->server, 'handleError']);
+    }
+
+    /**
+     * Starts the worker.
+     */
+    public function start(): void
+    {
     }
 
     /**
@@ -89,6 +92,5 @@ class Worker
      */
     public function close(bool $graceful = false): void
     {
-        // ignore this
     }
 }

@@ -99,6 +99,8 @@ final class ForkWorker extends Worker
             $channel->listen(function(CommandInterface $command){
                 $this->handleCommand($command);
             });
+
+            $this->run();
             $this->loop->run();
         };
     }

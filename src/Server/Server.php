@@ -21,6 +21,7 @@ use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\ServerInterface as Socket;
 use React\Socket\SocketServer;
+use Slince\Process\Process;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Server\Exception\InvalidArgumentException;
 
@@ -104,14 +105,6 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function getSocket(): Socket
-    {
-        return $this->socket;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function stop(): void
     {
         $this->emit('stop');
@@ -131,8 +124,8 @@ final class Server extends EventEmitter implements ServerInterface
     private function boot(): void
     {
         $this->trySignals();
-        if (!$this->options['reuseport']) {
-            $this->socket = new SocketServer($this->options['address'], $this->options, $this->loop);
+        if (!$this->options['reuseport'] || !Process::isSupported()) {
+            $this->createSocket();
         }
     }
 
@@ -155,6 +148,19 @@ final class Server extends EventEmitter implements ServerInterface
         } catch (\Exception $e) {
             $this->logger->warning("Cannot register signals.");
         }
+    }
+
+    public function createSocket(): Socket
+    {
+        return $this->socket = new SocketServer($this->options['address'], $this->options, $this->loop);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSocket(): Socket
+    {
+        return $this->socket;
     }
 
     /**
