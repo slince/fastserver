@@ -87,7 +87,7 @@ class Worker
      *
      * {@internal}
      */
-    public function close(bool $grace = false): void
+    public function close(bool $graceful = false): void
     {
         // ignore this
     }

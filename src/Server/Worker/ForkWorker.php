@@ -14,10 +14,9 @@ declare(strict_types=1);
 namespace Waveman\Server\Worker;
 
 use Psr\Log\LoggerInterface;
-use React\EventLoop\Loop;
+use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
-use Waveman\Server\Channel\ChannelFactory;
 use Waveman\Server\Channel\ChannelInterface;
 use Waveman\Server\Channel\Command\CLOSE;
 use Waveman\Server\Channel\Command\CommandInterface;
@@ -27,7 +26,7 @@ use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Exception\RuntimeException;
 use Waveman\Server\ServerInterface;
 
-class ForkWorker extends Worker
+final class ForkWorker extends Worker
 {
     /**
      * @var Process
@@ -38,6 +37,8 @@ class ForkWorker extends Worker
      * @var ChannelInterface
      */
     protected ChannelInterface $control;
+
+    protected ?array $sockets = null;
 
     /**
      * @var bool
@@ -69,47 +70,49 @@ class ForkWorker extends Worker
      */
     public function start(): void
     {
+        if (!$this->isSupportSignal) {
+            $this->sockets = UnixSocketChannel::createSocketPair();
+        }
         $this->process = new Process($this->createCallable());
-        $this->control = new UnixSocketChannel($this->loop, false, $this->createCommandFactory());
+        $this->control = $this->createChannel($this->loop);
         $this->process->start();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function close(bool $grace = false): void
+    public function close(bool $graceful = false): void
     {
-        $this->process->signal($grace ? \SIGHUP : \SIGTERM);
+        $this->control->executeCommand(new CLOSE($graceful));
     }
 
     protected function createCallable(): \Closure
     {
         return function(){
             // Reset loop instance.
-            $this->loop = Loop::get();
+            $this->loop = Factory::create();
 
             $this->inChildProcess = true;
 
-            $channel = ChannelFactory::createStreamChannel();
+            $channel = $this->createChannel($this->loop);
 
             $channel->listen(function(CommandInterface $command){
                 $this->handleCommand($command);
             });
-
             $this->loop->run();
         };
     }
 
     private function createChannel(LoopInterface $loop): ChannelInterface
     {
-        try {
+        if ($this->isSupportSignal) {
             $channel = new SignalChannel(null, $loop, [
                 \SIGTERM => new CLOSE(false),
                 \SIGHUP => new CLOSE(true),
             ]);
-        } catch (\Exception $exception) {
-            $this->logger->warning(sprintf('Signal channel is not supported, error: %s.', $exception->getMessage()));
-            $channel = new UnixSocketChannel($this->loop, $this->inChildProcess, self::createCommandFactory());
+        } else {
+            $this->logger->warning('Signal channel is not supported.');
+            $channel = new UnixSocketChannel($this->sockets, $this->loop, $this->inChildProcess, self::createCommandFactory());
         }
         return $channel;
     }
