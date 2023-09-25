@@ -13,17 +13,17 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Channel;
 
-use React\Stream\DuplexStreamInterface;
+use React\Stream\DuplexStreamInterface as Stream;
 
 final class ChannelFactory
 {
     /**
      * Creates the connection for the given stream.
      *
-     * @param DuplexStreamInterface $stream
+     * @param Stream $stream
      * @return ChannelInterface
      */
-    public static function createChannel(DuplexStreamInterface $stream): ChannelInterface
+    public static function createStreamChannel(Stream $stream): ChannelInterface
     {
         return new StreamChannel($stream);
     }

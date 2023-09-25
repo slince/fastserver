@@ -15,12 +15,12 @@ namespace Waveman\Server\Channel\Command;
 
 use Waveman\Server\Channel\Message;
 
-class ERROR implements CommandInterface
+final class ERROR implements CommandInterface
 {
     /**
      * @var string
      */
-    protected $message;
+    protected string $message;
 
     public function __construct(string $message)
     {
@@ -48,6 +48,6 @@ class ERROR implements CommandInterface
      */
     public static function fromMessage(Message $message): CommandInterface
     {
-        return new static($message->getArgument('message'));
+        return new ERROR($message->getArgument('message'));
     }
 }

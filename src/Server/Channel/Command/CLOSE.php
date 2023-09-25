@@ -21,7 +21,7 @@ class CLOSE implements CommandInterface
      * Close gracefully
      * @var bool
      */
-    protected $graceful = false;
+    protected bool $graceful = false;
 
     public function __construct(bool $graceful)
     {

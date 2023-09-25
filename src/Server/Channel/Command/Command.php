@@ -15,7 +15,7 @@ namespace Waveman\Server\Channel\Command;
 
 use Waveman\Server\Channel\Message;
 
-final class FallbackCommand implements CommandInterface
+final class Command implements CommandInterface
 {
     /**
      * @var string

@@ -22,7 +22,10 @@ use React\Stream\WritableResourceStream;
 use Slince\Process\Process;
 use Waveman\Server\Channel\ChannelFactory;
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\Command\CommandFactory;
+use Waveman\Server\Channel\Command\CLOSE;
+use Waveman\Server\Channel\Command\CommandInterface;
+use Waveman\Server\Channel\CommandFactory;
+use Waveman\Server\Exception\RuntimeException;
 use Waveman\Server\ServerInterface;
 
 class ForkWorker extends Worker
@@ -75,7 +78,7 @@ class ForkWorker extends Worker
     {
         $this->process = new Process($this->createCallable());
         $this->process->start();
-        $this->control = ChannelFactory::createChannel(new CompositeStream(
+        $this->control = ChannelFactory::createStreamChannel(new CompositeStream(
             new ReadableResourceStream($this->process->stdout, $this->loop),
             new WritableResourceStream($this->process->stdin, $this->loop)
         ));
@@ -104,40 +107,36 @@ class ForkWorker extends Worker
                 $this->handleClose(true);
             });
 
-            $communicator = CommunicatorFactory::createCommunicator(new CompositeStream(
-                new ReadableResourceStream($stdin, $this->loop),
-                new WritableResourceStream($stdout, $this->loop)
-            ));
+            $channel = ChannelFactory::createStreamChannel();
 
-            $communicator->listen(function(Message $message, CommunicatorInterface $communicator){
+            $channel->listen(function(CommandInterface $command){
                 $command = $this->commands->createCommand($message);
-                $this->handleCommand($command, $communicator);
+                $this->handleCommand($command, $channel);
             });
-
-            $this->work();
 
             $this->loop->run();
         };
     }
 
-    protected function handleCommand(CommandInterface $command, CommunicatorInterface $communicator)
+    protected function handleCommand(CommandInterface $command, ChannelInterface $channel)
     {
         switch ($command->getCommandId()) {
             case 'CLOSE':
                 $this->handleClose($command->isGraceful());
                 break;
+
         }
     }
 
-    protected function handleClose(bool $grace)
+    protected function handleClose(bool $grace): void
     {
         $this->requireInChildProcess();
         $this->logger->info('Receive close command.');
         if ($grace) {
             $this->loop->stop();
-        } else {
-            exit(0);
+            return;
         }
+        exit(0);
     }
 
     protected function createCommandFactory(): CommandFactory
@@ -147,7 +146,7 @@ class ForkWorker extends Worker
         ]);
     }
 
-    protected function requireInChildProcess()
+    protected function requireInChildProcess(): void
     {
         if (!$this->inChildProcess) {
             throw new RuntimeException('The action can only be executed in child process.');

@@ -23,9 +23,12 @@ class StreamChannel implements ChannelInterface
      */
     protected DuplexStreamInterface $stream;
 
-    public function __construct(DuplexStreamInterface $stream)
+    protected CommandFactoryInterface $commandFactory;
+
+    public function __construct(DuplexStreamInterface $stream, CommandFactoryInterface $commandFactory)
     {
         $this->stream = $stream;
+        $this->commandFactory = $commandFactory;
     }
 
     /**
@@ -48,7 +51,8 @@ class StreamChannel implements ChannelInterface
         $this->stream->once('data', function(string $chunk) use ($parser, $callback){
             $parser->push($chunk);
             foreach ($parser->evaluate() as $message) {
-                $callback($message, $this);
+                $command = $this->commandFactory->createCommand($message);
+                $callback($command);
             }
         });
     }
