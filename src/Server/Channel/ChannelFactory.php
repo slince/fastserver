@@ -21,10 +21,11 @@ final class ChannelFactory
      * Creates the connection for the given stream.
      *
      * @param Stream $stream
+     * @param CommandFactoryInterface $commandFactory
      * @return ChannelInterface
      */
-    public static function createStreamChannel(Stream $stream): ChannelInterface
+    public static function createStreamChannel(Stream $stream, CommandFactoryInterface $commandFactory): ChannelInterface
     {
-        return new StreamChannel($stream);
+        return new StreamChannel($stream, $commandFactory);
     }
 }

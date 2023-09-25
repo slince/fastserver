@@ -16,25 +16,19 @@ namespace Waveman\Server\Worker;
 use Psr\Log\LoggerInterface;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
-use React\Stream\CompositeStream;
-use React\Stream\ReadableResourceStream;
-use React\Stream\WritableResourceStream;
 use Slince\Process\Process;
 use Waveman\Server\Channel\ChannelFactory;
 use Waveman\Server\Channel\ChannelInterface;
 use Waveman\Server\Channel\Command\CLOSE;
 use Waveman\Server\Channel\Command\CommandInterface;
 use Waveman\Server\Channel\CommandFactory;
+use Waveman\Server\Channel\SignalChannel;
+use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Exception\RuntimeException;
 use Waveman\Server\ServerInterface;
 
 class ForkWorker extends Worker
 {
-    /**
-     * @var CommandFactory
-     */
-    protected CommandFactory $commands;
-
     /**
      * @var Process
      */
@@ -59,7 +53,6 @@ class ForkWorker extends Worker
     public function __construct(int $id, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
     {
         parent::__construct($id, $server, $logger, $loop);
-        $this->commands = $this->createCommandFactory();
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
 
@@ -77,11 +70,8 @@ class ForkWorker extends Worker
     public function start(): void
     {
         $this->process = new Process($this->createCallable());
+        $this->control = new UnixSocketChannel($this->loop, false, $this->createCommandFactory());
         $this->process->start();
-        $this->control = ChannelFactory::createStreamChannel(new CompositeStream(
-            new ReadableResourceStream($this->process->stdout, $this->loop),
-            new WritableResourceStream($this->process->stdin, $this->loop)
-        ));
     }
 
     /**
@@ -94,37 +84,42 @@ class ForkWorker extends Worker
 
     protected function createCallable(): \Closure
     {
-        return function($stdin, $stdout, $stderr){
+        return function(){
             // Reset loop instance.
             $this->loop = Loop::get();
 
             $this->inChildProcess = true;
 
-            $this->loop->addSignal(\SIGTERM, function(){
-                $this->handleClose(false);
-            });
-            $this->loop->addSignal(\SIGHUP, function(){
-                $this->handleClose(true);
-            });
-
             $channel = ChannelFactory::createStreamChannel();
 
             $channel->listen(function(CommandInterface $command){
-                $command = $this->commands->createCommand($message);
-                $this->handleCommand($command, $channel);
+                $this->handleCommand($command);
             });
 
             $this->loop->run();
         };
     }
 
-    protected function handleCommand(CommandInterface $command, ChannelInterface $channel)
+    private function createChannel(LoopInterface $loop): ChannelInterface
+    {
+        try {
+            $channel = new SignalChannel(null, $loop, [
+                \SIGTERM => new CLOSE(false),
+                \SIGHUP => new CLOSE(true),
+            ]);
+        } catch (\Exception $exception) {
+            $this->logger->warning(sprintf('Signal channel is not supported, error: %s.', $exception->getMessage()));
+            $channel = new UnixSocketChannel($this->loop, $this->inChildProcess, self::createCommandFactory());
+        }
+        return $channel;
+    }
+
+    protected function handleCommand(CommandInterface $command): void
     {
         switch ($command->getCommandId()) {
             case 'CLOSE':
                 $this->handleClose($command->isGraceful());
                 break;
-
         }
     }
 
@@ -139,11 +134,9 @@ class ForkWorker extends Worker
         exit(0);
     }
 
-    protected function createCommandFactory(): CommandFactory
+    protected static function createCommandFactory(): CommandFactory
     {
-        return new CommandFactory([
-            'CLOSE' => CLOSE::class,
-        ]);
+        return new CommandFactory([CLOSE::class]);
     }
 
     protected function requireInChildProcess(): void

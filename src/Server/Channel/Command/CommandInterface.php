@@ -25,6 +25,13 @@ interface CommandInterface
     public function getCommandId(): string;
 
     /**
+     * Return the command key.
+     *
+     * @return string
+     */
+    public function getCommandKey(): string;
+
+    /**
      * Create the message instance.
      *
      * @return Message

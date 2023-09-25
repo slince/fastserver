@@ -47,6 +47,14 @@ class CLOSE implements CommandInterface
     /**
      * {@inheritdoc}
      */
+    public function getCommandKey(): string
+    {
+        return $this->getCommandId() . '_' . $this->isGraceful();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function createMessage(): Message
     {
         return new Message(Message::PAYLOAD_CONTROL, ['graceful' => $this->graceful]);

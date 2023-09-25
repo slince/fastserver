@@ -42,6 +42,14 @@ final class Command implements CommandInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function getCommandKey(): string
+    {
+        return $this->getCommandId();
+    }
+
+    /**
      * Returns the command arguments.
      *
      * @return array
