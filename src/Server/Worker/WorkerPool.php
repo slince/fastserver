@@ -186,10 +186,9 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function createWorker(int $id): Worker
     {
-        return match($this->type) {
-            'proc' => new ProcWorker($id),
-            'fork' => new ForkWorker($id),
-            default => new Worker($id)
-        };
+        if ($this->type === self::WORKER_FORK) {
+            return new ForkWorker($id, $this->server, $this->loop, $this->logger);
+        }
+        return new ProcWorker($id, $this->server, $this->loop, $this->logger);
     }
 }

@@ -39,12 +39,12 @@ class Worker
      */
     protected LoggerInterface $logger;
 
-    public function __construct(int $id, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
+    public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
     {
         $this->id = $id;
         $this->server = $server;
-        $this->logger = $logger;
         $this->loop = $loop;
+        $this->logger = $logger;
     }
 
     /**

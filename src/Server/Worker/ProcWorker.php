@@ -13,18 +13,13 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Worker;
 
-use FastServer\Communicator\Command;
-use FastServer\Communicator\Command\CommandFactory;
-use FastServer\Communicator\CommunicatorInterface;
-use FastServer\Communicator\StreamCommunicator;
-use FastServer\Process\Process;
-use FastServer\Process\ProcProcess;
-use FastServer\ServerInterface;
 use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
-use React\Stream\CompositeStream;
-use React\Stream\ReadableResourceStream;
-use React\Stream\WritableResourceStream;
+use Symfony\Component\Process\Process;
+use Waveman\Server\Channel\ChannelInterface;
+use Waveman\Server\Channel\Command\CLOSE;
+use Waveman\Server\Channel\CommandFactory;
+use Waveman\Server\ServerInterface;
 
 class ProcWorker extends Worker
 {
@@ -34,27 +29,21 @@ class ProcWorker extends Worker
     protected CommandFactory $commands;
 
     /**
-     * @var ProcProcess
+     * @var Process
      */
-    protected ProcProcess $process;
+    protected Process $process;
 
     /**
-     * @var CommunicatorInterface
+     * @var ChannelInterface
      */
-    protected CommunicatorInterface $control;
-
-    /**
-     * @var bool
-     */
-    protected bool $isSupportSignal = false;
+    protected ChannelInterface $control;
 
     protected bool $inChildProcess = false;
 
-    public function __construct(int $id, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
+    public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
     {
-        parent::__construct($id, $server, $logger, $loop);
+        parent::__construct($id, $server, $loop, $logger);
         $this->commands = $this->createCommandFactory();
-        $this->isSupportSignal = Process::isSupportPosixSignal();
     }
 
     /**
@@ -66,14 +55,10 @@ class ProcWorker extends Worker
             'address' => $this->server->getOption('address')
         ];
         $entryFile = __DIR__ . '/Internal/worker.php';
-        $this->process = new ProcProcess(sprintf("php %s --config %s", $entryFile, json_encode($config)));
-        $this->process->start(false);
-        $this->control = new StreamCommunicator(new CompositeStream(
-            new ReadableResourceStream($this->process->stdout, $this->loop),
-            new WritableResourceStream($this->process->stdin, $this->loop),
-        ));
+        $this->process = Process::fromShellCommandline(sprintf("php %s --config %s", $entryFile, json_encode($config)));
+        $this->process->start();
     }
-
+    
     /**
      * Create command factory for the server.
      *
@@ -81,8 +66,6 @@ class ProcWorker extends Worker
      */
     protected function createCommandFactory(): CommandFactory
     {
-        return new CommandFactory([
-            'CLOSE' => Command\CLOSE::class,
-        ]);
+        return new CommandFactory([CLOSE::class]);
     }
 }

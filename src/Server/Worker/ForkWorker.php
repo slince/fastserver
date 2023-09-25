@@ -51,9 +51,9 @@ final class ForkWorker extends Worker
      */
     protected bool $inChildProcess = false;
 
-    public function __construct(int $id, ServerInterface $server, LoggerInterface $logger, LoopInterface $loop)
+    public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
     {
-        parent::__construct($id, $server, $logger, $loop);
+        parent::__construct($id, $server, $loop, $logger);
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
 
