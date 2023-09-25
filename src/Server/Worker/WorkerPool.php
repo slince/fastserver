@@ -14,9 +14,8 @@ declare(strict_types=1);
 namespace Waveman\Server\Worker;
 
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
-use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
+use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\ServerInterface;
 
 final class WorkerPool implements \IteratorAggregate, \Countable
@@ -81,13 +80,13 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      */
     protected LoggerInterface $logger;
 
-    public function __construct(string $type, int $capacity, ServerInterface $server, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
+    public function __construct(string $type, int $capacity, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
     {
         $this->type = $type;
         $this->capacity = $capacity;
         $this->server = $server;
-        $this->logger = $logger ?? new NullLogger();
-        $this->loop = $loop ?? Loop::get();
+        $this->loop = $loop;
+        $this->logger = $logger;
     }
 
     /**
@@ -190,5 +189,26 @@ final class WorkerPool implements \IteratorAggregate, \Countable
             return new ForkWorker($id, $this->server, $this->loop, $this->logger);
         }
         return new ProcWorker($id, $this->server, $this->loop, $this->logger);
+    }
+
+    /**
+     * Creates a worker pool.
+     *
+     * @param int $capacity
+     * @param ServerInterface $server
+     * @param LoggerInterface $logger
+     * @param LoopInterface $loop
+     * @return WorkerPool
+     */
+    public static function createPool(int $capacity, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger): WorkerPool
+    {
+        if (function_exists('pcntl_fork')) {
+            $type = self::WORKER_FORK;
+        } elseif (function_exists('proc_open')) {
+            $type = self::WORKER_PROC;
+        } else {
+            throw new InvalidArgumentException('Cannot create worker pool.');
+        }
+        return new WorkerPool($type, $capacity, $server, $logger, $loop);
     }
 }

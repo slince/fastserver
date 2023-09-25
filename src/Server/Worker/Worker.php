@@ -15,9 +15,10 @@ namespace Waveman\Server\Worker;
 
 use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
+use React\Socket\ConnectionInterface;
 use Waveman\Server\ServerInterface;
 
-class Worker
+abstract class Worker
 {
     /**
      * @var int
@@ -74,23 +75,41 @@ class Worker
         } else {
             $socket = $this->server->getSocket();
         }
-        $socket->on('connection', [$this->server, 'handleConnection']);
-        $socket->on('error', [$this->server, 'handleError']);
+        $socket->on('connection', [$this, 'handleConnection']);
+        $socket->on('error', [$this, 'handleError']);
+    }
+
+    /**
+     * Handles the new connection.
+     * {@internal}
+     * @param ConnectionInterface $connection
+     * @return void
+     */
+    public function handleConnection(ConnectionInterface $connection): void
+    {
+        $this->logger->debug(sprintf('Worker [%s] [%s] Accept connection from %s', $this->getId(),
+            $this->getPid(), $connection->getLocalAddress()));
+        $this->server->emit('connection', [$connection]);
+    }
+
+    /**
+     * Handles the error.
+     * {@internal}
+     * @param \Exception $error
+     * @return void
+     */
+    public function handleError(\Exception $error): void
+    {
+        $this->server->emit('error', [$error]);
     }
 
     /**
      * Starts the worker.
      */
-    public function start(): void
-    {
-    }
+    abstract public function start(): void;
 
     /**
      * Close the worker.
-     *
-     * {@internal}
      */
-    public function close(bool $graceful = false): void
-    {
-    }
+    abstract public function close(bool $graceful = false): void;
 }

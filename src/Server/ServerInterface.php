@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Waveman\Server;
 
+use React\Socket\SocketServer;
+
 interface ServerInterface
 {
     /**
@@ -52,10 +54,10 @@ interface ServerInterface
     /**
      * {@internal}
      */
-    public function createSocket();
+    public function createSocket(): SocketServer;
 
     /**
      * {@internal}
      */
-    public function getSocket();
+    public function getSocket(): SocketServer;
 }

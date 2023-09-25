@@ -18,12 +18,17 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
-use React\Socket\ConnectionInterface;
-use React\Socket\ServerInterface as Socket;
 use React\Socket\SocketServer;
 use Slince\Process\Process;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Waveman\Server\Channel\ChannelInterface;
+use Waveman\Server\Channel\Command\Close;
+use Waveman\Server\Channel\Command\CommandInterface;
+use Waveman\Server\Channel\Command\WorkerClose;
+use Waveman\Server\Channel\SignalChannel;
+use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Exception\InvalidArgumentException;
+use Waveman\Server\Worker\WorkerPool;
 
 final class Server extends EventEmitter implements ServerInterface
 {
@@ -32,22 +37,26 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * @var array
      */
-    protected array $options;
+    private array $options;
 
     /**
-     * @var Socket
+     * @var SocketServer
      */
-    protected Socket $socket;
+    private SocketServer $socket;
 
     /**
      * @var LoggerInterface
      */
-    protected LoggerInterface $logger;
+    private LoggerInterface $logger;
 
     /**
      * @var LoopInterface
      */
-    protected LoopInterface $loop;
+    private LoopInterface $loop;
+
+    private WorkerPool $pool;
+
+    private ChannelInterface $signals;
 
     public function __construct(?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
@@ -81,7 +90,7 @@ final class Server extends EventEmitter implements ServerInterface
      *
      * @param OptionsResolver $resolver
      */
-    protected function configureOptions(OptionsResolver $resolver): void
+    private function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
             ->setDefaults([
@@ -116,64 +125,42 @@ final class Server extends EventEmitter implements ServerInterface
      */
     public function serve(): void
     {
-        $this->boot();
+        if (!$this->options['reuseport'] || !Process::isSupported()) {
+            $this->createSocket();
+        }
+        $this->tryCreateChannel();
+        $this->pool = WorkerPool::createPool($this->options['max_workers'], $this, $this->loop, $this->logger);
         $this->emit('start', [$this]);
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
     }
 
-    private function boot(): void
+    private function tryCreateChannel(): void
     {
-        $this->trySignals();
-        if (!$this->options['reuseport'] || !Process::isSupported()) {
-            $this->createSocket();
-        }
-    }
-
-    /**
-     * Attempt install signals.
-     *
-     * @return void
-     */
-    protected function trySignals(): void
-    {
-        try {
-            $this->loop->addSignal(\SIGINT, [$this, 'onSignal']);
-            $this->loop->addSignal(\SIGTERM, [$this, 'onSignal']);
-            $this->loop->addSignal(\SIGQUIT, [$this, 'onSignal']);
-            $this->loop->addSignal(\SIGHUP, [$this, 'onSignal']);
-            $this->loop->addSignal(\SIGUSR1, [$this, 'onSignal']);
-            $this->loop->addSignal(\SIGUSR2, [$this, 'onSignal']);
-            $this->loop->addSignal(\SIGCHLD, [$this, 'onSignal']);
+        // if the signal is supported, create it.
+        if (Process::isSupportPosixSignal()) {
+            $this->signals = new SignalChannel(null, $this->loop, [
+                \SIGTERM => new Close(true),
+                \SIGHUP => new Close(true),
+                \SIGINT => new Close(true),
+                \SIGQUIT => new Close(true),
+                \SIGCHLD => new WorkerClose()
+            ]);
             $this->logger->debug("Register signals successfully.");
-        } catch (\Exception $e) {
+        } else {
             $this->logger->warning("Cannot register signals.");
         }
+        $channel = new UnixSocketChannel($this->sockets, $this->loop, $this->inChildProcess, self::createCommandFactory());
     }
 
-    public function createSocket(): Socket
+    private function handleCommand(CommandInterface $command): void
     {
-        return $this->socket = new SocketServer($this->options['address'], $this->options, $this->loop);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getSocket(): Socket
-    {
-        return $this->socket;
-    }
-
-    /**
-     * The method may be executed in child process for some worker type.
-     *
-     * @internal
-     * @param ConnectionInterface $connection
-     */
-    public function handleConnection(ConnectionInterface $connection): void
-    {
-        $this->logger->debug(sprintf('Worker [%s] [%s] Accept connection from %s', $this->worker->getId(),
-            $this->worker->getPid(), $connection->getLocalAddress()));
-        $this->emit('connection', [$connection]);
+        switch ($command->getCommandId()) {
+            case 'CLOSE':
+                $this->handleClose($command->isGraceful());
+                break;
+            case 'WORK_CLOSE':
+                break;
+        }
     }
 
     /**
@@ -200,5 +187,21 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->pool->removeWorker($pid);
                 break;
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createSocket(): SocketServer
+    {
+        return $this->socket = new SocketServer($this->options['address'], $this->options, $this->loop);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSocket(): SocketServer
+    {
+        return $this->socket;
     }
 }

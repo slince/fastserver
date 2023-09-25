@@ -15,25 +15,16 @@ namespace Waveman\Server\Channel\Command;
 
 use Waveman\Server\Channel\Message;
 
-class CLOSE implements CommandInterface
+final class Error implements CommandInterface
 {
     /**
-     * Close gracefully
-     * @var bool
+     * @var string
      */
-    protected bool $graceful = false;
+    protected string $message;
 
-    public function __construct(bool $graceful)
+    public function __construct(string $message)
     {
-        $this->graceful = $graceful;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isGraceful(): bool
-    {
-        return $this->graceful;
+        $this->message = $message;
     }
 
     /**
@@ -41,7 +32,7 @@ class CLOSE implements CommandInterface
      */
     public function getCommandId(): string
     {
-        return 'CLOSE';
+        return 'ERROR';
     }
 
     /**
@@ -49,7 +40,7 @@ class CLOSE implements CommandInterface
      */
     public function getCommandKey(): string
     {
-        return $this->getCommandId() . '_' . $this->isGraceful();
+        return $this->getCommandId();
     }
 
     /**
@@ -57,7 +48,7 @@ class CLOSE implements CommandInterface
      */
     public function createMessage(): Message
     {
-        return new Message(Message::PAYLOAD_CONTROL, ['graceful' => $this->graceful]);
+        return new Message(Message::PAYLOAD_ERROR, ['message' => $this->message]);
     }
 
     /**
@@ -65,6 +56,6 @@ class CLOSE implements CommandInterface
      */
     public static function fromMessage(Message $message): CommandInterface
     {
-        return new static($message->getArgument('graceful'));
+        return new Error($message->getArgument('message'));
     }
 }

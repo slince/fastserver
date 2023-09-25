@@ -17,7 +17,7 @@ use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 use Symfony\Component\Process\Process;
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\Command\CLOSE;
+use Waveman\Server\Channel\Command\Close;
 use Waveman\Server\Channel\CommandFactory;
 use Waveman\Server\ServerInterface;
 
@@ -26,19 +26,19 @@ class ProcWorker extends Worker
     /**
      * @var CommandFactory
      */
-    protected CommandFactory $commands;
+    private CommandFactory $commands;
 
     /**
      * @var Process
      */
-    protected Process $process;
+    private Process $process;
 
     /**
      * @var ChannelInterface
      */
-    protected ChannelInterface $control;
+    private ChannelInterface $control;
 
-    protected bool $inChildProcess = false;
+    private bool $inChildProcess = false;
 
     public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
     {
@@ -58,14 +58,22 @@ class ProcWorker extends Worker
         $this->process = Process::fromShellCommandline(sprintf("php %s --config %s", $entryFile, json_encode($config)));
         $this->process->start();
     }
-    
+
     /**
      * Create command factory for the server.
      *
      * @return CommandFactory
      */
-    protected function createCommandFactory(): CommandFactory
+    private function createCommandFactory(): CommandFactory
     {
-        return new CommandFactory([CLOSE::class]);
+        return new CommandFactory([Close::class]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function close(bool $graceful = false): void
+    {
+        $this->process->stop();
     }
 }

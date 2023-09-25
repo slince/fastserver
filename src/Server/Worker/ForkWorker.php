@@ -18,7 +18,7 @@ use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\Command\CLOSE;
+use Waveman\Server\Channel\Command\Close;
 use Waveman\Server\Channel\Command\CommandInterface;
 use Waveman\Server\Channel\CommandFactory;
 use Waveman\Server\Channel\SignalChannel;
@@ -31,25 +31,25 @@ final class ForkWorker extends Worker
     /**
      * @var Process
      */
-    protected Process $process;
+    private Process $process;
 
     /**
      * @var ChannelInterface
      */
-    protected ChannelInterface $control;
+    private ChannelInterface $control;
 
-    protected ?array $sockets = null;
+    private ?array $sockets = null;
 
     /**
      * @var bool
      */
-    protected bool $isSupportSignal = false;
+    private bool $isSupportSignal;
 
     /**
      * Whether in the child process.
      * @var bool
      */
-    protected bool $inChildProcess = false;
+    private bool $inChildProcess = false;
 
     public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
     {
@@ -83,10 +83,10 @@ final class ForkWorker extends Worker
      */
     public function close(bool $graceful = false): void
     {
-        $this->control->executeCommand(new CLOSE($graceful));
+        $this->control->executeCommand(new Close($graceful));
     }
 
-    protected function createCallable(): \Closure
+    private function createCallable(): \Closure
     {
         return function(){
             // Reset loop instance.
@@ -109,8 +109,8 @@ final class ForkWorker extends Worker
     {
         if ($this->isSupportSignal) {
             $channel = new SignalChannel(null, $loop, [
-                \SIGTERM => new CLOSE(false),
-                \SIGHUP => new CLOSE(true),
+                \SIGTERM => new Close(false),
+                \SIGHUP => new Close(true),
             ]);
         } else {
             $this->logger->warning('Signal channel is not supported.');
@@ -119,7 +119,7 @@ final class ForkWorker extends Worker
         return $channel;
     }
 
-    protected function handleCommand(CommandInterface $command): void
+    private function handleCommand(CommandInterface $command): void
     {
         switch ($command->getCommandId()) {
             case 'CLOSE':
@@ -128,7 +128,7 @@ final class ForkWorker extends Worker
         }
     }
 
-    protected function handleClose(bool $grace): void
+    private function handleClose(bool $grace): void
     {
         $this->requireInChildProcess();
         $this->logger->info('Receive close command.');
@@ -139,12 +139,12 @@ final class ForkWorker extends Worker
         exit(0);
     }
 
-    protected static function createCommandFactory(): CommandFactory
+    private static function createCommandFactory(): CommandFactory
     {
-        return new CommandFactory([CLOSE::class]);
+        return new CommandFactory([Close::class]);
     }
 
-    protected function requireInChildProcess(): void
+    private function requireInChildProcess(): void
     {
         if (!$this->inChildProcess) {
             throw new RuntimeException('The action can only be executed in child process.');
