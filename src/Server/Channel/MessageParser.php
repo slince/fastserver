@@ -58,8 +58,8 @@ final class MessageParser implements ParserInterface
 
         if (null !== $this->meta && $this->length >= $this->meta['size']) {
             $body = substr($this->buffer, 0, $this->meta['size']);
-            $payload = Message::parsePayload($body);
-            $message = new Message($this->meta['flags'], $payload, $body);
+            $payload = Message::parsePayload($this->meta['flags'], $body);
+            $message = new Message($this->meta['type'], $this->meta['flags'], $payload);
             $this->buffer = substr($this->buffer, $this->meta['size']); // reset buffer
             $this->length -= strlen($body);
             $this->meta = null;

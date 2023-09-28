@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Waveman\Server\Command;
 
 use Waveman\Server\Channel\CommandInterface;
-use Waveman\Server\Channel\Message;
 
 final class ErrorCommand implements CommandInterface
 {
@@ -45,18 +44,10 @@ final class ErrorCommand implements CommandInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return string
      */
-    public function createMessage(): Message
+    public function getMessage(): string
     {
-        return new Message(Message::PAYLOAD_ERROR, ['message' => $this->message]);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function fromMessage(Message $message): CommandInterface
-    {
-        return new ErrorCommand($message->getArgument('message'));
+        return $this->message;
     }
 }

@@ -17,7 +17,7 @@ use Waveman\Server\Exception\MetaException;
 
 final class Message
 {
-    public const HEADER_SIZE = 17;
+    public const HEADER_SIZE = 10;
     public const BUFFER_SIZE = 65536;
 
     /** Payload flags.*/
@@ -26,20 +26,31 @@ final class Message
     public const PAYLOAD_ERROR   = 8;
     public const PAYLOAD_JSON = 16;
 
+    private int $type;
+    
     /**
      * @var int
      */
-    protected int $flags;
+    private int $flags;
 
     /**
      * @var string
      */
-    protected string $payload = '';
+    private mixed $payload;
 
-    public function __construct(int $flags, string $payload = '')
+    public function __construct(int $type, int $flags, mixed $payload)
     {
+        $this->type = $type;
         $this->flags = $flags;
         $this->payload = $payload;
+    }
+
+    /**
+     * @return int
+     */
+    public function getType(): int
+    {
+        return $this->type;
     }
 
     /**
@@ -53,7 +64,7 @@ final class Message
     /**
      * @return string
      */
-    public function getPayload(): string
+    public function getPayload(): mixed
     {
         return $this->payload;
     }
@@ -67,12 +78,13 @@ final class Message
     public static function pack(Message $message): string
     {
         $flags = $message->getFlags();
-        $payload = '';
-        if ($message->getPayload()) {
+        if (($flags & self::PAYLOAD_JSON) === self::PAYLOAD_JSON) {
             $payload = json_encode($message->getPayload());
+        } else {
+            $payload = '';
         }
         $size = strlen($payload);
-        $body = pack('CPJ', $flags, $size, $size);
+        $body = pack('CCJ', $message->getType(), $flags, $size);
 
         if (!($flags & Message::PAYLOAD_NONE)) {
             $body .= $payload;
@@ -84,17 +96,29 @@ final class Message
      * Parse message header.
      *
      * @param string $header
-     * @return array|false
+     * @return array
      */
-    public static function parseHeader(string $header): false|array
+    public static function parseHeader(string $header): array
     {
-        $result = unpack("Cflags/Psize/Jrevs", $header);
+        $result = unpack("CtypeCflags/Psize", $header);
         if (!is_array($result)) {
-            throw new MetaException("invalid meta");
-        }
-        if ($result['size'] != $result['revs']) {
-            throw new MetaException("invalid meta (checksum)");
+            throw new MetaException("invalid message header");
         }
         return $result;
+    }
+
+    /**
+     * Parse message payload.
+     *
+     * @param int $flags
+     * @param string $body
+     * @return array|string
+     */
+    public static function parsePayload(int $flags, string $body): array|string
+    {
+        if (($flags & self::PAYLOAD_JSON) === self::PAYLOAD_JSON) {
+            return json_decode($body, true);
+        }
+        return $body;
     }
 }
