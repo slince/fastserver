@@ -13,12 +13,15 @@ declare(strict_types=1);
 
 namespace Waveman\Http;
 
+use GuzzleHttp\Psr7\Response;
 use Waveman\Http\Exception\InvalidHeaderException;
 use Waveman\Http\Parser\HttpEmitter;
 use Waveman\Http\Parser\HttpParser;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use React\Socket\ConnectionInterface;
+use React\Http\HttpServer as Http;
+use React\Http\Middleware;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Server\Parser\StreamingReader;
 use Waveman\Server\ServerInterface;
@@ -34,6 +37,16 @@ final class HttpServer implements ServerInterface
      * @var RequestHandlerInterface
      */
     protected RequestHandlerInterface $requestHandler;
+
+    public function __construct()
+    {
+        $http = new Http(
+            new Middleware\StreamingRequestMiddleware(),
+            new Middleware\LimitConcurrentRequestsMiddleware(100), // 100 concurrent buffering handlers
+            new Middleware\RequestBodyBufferMiddleware(2 * 1024 * 1024), // 2 MiB per request
+            new Middleware\RequestBodyParserMiddleware(),
+        );
+    }
 
     /**
      * {@inheritdoc}
