@@ -2,10 +2,15 @@
 
 namespace Waveman\Server\Channel;
 
-use Waveman\Server\Channel\Command\CommandInterface;
-
 interface CommandFactoryInterface
 {
+    /**
+     * Creates the message instance.
+     * @param CommandInterface $command
+     * @return Message
+     */
+    public function createMessage(CommandInterface $command): Message;
+
     /**
      * Creates the command from message.
      *

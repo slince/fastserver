@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Channel;
 
-use Waveman\Server\Channel\Command\CommandInterface;
-
 interface ChannelInterface
 {
     /**
@@ -22,7 +20,7 @@ interface ChannelInterface
      *
      * @param CommandInterface $command Command instance.
      */
-    public function executeCommand(CommandInterface $command): void;
+    public function send(CommandInterface $command): void;
 
     /**
      * Add a listener to listen message.

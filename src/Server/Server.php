@@ -22,11 +22,11 @@ use React\Socket\SocketServer;
 use Slince\Process\Process;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\Command\Close;
-use Waveman\Server\Channel\Command\CommandInterface;
-use Waveman\Server\Channel\Command\WorkerClose;
+use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\SignalChannel;
 use Waveman\Server\Channel\UnixSocketChannel;
+use Waveman\Server\Command\CloseCommand;
+use Waveman\Server\Command\WorkerCloseCommand;
 use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\Worker\WorkerPool;
 
@@ -139,11 +139,11 @@ final class Server extends EventEmitter implements ServerInterface
         // if the signal is supported, create it.
         if (Process::isSupportPosixSignal()) {
             $this->signals = new SignalChannel(null, $this->loop, [
-                \SIGTERM => new Close(true),
-                \SIGHUP => new Close(true),
-                \SIGINT => new Close(true),
-                \SIGQUIT => new Close(true),
-                \SIGCHLD => new WorkerClose()
+                \SIGTERM => new CloseCommand(true),
+                \SIGHUP => new CloseCommand(true),
+                \SIGINT => new CloseCommand(true),
+                \SIGQUIT => new CloseCommand(true),
+                \SIGCHLD => new WorkerCloseCommand()
             ]);
             $this->logger->debug("Register signals successfully.");
         } else {

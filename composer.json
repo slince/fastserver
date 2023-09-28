@@ -18,6 +18,7 @@
         "slince/process": "*@dev",
         "psr/log": "^3.0",
         "symfony/options-resolver": "^6.3",
-        "psr/http-server-handler": "^1.0"
+        "psr/http-server-handler": "^1.0",
+        "spiral/goridge": "^4.0"
     }
 }

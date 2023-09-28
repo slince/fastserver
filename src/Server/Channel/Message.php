@@ -24,7 +24,7 @@ final class Message
     public const PAYLOAD_NONE    = 2;
     public const PAYLOAD_RAW     = 4;
     public const PAYLOAD_ERROR   = 8;
-    public const PAYLOAD_CONTROL = 16;
+    public const PAYLOAD_JSON = 16;
 
     /**
      * @var int
@@ -32,20 +32,14 @@ final class Message
     protected int $flags;
 
     /**
-     * @var array
-     */
-    protected array $payload = [];
-
-    /**
      * @var string
      */
-    protected string $rawPayload;
+    protected string $payload = '';
 
-    public function __construct(int $flags, array $payload = [], string $rawPayload = '')
+    public function __construct(int $flags, string $payload = '')
     {
         $this->flags = $flags;
         $this->payload = $payload;
-        $this->rawPayload = $rawPayload;
     }
 
     /**
@@ -57,42 +51,11 @@ final class Message
     }
 
     /**
-     * @return array
-     */
-    public function getPayload(): array
-    {
-        return $this->payload;
-    }
-
-    /**
-     * Return the given argument from payload.
-     *
-     * @param string $name
-     * @param null $defaults
-     * @return mixed|null
-     */
-    public function getArgument(string $name, $defaults = null): mixed
-    {
-        return $this->payload[$name] ?? $defaults;
-    }
-
-    /**
-     * Add an argument to payload.
-     *
-     * @param string $name
-     * @param mixed $value
-     */
-    public function addArgument(string $name, mixed $value): void
-    {
-        $this->payload[$name] = $value;
-    }
-
-    /**
      * @return string
      */
-    public function getRawPayload(): string
+    public function getPayload(): string
     {
-        return $this->rawPayload;
+        return $this->payload;
     }
 
     /**
@@ -115,17 +78,6 @@ final class Message
             $body .= $payload;
         }
         return $body;
-    }
-
-    /**
-     * Parse message payload.
-     *
-     * @param string $payload
-     * @return array
-     */
-    public static function parsePayload(string $payload): array
-    {
-        return \json_decode($payload, true) ?: [];
     }
 
     /**

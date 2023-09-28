@@ -11,11 +11,12 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Channel\Command;
+namespace Waveman\Server\Command;
 
+use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\Message;
 
-final class Close implements CommandInterface
+final class CloseCommand implements CommandInterface
 {
     /**
      * Close gracefully

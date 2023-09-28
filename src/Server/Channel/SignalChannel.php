@@ -4,7 +4,6 @@ namespace Waveman\Server\Channel;
 
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
-use Waveman\Server\Channel\Command\CommandInterface;
 use Waveman\Server\Exception\InvalidArgumentException;
 
 final class SignalChannel implements ChannelInterface
@@ -38,7 +37,7 @@ final class SignalChannel implements ChannelInterface
     /**
      * {@inheritdoc}
      */
-    public function executeCommand(CommandInterface $command): void
+    public function send(CommandInterface $command): void
     {
         if (!isset($this->commandMap[$command->getCommandKey()])) {
             throw new InvalidArgumentException(sprintf('The command %s is not supported by signal channel', $command->getCommandKey()));

@@ -11,10 +11,10 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Channel\Handler;
+namespace Waveman\Server\Command\Handler;
 
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\Command\CommandInterface;
+use Waveman\Server\Channel\CommandInterface;
 
 interface HandlerInterface
 {

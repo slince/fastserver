@@ -17,8 +17,8 @@ use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 use Symfony\Component\Process\Process;
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\Command\Close;
 use Waveman\Server\Channel\CommandFactory;
+use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\ServerInterface;
 
 class ProcWorker extends Worker
@@ -66,7 +66,7 @@ class ProcWorker extends Worker
      */
     private function createCommandFactory(): CommandFactory
     {
-        return new CommandFactory([Close::class]);
+        return new CommandFactory([CloseCommand::class]);
     }
 
     /**

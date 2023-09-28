@@ -11,11 +11,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Channel\Handler;
+namespace Waveman\Server\Command\Handler;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
-use Waveman\Server\Channel\Command\CommandInterface;
+use Waveman\Server\Channel\CommandInterface;
 
 final class HandlerResolver
 {

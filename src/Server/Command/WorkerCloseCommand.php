@@ -1,10 +1,11 @@
 <?php
 
-namespace Waveman\Server\Channel\Command;
+namespace Waveman\Server\Command;
 
+use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\Message;
 
-final class WorkerClose implements CommandInterface
+final class WorkerCloseCommand implements CommandInterface
 {
     /**
      * {@inheritdoc}
@@ -35,6 +36,6 @@ final class WorkerClose implements CommandInterface
      */
     public static function fromMessage(Message $message): CommandInterface
     {
-        return new WorkerClose();
+        return new WorkerCloseCommand();
     }
 }

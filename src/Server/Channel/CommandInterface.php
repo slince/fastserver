@@ -11,9 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Channel\Command;
-
-use Waveman\Server\Channel\Message;
+namespace Waveman\Server\Channel;
 
 interface CommandInterface
 {
@@ -30,19 +28,4 @@ interface CommandInterface
      * @return string
      */
     public function getCommandKey(): string;
-
-    /**
-     * Create the message instance.
-     *
-     * @return Message
-     */
-    public function createMessage(): Message;
-
-    /**
-     * Create command base on given message.
-     *
-     * @param Message $message
-     * @return static
-     */
-    public static function fromMessage(Message $message): CommandInterface;
 }

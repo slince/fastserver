@@ -11,18 +11,18 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Channel\Handler;
+namespace Waveman\Server\Command\Handler;
 
-use Waveman\Server\Channel\Command\CommandInterface;
 use Waveman\Server\Channel\ChannelInterface;
-use FastServer\Exception\InvalidArgumentException;
+use Waveman\Server\Channel\CommandInterface;
+use Waveman\Server\Exception\InvalidArgumentException;
 
 final class DelegatingHandler implements HandlerInterface
 {
     /**
      * @var HandlerResolver
      */
-    protected $resolver;
+    protected HandlerResolver $resolver;
 
     public function __construct(HandlerResolver $resolver)
     {

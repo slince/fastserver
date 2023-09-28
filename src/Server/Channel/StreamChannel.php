@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Waveman\Server\Channel;
 
 use React\Stream\DuplexStreamInterface;
-use Waveman\Server\Channel\Command\CommandInterface;
 
 class StreamChannel implements ChannelInterface
 {
@@ -34,10 +33,9 @@ class StreamChannel implements ChannelInterface
     /**
      * {@inheritdoc}
      */
-    public function executeCommand(CommandInterface $command): void
+    public function send(CommandInterface $command): void
     {
-        $message = $command->createMessage();
-        $message->addArgument('_cid_', $command->getCommandId());
+        $message = $this->commandFactory->createMessage($command);
         $message = Message::pack($message);
         $this->stream->write($message);
     }

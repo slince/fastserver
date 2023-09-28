@@ -11,11 +11,12 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Channel\Command;
+namespace Waveman\Server\Command;
 
+use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\Message;
 
-final class Error implements CommandInterface
+final class ErrorCommand implements CommandInterface
 {
     /**
      * @var string
@@ -56,6 +57,6 @@ final class Error implements CommandInterface
      */
     public static function fromMessage(Message $message): CommandInterface
     {
-        return new Error($message->getArgument('message'));
+        return new ErrorCommand($message->getArgument('message'));
     }
 }

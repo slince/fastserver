@@ -18,11 +18,11 @@ use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\Command\Close;
-use Waveman\Server\Channel\Command\CommandInterface;
 use Waveman\Server\Channel\CommandFactory;
+use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\SignalChannel;
 use Waveman\Server\Channel\UnixSocketChannel;
+use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Exception\RuntimeException;
 use Waveman\Server\ServerInterface;
 
@@ -83,7 +83,7 @@ final class ForkWorker extends Worker
      */
     public function close(bool $graceful = false): void
     {
-        $this->control->executeCommand(new Close($graceful));
+        $this->control->send(new CloseCommand($graceful));
     }
 
     private function createCallable(): \Closure
@@ -109,8 +109,8 @@ final class ForkWorker extends Worker
     {
         if ($this->isSupportSignal) {
             $channel = new SignalChannel(null, $loop, [
-                \SIGTERM => new Close(false),
-                \SIGHUP => new Close(true),
+                \SIGTERM => new CloseCommand(false),
+                \SIGHUP => new CloseCommand(true),
             ]);
         } else {
             $this->logger->warning('Signal channel is not supported.');
@@ -141,7 +141,7 @@ final class ForkWorker extends Worker
 
     private static function createCommandFactory(): CommandFactory
     {
-        return new CommandFactory([Close::class]);
+        return new CommandFactory([CloseCommand::class]);
     }
 
     private function requireInChildProcess(): void
