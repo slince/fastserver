@@ -94,7 +94,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      *
      * @param Worker $worker
      */
-    public function add(Worker $worker)
+    public function add(Worker $worker): void
     {
         $this->workers[] = $worker;
     }
@@ -105,7 +105,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      * @param int $pid
      * @return Worker|null
      */
-    public function getWorker(int $pid): ?Worker
+    public function get(int $pid): ?Worker
     {
         foreach ($this->workers as $worker) {
             if ($pid === $worker->getPid()) {
@@ -129,6 +129,68 @@ final class WorkerPool implements \IteratorAggregate, \Countable
     }
 
     /**
+     * Remove the work by its pid.
+     *
+     * @param int $pid
+     * @return void
+     */
+    public function removeByPid(int $pid): void
+    {
+        $worker = $this->get($pid);
+        if (null === $worker) {
+            return;
+        }
+        $this->remove($worker);
+    }
+
+    /**
+     * Restart one worker by its pid.
+     *
+     * @param int $pid
+     * @return void
+     */
+    public function restart(int $pid): void
+    {
+        $worker = $this->get($pid);
+        if (null === $worker) {
+            throw new InvalidArgumentException(sprintf('Cannot find worker with pid %d', $pid));
+        }
+        $this->start($worker->getId());
+        $worker->close(true);
+    }
+
+    /**
+     * Restarts worker pools.
+     *
+     * @return void
+     */
+    public function restartAll(): void
+    {
+        $former = $this->workers;
+        // Start new workers.
+        foreach ($former as $worker) {
+            $this->start($worker->getId());
+        }
+        // Close old workers.
+        foreach ($former as $worker) {
+            $worker->close(true);
+        }
+    }
+
+    /**
+     * Start a new worker.
+     *
+     * @param int $id
+     * @return void
+     */
+    public function start(int $id): void
+    {
+        $worker = $this->createWorker($id);
+        $this->add($worker);
+        $worker->start();
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function count(): int
@@ -149,16 +211,17 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function run(): void
     {
-        $this->status = self::STATUS_STARTED;
+        $this->build();
         foreach ($this->workers as $worker) {
             $worker->start();
         }
+        $this->status = self::STATUS_STARTED;
     }
 
     /**
      * Build worker pools.
      */
-    public function build(): WorkerPool
+    private function build(): WorkerPool
     {
         for ($i = 0; $i < $this->capacity; $i++) {
             $this->add($this->createWorker($i));
@@ -170,7 +233,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      * Close all workers.
      * @param bool $graceful
      */
-    protected function closeWorkers(bool $graceful): void
+    public function close(bool $graceful): void
     {
         foreach ($this->workers as $worker) {
             $worker->close($graceful);
@@ -209,6 +272,6 @@ final class WorkerPool implements \IteratorAggregate, \Countable
         } else {
             throw new InvalidArgumentException('Cannot create worker pool.');
         }
-        return new WorkerPool($type, $capacity, $server, $logger, $loop);
+        return new WorkerPool($type, $capacity, $server, $loop, $logger);
     }
 }

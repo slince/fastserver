@@ -47,9 +47,10 @@ interface ServerInterface
 
     /**
      * Close the server and exit.
+     * @param bool $graceful
      * @return void
      */
-    public function stop(): void;
+    public function stop(bool $graceful = true): void;
 
     /**
      * {@internal}

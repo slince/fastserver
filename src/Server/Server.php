@@ -24,7 +24,6 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Server\Channel\ChannelInterface;
 use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\SignalChannel;
-use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\WorkerCloseCommand;
 use Waveman\Server\Exception\InvalidArgumentException;
@@ -72,9 +71,20 @@ final class Server extends EventEmitter implements ServerInterface
         $optionsResolver = new OptionsResolver();
         $this->configureOptions($optionsResolver);
         $this->options = $optionsResolver->resolve($options);
+        foreach ($this->options['plugins'] as $plugin) {
+            $this->configurePlugin($plugin, $options[$plugin->getId()] ?? []);
+        }
         if ($this->options['reuseport']) {
             $this->options['tls']['so_reuseport'] = true;
         }
+    }
+
+    private function configurePlugin(PluginInterface $plugin, array $options): void
+    {
+        $optionsResolver = new OptionsResolver();
+        $plugin->configureOptions($optionsResolver);
+        $resolved = $optionsResolver->resolve($options);
+        $plugin->configure($resolved);
     }
 
     /**
@@ -96,8 +106,11 @@ final class Server extends EventEmitter implements ServerInterface
             ->setDefaults([
                 'reuseport' => false,
                 'max_workers' => 1,
+                'plugins' => [],
             ])
-            ->setRequired(['address']);
+            ->setAllowedValues('plugins', [PluginInterface::class . '[]'])
+            ->setRequired(['address'])
+        ;
     }
 
     /**
@@ -114,8 +127,9 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function stop(): void
+    public function stop(bool $graceful = false): void
     {
+        $this->pool->close($graceful);
         $this->emit('stop');
         $this->loop->stop();
     }
@@ -125,16 +139,22 @@ final class Server extends EventEmitter implements ServerInterface
      */
     public function serve(): void
     {
-        if (!$this->options['reuseport'] || !Process::isSupported()) {
-            $this->createSocket();
-        }
-        $this->tryCreateChannel();
-        $this->pool = WorkerPool::createPool($this->options['max_workers'], $this, $this->loop, $this->logger);
+        $this->boot();
         $this->emit('start', [$this]);
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
     }
 
-    private function tryCreateChannel(): void
+    private function boot(): void
+    {
+        if (!$this->options['reuseport'] || !Process::isSupported()) {
+            $this->createSocket();
+        }
+        $this->createChannel();
+        $this->createWorkers();
+        $this->activatePlugins();
+    }
+
+    private function createChannel(): void
     {
         // if the signal is supported, create it.
         if (Process::isSupportPosixSignal()) {
@@ -145,47 +165,40 @@ final class Server extends EventEmitter implements ServerInterface
                 \SIGQUIT => new CloseCommand(true),
                 \SIGCHLD => new WorkerCloseCommand()
             ]);
+            $this->signals->listen([$this, 'handleCommand']);
             $this->logger->debug("Register signals successfully.");
         } else {
             $this->logger->warning("Cannot register signals.");
         }
-        $channel = new UnixSocketChannel($this->sockets, $this->loop, $this->inChildProcess, self::createCommandFactory());
     }
 
     private function handleCommand(CommandInterface $command): void
     {
+        $this->emit('command', [$command]);
         switch ($command->getCommandId()) {
             case 'CLOSE':
-                $this->handleClose($command->isGraceful());
+                $this->stop($command->isGraceful());
                 break;
-            case 'WORK_CLOSE':
-                break;
-        }
-    }
-
-    /**
-     * {@internal}
-     */
-    public function onSignal(int $signal): void
-    {
-        switch ($signal) {
-            case \SIGINT:
-            case \SIGTERM:
-            case \SIGQUIT:
-            case \SIGHUP:
-                $this->pool->close(\SIGHUP === $signal);
-                break;
-            case \SIGUSR1:
-            case \SIGUSR2:
-                $this->pool->restart(\SIGUSR2 === $signal);
-                break;
-            case \SIGCHLD:
+            case 'WORKER_CLOSE':
                 $pid = \pcntl_wait($status);
                 if (-1 === $pid) {
                     return;
                 }
-                $this->pool->removeWorker($pid);
+                $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $pid));
+                $this->pool->removeByPid($pid);
                 break;
+        }
+    }
+
+    private function createWorkers(): void
+    {
+        $this->pool = WorkerPool::createPool($this->options['max_workers'], $this, $this->loop, $this->logger);
+    }
+
+    private function activatePlugins(): void
+    {
+        foreach ($this->options['plugins'] as $plugin) {
+            $plugin->activate($this);
         }
     }
 
