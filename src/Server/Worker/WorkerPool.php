@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the fastserver/fastserver package.
+ * This file is part of the waveman/waveman package.
  *
  * (c) Slince <taosikai@yeah.net>
  *
@@ -167,10 +167,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
     public function restartAll(): void
     {
         $former = $this->workers;
-        // Start new workers.
-        foreach ($former as $worker) {
-            $this->start($worker->getId());
-        }
+        $this->run();
         // Close old workers.
         foreach ($former as $worker) {
             $worker->close(true);
@@ -211,22 +208,10 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function run(): void
     {
-        $this->build();
-        foreach ($this->workers as $worker) {
-            $worker->start();
+        for ($i = 0; $i < $this->capacity; $i++) {
+            $this->start($i);
         }
         $this->status = self::STATUS_STARTED;
-    }
-
-    /**
-     * Build worker pools.
-     */
-    private function build(): WorkerPool
-    {
-        for ($i = 0; $i < $this->capacity; $i++) {
-            $this->add($this->createWorker($i));
-        }
-        return $this;
     }
 
     /**

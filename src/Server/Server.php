@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the fastserver/fastserver package.
+ * This file is part of the waveman/waveman package.
  *
  * (c) Slince <taosikai@yeah.net>
  *
@@ -56,7 +56,6 @@ final class Server extends EventEmitter implements ServerInterface
     private WorkerPool $pool;
 
     private ChannelInterface $signals;
-
     public function __construct(?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
         $this->logger = $logger ?? new NullLogger();
@@ -142,6 +141,8 @@ final class Server extends EventEmitter implements ServerInterface
         $this->boot();
         $this->emit('start', [$this]);
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
+        $this->pool->run();
+        $this->loop->run();
     }
 
     private function boot(): void
@@ -186,6 +187,10 @@ final class Server extends EventEmitter implements ServerInterface
                 }
                 $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $pid));
                 $this->pool->removeByPid($pid);
+                break;
+            case 'RELOAD':
+                $this->logger->debug('Reload workers.');
+                $this->pool->restartAll();
                 break;
         }
     }

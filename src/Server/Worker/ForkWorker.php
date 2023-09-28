@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the fastserver/fastserver package.
+ * This file is part of the waveman/waveman package.
  *
  * (c) Slince <taosikai@yeah.net>
  *

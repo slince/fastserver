@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the fastserver/fastserver package.
+ * This file is part of the waveman/waveman package.
  *
  * (c) Slince <taosikai@yeah.net>
  *
@@ -16,6 +16,7 @@ namespace Waveman\Server\Worker;
 use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
+use Waveman\Server\ConnectionPool;
 use Waveman\Server\ServerInterface;
 
 abstract class Worker
@@ -40,12 +41,15 @@ abstract class Worker
      */
     protected LoggerInterface $logger;
 
+    private ConnectionPool $connections;
+
     public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
     {
         $this->id = $id;
         $this->server = $server;
         $this->loop = $loop;
         $this->logger = $logger;
+        $this->connections = new ConnectionPool();
     }
 
     /**
@@ -89,6 +93,10 @@ abstract class Worker
     {
         $this->logger->debug(sprintf('Worker [%s] [%s] Accept connection from %s', $this->getId(),
             $this->getPid(), $connection->getLocalAddress()));
+        $this->connections->add($connection);
+        $connection->on('close', function() use($connection){
+            $this->connections->remove($connection);
+        });
         $this->server->emit('connection', [$connection]);
     }
 
