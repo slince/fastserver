@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace Waveman\Http\Exception;
 
-use Waveman\Exception\InvalidArgumentException;
-
 class InvalidHeaderException extends InvalidArgumentException
 {
 

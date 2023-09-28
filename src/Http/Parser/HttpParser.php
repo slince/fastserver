@@ -13,13 +13,15 @@ declare(strict_types=1);
 
 namespace Waveman\Http\Parser;
 
-use Waveman\StreamAwareInterface;
-use Waveman\Http\Exception\InvalidHeaderException;
-use Waveman\Parser\ParserInterface;
 use GuzzleHttp\Psr7\BufferStream;
 use GuzzleHttp\Psr7\ServerRequest;
+use Psr\Http\Message\ServerRequestInterface;
+use Waveman\Http\Exception\InvalidArgumentException;
+use Waveman\Http\Exception\InvalidHeaderException;
 use React\Socket\ConnectionInterface;
 use React\Stream\DuplexStreamInterface;
+use Waveman\Server\Parser\ParserInterface;
+use Waveman\Server\StreamAwareInterface;
 
 class HttpParser implements ParserInterface, StreamAwareInterface
 {
@@ -29,40 +31,43 @@ class HttpParser implements ParserInterface, StreamAwareInterface
     /**
      * @var ConnectionInterface
      */
-    protected $connection;
+    protected ConnectionInterface $connection;
 
     /**
      * @var string
      */
-    protected $buffer = '';
+    protected string $buffer = '';
 
     /**
      * @var int
      */
-    protected $length;
+    protected int $length;
 
     /**
-     * @var ServerRequest
+     * @var ServerRequestInterface|null
      */
-    protected $request;
+    protected ?ServerRequestInterface $request = null;
 
     /**
      * @var int|null
      */
-    protected $contentLength = 0;
+    protected ?int $contentLength = 0;
 
     /**
      * {@inheritdoc}
      */
-    public function setStream(DuplexStreamInterface $stream)
+    public function setStream(DuplexStreamInterface $stream): void
     {
+        if (!$stream instanceof ConnectionInterface) {
+            throw new InvalidArgumentException('Invalid stream for http parser.');
+        }
         $this->connection = $stream;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function push(string $chunk)
+    public function push(string $chunk): void
     {
         $this->buffer .= $chunk;
         $this->length += strlen($chunk);
@@ -99,7 +104,7 @@ class HttpParser implements ParserInterface, StreamAwareInterface
         }
     }
 
-    protected function captureRequestBody(int $length)
+    protected function captureRequestBody(int $length): ServerRequestInterface
     {
         $content = ltrim(substr($this->buffer, 0, $length), static::CRLF);
         // reset buffer state
@@ -111,18 +116,18 @@ class HttpParser implements ParserInterface, StreamAwareInterface
         return $this->request->withBody($body);
     }
 
-    protected function resetState()
+    protected function resetState(): void
     {
         $this->request = null;
         $this->contentLength = null;
 
         // Maybe reset buffer contains a full request.
-        if (false !== strpos($this->buffer, "\r\n\r\n")) {
+        if (str_contains($this->buffer, "\r\n\r\n")) {
             $this->evaluate();
         }
     }
 
-    protected function parserHeader(string $header): ServerRequest
+    protected function parserHeader(string $header): ServerRequestInterface
     {
         if (!\preg_match('#^(?<method>[^ ]+) (?<target>[^ ]+) HTTP/(?<version>\d\.\d)#m', $header, $start)) {
             throw new InvalidHeaderException('Unable to parse invalid request-line');

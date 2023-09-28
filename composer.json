@@ -19,6 +19,7 @@
         "psr/log": "^3.0",
         "symfony/options-resolver": "^6.3",
         "psr/http-server-handler": "^1.0",
-        "spiral/goridge": "^4.0"
+        "spiral/goridge": "^4.0",
+        "guzzlehttp/psr7": "^2.6"
     }
 }

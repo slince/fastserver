@@ -6,6 +6,8 @@
     "require": {
         "php": ">=8.2",
         "waveman/server": "*@dev",
-        "psr/http-server-handler": "^1.0"
+        "psr/http-server-handler": "^1.0",
+        "react/http": "^1.9",
+        "guzzlehttp/psr7": "^2.6"
     }
 }

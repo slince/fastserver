@@ -208,7 +208,7 @@ final class Server extends EventEmitter implements ServerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@internal}
      */
     public function createSocket(): SocketServer
     {
@@ -216,7 +216,7 @@ final class Server extends EventEmitter implements ServerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@internal}
      */
     public function getSocket(): SocketServer
     {

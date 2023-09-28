@@ -13,40 +13,32 @@ declare(strict_types=1);
 
 namespace Waveman\Http;
 
-use Waveman\ConnectionPool;
 use Waveman\Http\Exception\InvalidHeaderException;
 use Waveman\Http\Parser\HttpEmitter;
 use Waveman\Http\Parser\HttpParser;
-use Waveman\Parser\ParserFactory;
-use Waveman\Parser\StreamingReader;
-use Waveman\TcpServer;
-use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Waveman\Server\Parser\StreamingReader;
+use Waveman\Server\ServerInterface;
 
-final class HttpServer extends TcpServer
+final class HttpServer implements ServerInterface
 {
-    /**
-     * @var ConnectionPool
-     */
-    protected $connections;
-
     /**
      * @var StreamingReader
      */
-    protected $streamReader;
+    protected StreamingReader $streamReader;
 
     /**
      * @var RequestHandlerInterface
      */
-    protected $requestHandler;
+    protected RequestHandlerInterface $requestHandler;
 
     /**
      * {@inheritdoc}
      */
-    protected function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
         parent::configureOptions($resolver);
         $resolver->setDefaults([
@@ -61,7 +53,7 @@ final class HttpServer extends TcpServer
      *
      * @param callable|RequestHandlerInterface $requestHandler
      */
-    public function handle($requestHandler)
+    public function handle(callable|RequestHandlerInterface $requestHandler): void
     {
         if (is_callable($requestHandler)) {
             $requestHandler = new RequestHandler($requestHandler);
@@ -72,9 +64,6 @@ final class HttpServer extends TcpServer
         $this->requestHandler = $requestHandler;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function initialize()
     {
         $this->connections = new ConnectionPool();
@@ -136,5 +125,30 @@ final class HttpServer extends TcpServer
                 $connection->end();
             }
         }
+    }
+
+    public function configure(array $options): void
+    {
+        // TODO: Implement configure() method.
+    }
+
+    public function on(string $event, callable $listener): void
+    {
+        // TODO: Implement on() method.
+    }
+
+    public function getOption(string $name): mixed
+    {
+        // TODO: Implement getOption() method.
+    }
+
+    public function serve(): void
+    {
+        // TODO: Implement serve() method.
+    }
+
+    public function stop(bool $graceful = true): void
+    {
+        // TODO: Implement stop() method.
     }
 }

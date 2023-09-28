@@ -51,14 +51,4 @@ interface ServerInterface
      * @return void
      */
     public function stop(bool $graceful = true): void;
-
-    /**
-     * {@internal}
-     */
-    public function createSocket(): SocketServer;
-
-    /**
-     * {@internal}
-     */
-    public function getSocket(): SocketServer;
 }

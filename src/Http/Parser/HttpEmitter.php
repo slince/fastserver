@@ -13,11 +13,11 @@ declare(strict_types=1);
 
 namespace Waveman\Http\Parser;
 
-use Waveman\Parser\WriterInterface;
 use GuzzleHttp\Psr7\BufferStream;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Stream\WritableStreamInterface;
+use Waveman\Server\Parser\WriterInterface;
 
 final class HttpEmitter implements WriterInterface
 {
@@ -26,7 +26,7 @@ final class HttpEmitter implements WriterInterface
     /**
      * @var WritableStreamInterface
      */
-    protected $stream;
+    protected WritableStreamInterface $stream;
 
     public function __construct(WritableStreamInterface $stream)
     {
@@ -36,7 +36,7 @@ final class HttpEmitter implements WriterInterface
     /**
      * {@inheritdoc}
      */
-    public function write($response, $request = null)
+    public function write($response, $request = null): void
     {
         $this->emit($response, $request);
     }
@@ -47,7 +47,7 @@ final class HttpEmitter implements WriterInterface
      * @param ResponseInterface $response
      * @param ServerRequestInterface|null $request
      */
-    public function emit(ResponseInterface $response, ?ServerRequestInterface $request = null)
+    public function emit(ResponseInterface $response, ?ServerRequestInterface $request = null): void
     {
         $response = $this->handleResponse($response, $request);
 
@@ -147,7 +147,7 @@ final class HttpEmitter implements WriterInterface
      * `emitHeaders()` in order to prevent PHP from changing the status code of
      * the emitted response.
      */
-    protected function emitStatusLine(ResponseInterface $response)
+    protected function emitStatusLine(ResponseInterface $response): void
     {
         $reasonPhrase = $response->getReasonPhrase();
         $statusCode   = $response->getStatusCode();
@@ -168,7 +168,7 @@ final class HttpEmitter implements WriterInterface
      * in such a way as to create aggregate headers (instead of replace
      * the previous).
      */
-    protected function emitHeaders(ResponseInterface $response)
+    protected function emitHeaders(ResponseInterface $response): void
     {
         foreach ($response->getHeaders() as $header => $values) {
             $name = $this->filterHeader($header);
@@ -190,7 +190,7 @@ final class HttpEmitter implements WriterInterface
     /**
      * Emit the message body.
      */
-    protected function emitBody(ResponseInterface $response)
+    protected function emitBody(ResponseInterface $response): void
     {
         $body = $response->getBody();
 
@@ -214,7 +214,7 @@ final class HttpEmitter implements WriterInterface
      * @param array $range
      * @param ResponseInterface $response
      */
-    protected function emitBodyRange(array $range, ResponseInterface $response)
+    protected function emitBodyRange(array $range, ResponseInterface $response): void
     {
         [, $first, $last] = $range;
 
@@ -268,7 +268,7 @@ final class HttpEmitter implements WriterInterface
         ];
     }
 
-    protected function writeLine(string $data, bool $newLine = true)
+    protected function writeLine(string $data, bool $newLine = true): void
     {
         if ($newLine) {
             $data .= HttpParser::CRLF;
