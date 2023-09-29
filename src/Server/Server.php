@@ -39,9 +39,9 @@ final class Server extends EventEmitter implements ServerInterface
     private array $options;
 
     /**
-     * @var SocketServer
+     * @var SocketServer|null
      */
-    private SocketServer $socket;
+    private ?SocketServer $socket = null;
 
     /**
      * @var LoggerInterface
@@ -56,16 +56,19 @@ final class Server extends EventEmitter implements ServerInterface
     private WorkerPool $pool;
 
     private ChannelInterface $signals;
-    public function __construct(?LoggerInterface $logger = null, ?LoopInterface $loop = null)
+    public function __construct(array $options, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
+        $this->configure($options);
         $this->logger = $logger ?? new NullLogger();
         $this->loop = $loop ?? Loop::get();
     }
 
     /**
-     * {@inheritdoc}
+     * Configure the server.
+     *
+     * @param array $options
      */
-    public function configure(array $options): void
+    private function configure(array $options): void
     {
         $optionsResolver = new OptionsResolver();
         $this->configureOptions($optionsResolver);
@@ -148,7 +151,7 @@ final class Server extends EventEmitter implements ServerInterface
     private function boot(): void
     {
         if (!$this->options['reuseport'] || !Process::isSupported()) {
-            $this->createSocket();
+            $this->getSocket();
         }
         $this->createChannel();
         $this->createWorkers();
@@ -208,18 +211,13 @@ final class Server extends EventEmitter implements ServerInterface
     }
 
     /**
-     * {@internal}
-     */
-    public function createSocket(): SocketServer
-    {
-        return $this->socket = new SocketServer($this->options['address'], $this->options, $this->loop);
-    }
-
-    /**
-     * {@internal}
+     * {@inheritdoc}
      */
     public function getSocket(): SocketServer
     {
+        if (null === $this->socket) {
+            $this->socket = new SocketServer($this->options['address'], $this->options, $this->loop);
+        }
         return $this->socket;
     }
 }

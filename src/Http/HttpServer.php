@@ -13,20 +13,25 @@ declare(strict_types=1);
 
 namespace Waveman\Http;
 
+use Evenement\EventEmitter;
 use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use React\EventLoop\LoopInterface;
+use React\Http\HttpServer as Http;
+use React\Http\Middleware;
+use React\Socket\ConnectionInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Http\Exception\InvalidHeaderException;
 use Waveman\Http\Parser\HttpEmitter;
 use Waveman\Http\Parser\HttpParser;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
-use React\Socket\ConnectionInterface;
-use React\Http\HttpServer as Http;
-use React\Http\Middleware;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Server\Parser\StreamingReader;
+use Waveman\Server\Server;
 use Waveman\Server\ServerInterface;
 
-final class HttpServer implements ServerInterface
+final class HttpServer extends EventEmitter implements ServerInterface
 {
     /**
      * @var StreamingReader
@@ -38,27 +43,43 @@ final class HttpServer implements ServerInterface
      */
     protected RequestHandlerInterface $requestHandler;
 
-    public function __construct()
+    protected LoggerInterface $logger;
+
+    protected array $options;
+
+    protected ServerInterface $server;
+
+    public function __construct(array $options, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
-        $http = new Http(
-            new Middleware\StreamingRequestMiddleware(),
-            new Middleware\LimitConcurrentRequestsMiddleware(100), // 100 concurrent buffering handlers
-            new Middleware\RequestBodyBufferMiddleware(2 * 1024 * 1024), // 2 MiB per request
-            new Middleware\RequestBodyParserMiddleware(),
-        );
+        $this->logger = $logger ?? new NullLogger();
+        $this->server = new Server($options, $this->logger, $loop);
+        $this->configure($options);
     }
 
     /**
-     * {@inheritdoc}
+     * Configure options resolver for the server.
+     *
+     * @param OptionsResolver $resolver
      */
-    public function configureOptions(OptionsResolver $resolver): void
+    private function configureOptions(OptionsResolver $resolver): void
     {
-        parent::configureOptions($resolver);
         $resolver->setDefaults([
             'keepalive' => true,
             'keepalive_timeout' => 120,
             'keepalive_requests' => 1000
         ]);
+    }
+
+    /**
+     * Configure the server.
+     *
+     * @param array $options
+     */
+    private function configure(array $options): void
+    {
+        $optionsResolver = new OptionsResolver();
+        $this->configureOptions($optionsResolver);
+        $this->options = $optionsResolver->resolve($options);
     }
 
     /**
@@ -124,7 +145,7 @@ final class HttpServer implements ServerInterface
     /**
      * @internal
      */
-    public function closeExpiredConnections()
+    public function closeExpiredConnections(): void
     {
         $this->logger->info(sprintf('Checking expired connections(%d).', count($this->connections)));
         /* @var ConnectionInterface $connection */
@@ -140,28 +161,26 @@ final class HttpServer implements ServerInterface
         }
     }
 
-    public function configure(array $options): void
-    {
-        // TODO: Implement configure() method.
-    }
-
-    public function on(string $event, callable $listener): void
-    {
-        // TODO: Implement on() method.
-    }
-
-    public function getOption(string $name): mixed
-    {
-        // TODO: Implement getOption() method.
-    }
-
+    /**
+     * {@inheritdoc}
+     */
     public function serve(): void
     {
-        // TODO: Implement serve() method.
+        $http = new Http(
+            new Middleware\StreamingRequestMiddleware(),
+            new Middleware\LimitConcurrentRequestsMiddleware(100), // 100 concurrent buffering handlers
+            new Middleware\RequestBodyBufferMiddleware(2 * 1024 * 1024), // 2 MiB per request
+            new Middleware\RequestBodyParserMiddleware(),
+        );
+        $this->server->serve();
+        $http->listen($this->server->getSocket());
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function stop(bool $graceful = true): void
     {
-        // TODO: Implement stop() method.
+        $this->server->stop($graceful);
     }
 }

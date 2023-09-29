@@ -1,6 +1,8 @@
 <?php
 
-use FastServer\Http\HttpServer;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ServerRequestInterface;
+use Waveman\Http\HttpServer;
 
 include __DIR__ . '/../vendor/autoload.php';
 
@@ -18,7 +20,7 @@ $server->configure([
 
 $i = 0;
 
-$server->handle(function(Strem $request) use(&$i){
+$server->handle(function(ServerRequestInterface $request) use(&$i){
     $i++;
     return new Response(200, [], "hello {$i}");
 });

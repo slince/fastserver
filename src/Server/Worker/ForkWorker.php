@@ -18,11 +18,11 @@ use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\CommandFactory;
 use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\SignalChannel;
 use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
+use Waveman\Server\Command\CommandFactory;
 use Waveman\Server\Exception\RuntimeException;
 use Waveman\Server\ServerInterface;
 
@@ -141,7 +141,7 @@ final class ForkWorker extends Worker
 
     private static function createCommandFactory(): CommandFactory
     {
-        return new CommandFactory([CloseCommand::class]);
+        return new CommandFactory();
     }
 
     private function requireInChildProcess(): void

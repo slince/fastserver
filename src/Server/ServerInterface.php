@@ -13,17 +13,10 @@ declare(strict_types=1);
 
 namespace Waveman\Server;
 
-use React\Socket\SocketServer;
+use React\Socket\ServerInterface as Socket;
 
 interface ServerInterface
 {
-    /**
-     * Configure the server.
-     *
-     * @param array $options
-     */
-    public function configure(array $options): void;
-
     /**
      * Add an event listener.
      *
@@ -51,4 +44,11 @@ interface ServerInterface
      * @return void
      */
     public function stop(bool $graceful = true): void;
+
+    /**
+     * Returns the socket instance.
+     * 
+     * @return Socket
+     */
+    public function getSocket(): Socket;
 }

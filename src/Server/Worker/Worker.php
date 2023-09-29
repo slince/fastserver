@@ -72,13 +72,14 @@ abstract class Worker
         return getmypid();
     }
 
+    /**
+     * Run the worker.
+     * 
+     * @return void
+     */
     protected function run(): void
     {
-        if ($this->server->getOption('reuseport')) {
-            $socket = $this->server->createSocket();
-        } else {
-            $socket = $this->server->getSocket();
-        }
+        $socket = $this->server->getSocket();
         $socket->on('connection', [$this, 'handleConnection']);
         $socket->on('error', [$this, 'handleError']);
     }
