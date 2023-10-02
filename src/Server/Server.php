@@ -53,9 +53,16 @@ final class Server extends EventEmitter implements ServerInterface
      */
     private LoopInterface $loop;
 
+    /**
+     * @var WorkerPool
+     */
     private WorkerPool $pool;
 
+    /**
+     * @var ChannelInterface
+     */
     private ChannelInterface $signals;
+
     public function __construct(array $options, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
         $this->configure($options);
@@ -200,11 +207,13 @@ final class Server extends EventEmitter implements ServerInterface
 
     private function createWorkers(): void
     {
+        $this->logger->debug(sprintf("Create %d workers.", $this->options['max_workers']));
         $this->pool = WorkerPool::createPool($this->options['max_workers'], $this, $this->loop, $this->logger);
     }
 
     private function activatePlugins(): void
     {
+        $this->logger->debug('Activate plugins.');
         foreach ($this->options['plugins'] as $plugin) {
             $plugin->activate($this);
         }

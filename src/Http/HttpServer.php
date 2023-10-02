@@ -27,6 +27,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Http\Exception\InvalidHeaderException;
 use Waveman\Http\Parser\HttpEmitter;
 use Waveman\Http\Parser\HttpParser;
+use Waveman\Server\Parser\ParserFactory;
 use Waveman\Server\Parser\StreamingReader;
 use Waveman\Server\Server;
 use Waveman\Server\ServerInterface;
@@ -132,7 +133,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
         // Add a timer for connections.
         if ($this->options['keepalive']) {
-//            $this->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+            $this->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
         }
     }
 
