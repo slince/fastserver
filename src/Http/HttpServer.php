@@ -27,6 +27,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Http\Exception\InvalidHeaderException;
 use Waveman\Http\Parser\HttpEmitter;
 use Waveman\Http\Parser\HttpParser;
+use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\Parser\ParserFactory;
 use Waveman\Server\Parser\StreamingReader;
 use Waveman\Server\Server;
@@ -34,6 +35,8 @@ use Waveman\Server\ServerInterface;
 
 final class HttpServer extends EventEmitter implements ServerInterface
 {
+    private const EVENT_NAMES = ['connection', 'request', 'close'];
+
     /**
      * @var StreamingReader
      */
@@ -160,6 +163,17 @@ final class HttpServer extends EventEmitter implements ServerInterface
                 $connection->end();
             }
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function on(string $event, callable $listener): void
+    {
+        if (!in_array($event, self::EVENT_NAMES)) {
+            throw new InvalidArgumentException(sprintf('The event "%s" is not supported.', $event));
+        }
+        parent::on($event, $listener);
     }
 
     /**

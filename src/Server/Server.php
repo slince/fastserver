@@ -63,11 +63,14 @@ final class Server extends EventEmitter implements ServerInterface
      */
     private ChannelInterface $signals;
 
+    private ConnectionPool $connections;
+
     public function __construct(array $options, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
         $this->configure($options);
         $this->logger = $logger ?? new NullLogger();
         $this->loop = $loop ?? Loop::get();
+        $this->connections = new ConnectionPool();
     }
 
     /**
@@ -97,11 +100,42 @@ final class Server extends EventEmitter implements ServerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Gets the specific option.
+     *
+     * @param string $name
+     * @return mixed
      */
     public function getOption(string $name): mixed
     {
         return $this->options[$name] ?? null;
+    }
+
+    /**
+     * Returns the connection pool of the server.
+     *
+     * @return ConnectionPool
+     */
+    public function getConnections(): ConnectionPool
+    {
+        return $this->connections;
+    }
+
+    /**
+     * Return the logger instance.
+     *
+     * @return LoggerInterface
+     */
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+
+    /**
+     * @return LoopInterface
+     */
+    public function getLoop(): LoopInterface
+    {
+        return $this->loop;
     }
 
     /**
@@ -208,7 +242,7 @@ final class Server extends EventEmitter implements ServerInterface
     private function createWorkers(): void
     {
         $this->logger->debug(sprintf("Create %d workers.", $this->options['max_workers']));
-        $this->pool = WorkerPool::createPool($this->options['max_workers'], $this, $this->loop, $this->logger);
+        $this->pool = WorkerPool::createPool($this->options['max_workers'], $this);
     }
 
     private function activatePlugins(): void
@@ -220,7 +254,9 @@ final class Server extends EventEmitter implements ServerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Returns the socket instance.
+     *
+     * @return SocketServer
      */
     public function getSocket(): SocketServer
     {

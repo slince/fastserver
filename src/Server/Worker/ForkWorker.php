@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Worker;
 
-use Psr\Log\LoggerInterface;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
@@ -24,7 +23,7 @@ use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\CommandFactory;
 use Waveman\Server\Exception\RuntimeException;
-use Waveman\Server\ServerInterface;
+use Waveman\Server\Server;
 
 final class ForkWorker extends Worker
 {
@@ -51,9 +50,9 @@ final class ForkWorker extends Worker
      */
     private bool $inChildProcess = false;
 
-    public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
+    public function __construct(int $id, Server $server)
     {
-        parent::__construct($id, $server, $loop, $logger);
+        parent::__construct($id, $server);
         $this->isSupportSignal = Process::isSupportPosixSignal();
     }
 

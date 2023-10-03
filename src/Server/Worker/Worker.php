@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
 use Waveman\Server\ConnectionPool;
+use Waveman\Server\Server;
 use Waveman\Server\ServerInterface;
 
 abstract class Worker
@@ -27,7 +28,7 @@ abstract class Worker
     protected int $id;
 
     /**
-     * @var ServerInterface
+     * @var Server
      */
     protected ServerInterface $server;
 
@@ -41,15 +42,15 @@ abstract class Worker
      */
     protected LoggerInterface $logger;
 
-    private ConnectionPool $connections;
+    protected ConnectionPool $connections;
 
-    public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
+    public function __construct(int $id, Server $server)
     {
         $this->id = $id;
         $this->server = $server;
-        $this->loop = $loop;
-        $this->logger = $logger;
-        $this->connections = new ConnectionPool();
+        $this->connections = $server->getConnections();
+        $this->loop = $server->getLoop();
+        $this->logger = $server->getLogger();
     }
 
     /**
@@ -94,9 +95,9 @@ abstract class Worker
     {
         $this->logger->debug(sprintf('Worker [%s] [%s] Accept connection from %s', $this->getId(),
             $this->getPid(), $connection->getLocalAddress()));
-        $this->connections->add($connection);
+        $this->server->getConnections()->add($connection);
         $connection->on('close', function() use($connection){
-            $this->connections->remove($connection);
+            $this->server->getConnections()->remove($connection);
         });
         $this->server->emit('connection', [$connection]);
     }

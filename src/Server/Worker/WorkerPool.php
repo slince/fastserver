@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Worker;
 
-use Psr\Log\LoggerInterface;
-use React\EventLoop\LoopInterface;
 use Waveman\Server\Exception\InvalidArgumentException;
-use Waveman\Server\ServerInterface;
+use Waveman\Server\Server;
 
 final class WorkerPool implements \IteratorAggregate, \Countable
 {
@@ -66,27 +64,15 @@ final class WorkerPool implements \IteratorAggregate, \Countable
     protected array $workers = [];
 
     /**
-     * @var LoopInterface
+     * @var Server
      */
-    protected LoopInterface $loop;
+    protected Server $server;
 
-    /**
-     * @var ServerInterface
-     */
-    protected ServerInterface $server;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected LoggerInterface $logger;
-
-    public function __construct(string $type, int $capacity, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
+    public function __construct(string $type, int $capacity, Server $server)
     {
         $this->type = $type;
         $this->capacity = $capacity;
         $this->server = $server;
-        $this->loop = $loop;
-        $this->logger = $logger;
     }
 
     /**
@@ -234,21 +220,19 @@ final class WorkerPool implements \IteratorAggregate, \Countable
     public function createWorker(int $id): Worker
     {
         if ($this->type === self::WORKER_FORK) {
-            return new ForkWorker($id, $this->server, $this->loop, $this->logger);
+            return new ForkWorker($id, $this->server);
         }
-        return new ProcWorker($id, $this->server, $this->loop, $this->logger);
+        return new ProcWorker($id, $this->server);
     }
 
     /**
      * Creates a worker pool.
      *
      * @param int $capacity
-     * @param ServerInterface $server
-     * @param LoggerInterface $logger
-     * @param LoopInterface $loop
+     * @param Server $server
      * @return WorkerPool
      */
-    public static function createPool(int $capacity, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger): WorkerPool
+    public static function createPool(int $capacity, Server $server): WorkerPool
     {
         if (function_exists('pcntl_fork')) {
             $type = self::WORKER_FORK;
@@ -257,6 +241,6 @@ final class WorkerPool implements \IteratorAggregate, \Countable
         } else {
             throw new InvalidArgumentException('Cannot create worker pool.');
         }
-        return new WorkerPool($type, $capacity, $server, $loop, $logger);
+        return new WorkerPool($type, $capacity, $server);
     }
 }

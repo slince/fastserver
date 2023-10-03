@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Worker;
 
-use Psr\Log\LoggerInterface;
-use React\EventLoop\LoopInterface;
 use Symfony\Component\Process\Process;
 use Waveman\Server\Channel\ChannelInterface;
 use Waveman\Server\Command\CloseCommand;
@@ -40,9 +38,9 @@ class ProcWorker extends Worker
 
     private bool $inChildProcess = false;
 
-    public function __construct(int $id, ServerInterface $server, LoopInterface $loop, LoggerInterface $logger)
+    public function __construct(int $id, ServerInterface $server)
     {
-        parent::__construct($id, $server, $loop, $logger);
+        parent::__construct($id, $server);
         $this->commands = $this->createCommandFactory();
     }
 
