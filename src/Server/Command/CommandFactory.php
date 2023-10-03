@@ -47,4 +47,14 @@ final class CommandFactory implements CommandFactoryInterface
             WorkerCloseCommand::class => new WorkerCloseCommand()
         };
     }
+
+    /**
+     * Create one new command factory.
+     * 
+     * @return CommandFactory
+     */
+    public static function create(): CommandFactory
+    {
+        return new CommandFactory();
+    }
 }

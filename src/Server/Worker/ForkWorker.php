@@ -113,7 +113,7 @@ final class ForkWorker extends Worker
             ]);
         } else {
             $this->logger->warning('Signal channel is not supported.');
-            $channel = new UnixSocketChannel($this->sockets, $this->loop, $this->inChildProcess, self::createCommandFactory());
+            $channel = new UnixSocketChannel($this->sockets, $this->loop, $this->inChildProcess, CommandFactory::create());
         }
         return $channel;
     }
@@ -124,6 +124,8 @@ final class ForkWorker extends Worker
             case 'CLOSE':
                 $this->handleClose($command->isGraceful());
                 break;
+            case 'RELOAD':
+
         }
     }
 
@@ -136,11 +138,6 @@ final class ForkWorker extends Worker
             return;
         }
         exit(0);
-    }
-
-    private static function createCommandFactory(): CommandFactory
-    {
-        return new CommandFactory();
     }
 
     private function requireInChildProcess(): void

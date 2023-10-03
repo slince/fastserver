@@ -143,6 +143,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
         }
         $this->start($worker->getId());
         $worker->close(true);
+        $this->remove($worker);
     }
 
     /**
@@ -157,6 +158,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
         // Close old workers.
         foreach ($former as $worker) {
             $worker->close(true);
+            $this->remove($worker);
         }
     }
 

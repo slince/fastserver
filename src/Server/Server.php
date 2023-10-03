@@ -31,7 +31,7 @@ use Waveman\Server\Worker\WorkerPool;
 
 final class Server extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['start', 'end', 'connection', 'message', 'close'];
+    private const EVENT_NAMES = ['start', 'connection', 'close', 'command'];
 
     /**
      * @var array

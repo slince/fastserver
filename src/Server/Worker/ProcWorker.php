@@ -15,17 +15,9 @@ namespace Waveman\Server\Worker;
 
 use Symfony\Component\Process\Process;
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Command\CloseCommand;
-use Waveman\Server\Command\CommandFactory;
-use Waveman\Server\ServerInterface;
 
 class ProcWorker extends Worker
 {
-    /**
-     * @var CommandFactory
-     */
-    private CommandFactory $commands;
-
     /**
      * @var Process
      */
@@ -35,14 +27,6 @@ class ProcWorker extends Worker
      * @var ChannelInterface
      */
     private ChannelInterface $control;
-
-    private bool $inChildProcess = false;
-
-    public function __construct(int $id, ServerInterface $server)
-    {
-        parent::__construct($id, $server);
-        $this->commands = $this->createCommandFactory();
-    }
 
     /**
      * {@inheritdoc}
@@ -55,16 +39,6 @@ class ProcWorker extends Worker
         $entryFile = __DIR__ . '/Internal/worker.php';
         $this->process = Process::fromShellCommandline(sprintf("php %s --config %s", $entryFile, json_encode($config)));
         $this->process->start();
-    }
-
-    /**
-     * Create command factory for the server.
-     *
-     * @return CommandFactory
-     */
-    private function createCommandFactory(): CommandFactory
-    {
-        return new CommandFactory([CloseCommand::class]);
     }
 
     /**
