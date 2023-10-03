@@ -42,7 +42,24 @@ abstract class Worker
      */
     protected LoggerInterface $logger;
 
+    /**
+     * @var ConnectionPool
+     */
     protected ConnectionPool $connections;
+
+    /**
+     * Created time.
+     *
+     * @var \DateTimeInterface
+     */
+    protected \DateTimeInterface $createdAt;
+
+    /**
+     * Update time.
+     *
+     * @var \DateTimeInterface
+     */
+    protected \DateTimeInterface $updatedAt;
 
     public function __construct(int $id, Server $server)
     {
@@ -51,6 +68,7 @@ abstract class Worker
         $this->connections = $server->getConnections();
         $this->loop = $server->getLoop();
         $this->logger = $server->getLogger();
+        $this->createdAt = $this->updatedAt = new \DateTime();
     }
 
     /**
@@ -111,6 +129,46 @@ abstract class Worker
     public function handleError(\Exception $error): void
     {
         $this->server->emit('error', [$error]);
+    }
+
+    /**
+     * Heartbeat.
+     * 
+     * @return void
+     */
+    public function heartbeat(): void
+    {
+        $this->updatedAt = new \DateTime();
+    }
+
+    /**
+     * Gets create time.
+     *
+     * @return \DateTimeInterface
+     */
+    public function getCreatedAt(): \DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * Gets the update time.
+     *
+     * @return \DateTimeInterface
+     */
+    public function getUpdatedAt(): \DateTimeInterface
+    {
+        return $this->updatedAt;
+    }
+
+    /**
+     * Alive seconds.
+     *
+     * @return int
+     */
+    public function getAliveSeconds(): int
+    {
+        return time() - $this->createdAt->getTimestamp();
     }
 
     /**

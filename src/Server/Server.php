@@ -56,7 +56,7 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * @var WorkerPool
      */
-    private WorkerPool $pool;
+    private WorkerPool $workers;
 
     /**
      * @var ChannelInterface
@@ -172,7 +172,7 @@ final class Server extends EventEmitter implements ServerInterface
      */
     public function stop(bool $graceful = false): void
     {
-        $this->pool->close($graceful);
+        $this->workers->close($graceful);
         $this->emit('stop');
         $this->loop->stop();
     }
@@ -185,7 +185,7 @@ final class Server extends EventEmitter implements ServerInterface
         $this->boot();
         $this->emit('start', [$this]);
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
-        $this->pool->run();
+        $this->workers->run();
         $this->loop->run();
     }
 
@@ -230,11 +230,14 @@ final class Server extends EventEmitter implements ServerInterface
                     return;
                 }
                 $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $pid));
-                $this->pool->removeByPid($pid);
+                $this->workers->removeByPid($pid);
                 break;
             case 'RELOAD':
                 $this->logger->debug('Reload workers.');
-                $this->pool->restartAll();
+                $this->workers->restartAll();
+                break;
+            case 'PING':
+                $this->workers->heartbeat($command->getWorkerId());
                 break;
         }
     }
@@ -242,7 +245,7 @@ final class Server extends EventEmitter implements ServerInterface
     private function createWorkers(): void
     {
         $this->logger->debug(sprintf("Create %d workers.", $this->options['max_workers']));
-        $this->pool = WorkerPool::createPool($this->options['max_workers'], $this);
+        $this->workers = WorkerPool::createPool($this->options['max_workers'], $this);
     }
 
     private function activatePlugins(): void

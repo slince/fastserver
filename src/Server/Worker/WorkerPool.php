@@ -129,6 +129,15 @@ final class WorkerPool implements \IteratorAggregate, \Countable
         $this->remove($worker);
     }
 
+    private function ensure(int $pid): Worker
+    {
+        $worker = $this->get($pid);
+        if (null === $worker) {
+            throw new InvalidArgumentException(sprintf('Cannot find worker with pid %d', $pid));
+        }
+        return $worker;
+    }
+
     /**
      * Restart one worker by its pid.
      *
@@ -137,13 +146,22 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function restart(int $pid): void
     {
-        $worker = $this->get($pid);
-        if (null === $worker) {
-            throw new InvalidArgumentException(sprintf('Cannot find worker with pid %d', $pid));
-        }
+        $worker = $this->ensure($pid);
         $this->start($worker->getId());
         $worker->close(true);
         $this->remove($worker);
+    }
+
+    /**
+     * Updates the worker updated time by its pid.
+     *
+     * @param int $pid
+     * @return void
+     */
+    public function heartbeat(int $pid): void
+    {
+        $worker = $this->ensure($pid);
+        $worker->heartbeat();
     }
 
     /**
