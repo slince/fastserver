@@ -31,7 +31,7 @@ use Waveman\Server\Worker\WorkerPool;
 
 final class Server extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['start', 'connection', 'close', 'command'];
+    private const EVENT_NAMES = ['start', 'connection', 'close', 'error', 'command'];
 
     /**
      * @var array
@@ -151,8 +151,9 @@ final class Server extends EventEmitter implements ServerInterface
                 'max_workers' => 1,
                 'plugins' => [],
             ])
-            ->setAllowedValues('plugins', [PluginInterface::class . '[]'])
+            ->setAllowedTypes('plugins', [PluginInterface::class . '[]'])
             ->setRequired(['address'])
+            ->setIgnoreUndefined()
         ;
     }
 
@@ -217,7 +218,14 @@ final class Server extends EventEmitter implements ServerInterface
         }
     }
 
-    private function handleCommand(CommandInterface $command): void
+    /**
+     * Handle commands.
+     * 
+     * {@internal}
+     * @param CommandInterface $command
+     * @return void
+     */
+    public function handleCommand(CommandInterface $command): void
     {
         $this->emit('command', [$command]);
         switch ($command->getCommandId()) {

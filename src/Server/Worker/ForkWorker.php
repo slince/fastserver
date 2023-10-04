@@ -35,8 +35,6 @@ final class ForkWorker extends Worker
      */
     private ChannelInterface $control;
 
-    private array $sockets;
-
     private ?SignalChannel $signals = null;
 
     /**
@@ -44,6 +42,8 @@ final class ForkWorker extends Worker
      * @var bool
      */
     private bool $inChildProcess = false;
+
+    private array $sockets;
 
     /**
      * {@inheritdoc}

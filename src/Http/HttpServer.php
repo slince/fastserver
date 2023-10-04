@@ -79,11 +79,14 @@ final class HttpServer extends EventEmitter implements ServerInterface
      */
     private function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults([
-            'keepalive' => true,
-            'keepalive_timeout' => 120,
-            'keepalive_requests' => 1000
-        ]);
+        $resolver
+            ->setDefaults([
+                'keepalive' => true,
+                'keepalive_timeout' => 120,
+                'keepalive_requests' => 1000
+            ])
+            ->setIgnoreUndefined()
+        ;
     }
 
     /**
