@@ -25,6 +25,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Http\Exception\InvalidHeaderException;
 use Waveman\Http\Parser\HttpEmitter;
 use Waveman\Http\Parser\HttpParser;
+use Waveman\Server\ConnectionPool;
 use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\Parser\ParserFactory;
 use Waveman\Server\Parser\StreamingReader;
@@ -38,24 +39,37 @@ final class HttpServer extends EventEmitter implements ServerInterface
     /**
      * @var StreamingReader
      */
-    protected StreamingReader $streamReader;
+    private StreamingReader $streamReader;
 
     /**
      * @var RequestHandlerInterface
      */
-    protected RequestHandlerInterface $requestHandler;
+    private RequestHandlerInterface $requestHandler;
 
-    protected LoggerInterface $logger;
+    private LoggerInterface $logger;
 
-    protected array $options;
+    private ServerInterface $server;
 
-    protected ServerInterface $server;
+    private ConnectionPool $connections;
+
+    private array $options;
 
     public function __construct(array $options, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
         $this->logger = $logger ?? new NullLogger();
         $this->server = new Server($options, $this->logger, $loop);
+        $this->connections = $this->server->getConnections();
+
         $this->configure($options);
+
+        $this->server->on('connection', function (ConnectionInterface $connection) {
+            $this->emit('connection', [$connection]);
+        });
+        $this->server->on('error', function (\Exception $error) {
+            $this->emit('error', [$error]);
+        });
+
+        $this->boot();
     }
 
     /**
@@ -100,10 +114,8 @@ final class HttpServer extends EventEmitter implements ServerInterface
         $this->requestHandler = $requestHandler;
     }
 
-    protected function boot()
+    protected function boot(): void
     {
-        $this->connections = new ConnectionPool();
-
         $this->streamReader = $this->createStreamReader();
         $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
             $this->connections->getMetadata($connection)->incrRequest();
@@ -118,6 +130,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
                 $connection->end();
             }
         });
+        
         $this->streamReader->on('error', function(\Exception $exception, $writer, ConnectionInterface $connection){
             $response = new Response($exception->getCode() ?: 400, [], $exception->getMessage());
             $writer->write($response);
@@ -125,10 +138,6 @@ final class HttpServer extends EventEmitter implements ServerInterface
         });
 
         $this->server->on('connection', function(ConnectionInterface $connection){
-            $this->connections->add($connection);
-            $connection->on('close', function() use($connection){
-                $this->connections->remove($connection);
-            });
             $this->streamReader->listen($connection);
         });
 
