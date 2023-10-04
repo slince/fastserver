@@ -34,6 +34,34 @@ final class Server extends EventEmitter implements ServerInterface
     private const EVENT_NAMES = ['start', 'connection', 'close', 'error', 'command'];
 
     /**
+     * process status,running
+     * @var string
+     */
+    const STATUS_READY = 'ready';
+
+    /**
+     * process status,running
+     * @var string
+     */
+    const STATUS_STARTED = 'started';
+
+    /**
+     * closing.
+     */
+    const STATUS_CLOSING = 'closing';
+
+    /**
+     * process status,terminated
+     * @var string
+     */
+    const STATUS_TERMINATED = 'terminated';
+
+    /**
+     * @var string
+     */
+    protected string $status = self::STATUS_READY;
+
+    /**
      * @var array
      */
     private array $options;
@@ -187,6 +215,7 @@ final class Server extends EventEmitter implements ServerInterface
         $this->emit('start', [$this]);
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
         $this->workers->run();
+        $this->signals->listen([$this, 'handleCommand']);
         $this->loop->run();
     }
 
@@ -211,7 +240,6 @@ final class Server extends EventEmitter implements ServerInterface
                 \SIGQUIT => new CloseCommand(true),
                 \SIGCHLD => new WorkerCloseCommand()
             ]);
-            $this->signals->listen([$this, 'handleCommand']);
             $this->logger->debug("Register signals successfully.");
         } else {
             $this->logger->warning("Cannot register signals.");
@@ -228,6 +256,7 @@ final class Server extends EventEmitter implements ServerInterface
     public function handleCommand(CommandInterface $command): void
     {
         $this->emit('command', [$command]);
+        $this->logger->debug(sprintf('Received command %s', get_class($command)), ['pid' => getmypid()]);
         switch ($command->getCommandId()) {
             case 'CLOSE':
                 $this->stop($command->isGraceful());

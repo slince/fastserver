@@ -161,7 +161,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
      */
     public function closeExpiredConnections(): void
     {
-        $this->logger->info(sprintf('Checking expired connections(%d).', count($this->connections)));
+        $this->logger->debug(sprintf('Checking expired connections(%d).', count($this->connections)));
         /* @var ConnectionInterface $connection */
         foreach ($this->connections as $connection) {
             $metadata = $this->connections->getMetadata($connection);
