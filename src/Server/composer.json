@@ -1,16 +1,20 @@
 {
     "name": "waveman/server",
     "autoload": {
-        "Wave\\Server\\": "./"
+        "psr-4": {
+            "Waveman\\Server\\": "./"
+        }
     },
     "require": {
         "php": ">=8.2",
-        "ext-pcntl": "*",
-        "ext-posix": "*",
         "react/socket": "^1.14",
         "symfony/process": "^6.3",
         "slince/process": "*@dev",
         "psr/log": "^3.0",
         "symfony/options-resolver": "^6.3"
+    },
+    "suggest": {
+        "ext-pcntl": "*",
+        "ext-posix": "*"
     }
 }

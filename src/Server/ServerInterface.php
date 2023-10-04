@@ -21,7 +21,7 @@ interface ServerInterface
      * @param string $event
      * @param callable $listener
      */
-    public function on(string $event, callable $listener): void;
+    public function on($event, callable $listener): void;
 
     /**
      * Start the server.

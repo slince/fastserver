@@ -114,7 +114,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
         $this->requestHandler = $requestHandler;
     }
 
-    protected function boot(): void
+    private function boot(): void
     {
         $this->streamReader = $this->createStreamReader();
         $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
@@ -130,7 +130,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
                 $connection->end();
             }
         });
-        
+
         $this->streamReader->on('error', function(\Exception $exception, $writer, ConnectionInterface $connection){
             $response = new Response($exception->getCode() ?: 400, [], $exception->getMessage());
             $writer->write($response);
@@ -147,7 +147,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
         }
     }
 
-    protected static function createStreamReader(): StreamingReader
+    private static function createStreamReader(): StreamingReader
     {
         $parserFactory = new ParserFactory(HttpParser::class, HttpEmitter::class);
         return new StreamingReader($parserFactory);
@@ -175,7 +175,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function on(string $event, callable $listener): void
+    public function on($event, callable $listener): void
     {
         if (!in_array($event, self::EVENT_NAMES)) {
             throw new InvalidArgumentException(sprintf('The event "%s" is not supported.', $event));

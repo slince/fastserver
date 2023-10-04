@@ -159,7 +159,7 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function on(string $event, callable $listener): void
+    public function on($event, callable $listener): void
     {
         if (!in_array($event, self::EVENT_NAMES)) {
             throw new InvalidArgumentException(sprintf('The event "%s" is not supported.', $event));

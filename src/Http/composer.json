@@ -1,7 +1,9 @@
 {
     "name": "waveman/http",
     "autoload": {
-        "Wave\\Http\\": "./"
+        "psr-4": {
+            "Waveman\\Http\\": "./"
+        }
     },
     "require": {
         "php": ">=8.2",
