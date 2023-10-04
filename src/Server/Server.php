@@ -224,6 +224,15 @@ final class Server extends EventEmitter implements ServerInterface
             case 'CLOSE':
                 $this->stop($command->isGraceful());
                 break;
+            case 'RELOAD':
+                $this->logger->debug('Reload workers.');
+                $this->workers->restartAll();
+                break;
+            // Command from workers.
+            case 'PING':
+                $this->logger->debug(sprintf('Received ping from worker %d.', $command->getWorkerId()));
+                $this->workers->heartbeat($command->getWorkerId());
+                break;
             case 'WORKER_CLOSE':
                 // Only for that enabled sigchid
                 $pid = \pcntl_wait($status);
@@ -232,14 +241,6 @@ final class Server extends EventEmitter implements ServerInterface
                 }
                 $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $pid));
                 $this->workers->removeByPid($pid);
-                break;
-            case 'RELOAD':
-                $this->logger->debug('Reload workers.');
-                $this->workers->restartAll();
-                break;
-            case 'PING':
-                $this->logger->debug(sprintf('Received ping from worker %d.', $command->getWorkerId()));
-                $this->workers->heartbeat($command->getWorkerId());
                 break;
         }
     }

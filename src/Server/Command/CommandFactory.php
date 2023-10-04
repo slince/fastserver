@@ -12,7 +12,11 @@ final class CommandFactory implements CommandFactoryInterface
     private array $commands = [
         CloseCommand::class => 0,
         ErrorCommand::class => 1,
-        WorkerCloseCommand::class => 2
+        WorkerCloseCommand::class => 2,
+        ControlCommand::class => 3,
+        HeartbeatCommand::class => 4,
+        PingCommand::class => 5,
+        ReloadCommand::class => 6
     ];
 
     /**
@@ -44,7 +48,8 @@ final class CommandFactory implements CommandFactoryInterface
         return match($class){
             CloseCommand::class => new CloseCommand($message->getPayload()['graceful']),
             ErrorCommand::class => new ErrorCommand($message->getPayload()),
-            WorkerCloseCommand::class => new WorkerCloseCommand()
+            WorkerCloseCommand::class => new WorkerCloseCommand(),
+
         };
     }
 

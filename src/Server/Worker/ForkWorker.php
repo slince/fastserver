@@ -21,6 +21,8 @@ use Waveman\Server\Channel\SignalChannel;
 use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\CommandFactory;
+use Waveman\Server\Command\HeartbeatCommand;
+use Waveman\Server\Command\PingCommand;
 use Waveman\Server\Exception\RuntimeException;
 
 final class ForkWorker extends Worker
@@ -77,7 +79,12 @@ final class ForkWorker extends Worker
      */
     public function alive(): void
     {
-
+        $command = new HeartbeatCommand();
+        if (null !== $this->signals) {
+            $this->signals->send($command);
+        } else {
+            $this->control->send($command);
+        }
     }
 
 
@@ -115,9 +122,10 @@ final class ForkWorker extends Worker
             case 'CLOSE':
                 $this->handleClose($command->isGraceful());
                 break;
-            case 'RELOAD':
-                
+            case 'HEARTBEAT':
+                $this->control->send(new PingCommand($this->getPid()));
                 break;
+
         }
     }
 
