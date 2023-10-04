@@ -21,6 +21,8 @@ use Waveman\Server\Channel\SignalChannel;
 use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\CommandFactory;
+use Waveman\Server\Command\ConnectionsCommand;
+use Waveman\Server\Command\ControlCommand;
 use Waveman\Server\Command\HeartbeatCommand;
 use Waveman\Server\Command\PingCommand;
 use Waveman\Server\Exception\RuntimeException;
@@ -125,7 +127,14 @@ final class ForkWorker extends Worker
             case 'HEARTBEAT':
                 $this->control->send(new PingCommand($this->getPid()));
                 break;
+            case 'CONTROL':
+                if (($command->getFlags() & ControlCommand::CONNECTIONS) === ControlCommand::CONNECTIONS) {
+                    $this->control->send(new ConnectionsCommand($this->getPid(), $this->connections));
+                }
+                if (($command->getFlags() & ControlCommand::STATUS) === ControlCommand::STATUS) {
 
+                }
+                break;
         }
     }
 

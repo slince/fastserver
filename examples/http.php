@@ -6,10 +6,7 @@ use Waveman\Http\HttpServer;
 
 include __DIR__ . '/../vendor/autoload.php';
 
-
-$server = new HttpServer();
-
-$server->configure([
+$server = new HttpServer([
     'address' => '127.0.0.1:2345',
     'max_workers' => 1,
     'reuseport' => true,
