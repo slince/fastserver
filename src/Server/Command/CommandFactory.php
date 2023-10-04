@@ -15,8 +15,10 @@ final class CommandFactory implements CommandFactoryInterface
         WorkerCloseCommand::class => 2,
         ControlCommand::class => 3,
         HeartbeatCommand::class => 4,
-        PingCommand::class => 5,
-        ReloadCommand::class => 6
+        ReloadCommand::class => 5,
+        WorkerPingCommand::class => 6,
+        WorkerConnectionsCommand::class => 7,
+        WorkerStatusCommand::class => 8
     ];
 
     /**
@@ -31,6 +33,10 @@ final class CommandFactory implements CommandFactoryInterface
         $payload = match ($class) {
              CloseCommand::class => ['graceful' => $command->isGraceful()],
              ErrorCommand::class => ['message' => $command->getMessage()],
+             ControlCommand::class => ['flags' => $command->getFlags()],
+             WorkerPingCommand::class => ['worker_id' => $command->getWorkerId()],
+             WorkerConnectionsCommand::class => ['worker_id' => $command->getWorkerId(), 'connections' => $command->getConnectionDescriptors()],
+             WorkerStatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getWorkerStatus()],
              default => null
         };
         return new Message($this->commands[$class],$payload ? Message::PAYLOAD_JSON : Message::PAYLOAD_NONE, $payload);

@@ -21,10 +21,10 @@ use Waveman\Server\Channel\SignalChannel;
 use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\CommandFactory;
-use Waveman\Server\Command\ConnectionsCommand;
 use Waveman\Server\Command\ControlCommand;
 use Waveman\Server\Command\HeartbeatCommand;
-use Waveman\Server\Command\PingCommand;
+use Waveman\Server\Command\WorkerConnectionsCommand;
+use Waveman\Server\Command\WorkerPingCommand;
 use Waveman\Server\Command\WorkerStatusCommand;
 use Waveman\Server\Exception\RuntimeException;
 
@@ -126,11 +126,11 @@ final class ForkWorker extends Worker
                 $this->handleClose($command->isGraceful());
                 break;
             case 'HEARTBEAT':
-                $this->control->send(new PingCommand($this->getPid()));
+                $this->control->send(new WorkerPingCommand($this->getPid()));
                 break;
             case 'CONTROL':
                 if (($command->getFlags() & ControlCommand::CONNECTIONS) === ControlCommand::CONNECTIONS) {
-                    $this->control->send(new ConnectionsCommand($this->getPid(), $this->connections));
+                    $this->control->send(new WorkerConnectionsCommand($this->getPid(), $this->connections));
                 }
                 if (($command->getFlags() & ControlCommand::STATUS) === ControlCommand::STATUS) {
                     $this->control->send(new WorkerStatusCommand($this->getPid(), $this->createStatus()));
