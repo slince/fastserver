@@ -50,6 +50,15 @@ final class ConnectionDescriptor implements \JsonSerializable
         $this->aliveSeconds = $aliveSeconds;
     }
 
+    public static function fromConnectionPool(ConnectionPool $connections): array
+    {
+        $descriptors = [];
+        foreach ($connections as $metadata) {
+            $descriptors[] = self::fromConnectionMetadata($metadata);
+        }
+        return $descriptors;
+    }
+
     public static function fromConnectionMetadata(ConnectionMetadata $metadata): ConnectionDescriptor
     {
         $connection = $metadata->getConnection();

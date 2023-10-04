@@ -2,26 +2,22 @@
 
 namespace Waveman\Server\Command;
 
-use Waveman\Server\ConnectionDescriptor;
-use Waveman\Server\ConnectionPool;
-
 final class WorkerConnectionsCommand extends WorkerCommand
 {
-    private ConnectionPool $connections;
+    private array $connections;
 
-    public function __construct(int $workerId, ConnectionPool $connections)
+    public function __construct(int $workerId, array $connections)
     {
         parent::__construct($workerId);
         $this->connections = $connections;
     }
 
-    public function getConnectionDescriptors(): array
+    /**
+     * @return array
+     */
+    public function getConnections(): array
     {
-        $descriptors = [];
-        foreach ($this->connections as $metadata) {
-            $descriptors[] = ConnectionDescriptor::fromConnectionMetadata($metadata);
-        }
-        return $descriptors;
+        return $this->connections;
     }
 
     public function getCommandId(): string

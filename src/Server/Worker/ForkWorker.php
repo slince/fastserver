@@ -26,6 +26,7 @@ use Waveman\Server\Command\HeartbeatCommand;
 use Waveman\Server\Command\WorkerConnectionsCommand;
 use Waveman\Server\Command\WorkerPingCommand;
 use Waveman\Server\Command\WorkerStatusCommand;
+use Waveman\Server\ConnectionDescriptor;
 use Waveman\Server\Exception\RuntimeException;
 
 final class ForkWorker extends Worker
@@ -130,7 +131,7 @@ final class ForkWorker extends Worker
                 break;
             case 'CONTROL':
                 if (($command->getFlags() & ControlCommand::CONNECTIONS) === ControlCommand::CONNECTIONS) {
-                    $this->control->send(new WorkerConnectionsCommand($this->getPid(), $this->connections));
+                    $this->control->send(new WorkerConnectionsCommand($this->getPid(), ConnectionDescriptor::fromConnectionPool($this->connections)));
                 }
                 if (($command->getFlags() & ControlCommand::STATUS) === ControlCommand::STATUS) {
                     $this->control->send(new WorkerStatusCommand($this->getPid(), $this->createStatus()));

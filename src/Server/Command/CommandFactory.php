@@ -7,6 +7,7 @@ use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\Message;
 use Waveman\Server\ConnectionDescriptor;
 use Waveman\Server\Exception\InvalidArgumentException;
+use Waveman\Server\WorkerStatus;
 
 final class CommandFactory implements CommandFactoryInterface
 {
@@ -36,7 +37,7 @@ final class CommandFactory implements CommandFactoryInterface
              ErrorCommand::class => ['message' => $command->getMessage()],
              ControlCommand::class => ['flags' => $command->getFlags()],
              WorkerPingCommand::class => ['worker_id' => $command->getWorkerId()],
-             WorkerConnectionsCommand::class => ['worker_id' => $command->getWorkerId(), 'connections' => $command->getConnectionDescriptors()],
+             WorkerConnectionsCommand::class => ['worker_id' => $command->getWorkerId(), 'connections' => $command->getConnections()],
              WorkerStatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getWorkerStatus()],
              default => null
         };
@@ -57,7 +58,8 @@ final class CommandFactory implements CommandFactoryInterface
             CloseCommand::class => new CloseCommand($message->getPayload()['graceful']),
             ErrorCommand::class => new ErrorCommand($message->getPayload()),
             WorkerCloseCommand::class => new WorkerCloseCommand(),
-            WorkerConnectionsCommand::class => new WorkerConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(... $item), $payload['connections'])),
+            WorkerConnectionsCommand::class => new WorkerConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(...$item), $payload['connections'])),
+            WorkerStatusCommand::class => new WorkerStatusCommand($payload['worker_id'], new WorkerStatus(...$payload['status'])),
             default => new $class()
         };
     }
