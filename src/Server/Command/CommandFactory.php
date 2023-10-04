@@ -5,6 +5,7 @@ namespace Waveman\Server\Command;
 use Waveman\Server\Channel\CommandFactoryInterface;
 use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\Message;
+use Waveman\Server\ConnectionDescriptor;
 use Waveman\Server\Exception\InvalidArgumentException;
 
 final class CommandFactory implements CommandFactoryInterface
@@ -51,11 +52,13 @@ final class CommandFactory implements CommandFactoryInterface
         if (false === $class) {
             throw new InvalidArgumentException(sprintf('The command type %d is not supported', $message->getType()));
         }
+        $payload = $message->getPayload();
         return match($class){
             CloseCommand::class => new CloseCommand($message->getPayload()['graceful']),
             ErrorCommand::class => new ErrorCommand($message->getPayload()),
             WorkerCloseCommand::class => new WorkerCloseCommand(),
-
+            WorkerConnectionsCommand::class => new WorkerConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(... $item), $payload['connections'])),
+            default => new $class()
         };
     }
 

@@ -2,7 +2,7 @@
 
 namespace Waveman\Server;
 
-final class ConnectionDescriptor
+final class ConnectionDescriptor implements \JsonSerializable
 {
     private string $localAddress;
     private string $remoteAddress;
@@ -58,5 +58,17 @@ final class ConnectionDescriptor
             $connection->getRemoteAddress(),
             $metadata->getAliveSeconds(),
         );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'localAddress' => $this->localAddress,
+            'remoteAddress' => $this->remoteAddress,
+            'aliveSeconds' => $this->aliveSeconds
+        ];
     }
 }

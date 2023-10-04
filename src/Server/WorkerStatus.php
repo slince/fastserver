@@ -2,7 +2,7 @@
 
 namespace Waveman\Server;
 
-final class WorkerStatus
+final class WorkerStatus implements \JsonSerializable
 {
     private int $pid;
     private string $listening;
@@ -41,5 +41,18 @@ final class WorkerStatus
     public function getConnections(): int
     {
         return $this->connections;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'pid' => $this->pid,
+            'listening' => $this->listening,
+            'memoryUsage' => $this->memoryUsage,
+            'connections' => $this->connections
+        ];
     }
 }
