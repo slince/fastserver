@@ -19,6 +19,7 @@ use React\Socket\ConnectionInterface;
 use Waveman\Server\ConnectionPool;
 use Waveman\Server\Server;
 use Waveman\Server\ServerInterface;
+use Waveman\Server\WorkerStatus;
 
 abstract class Worker
 {
@@ -132,13 +133,6 @@ abstract class Worker
     }
 
     /**
-     * Checks the worker is alive.
-     *
-     * @return void
-     */
-    abstract public function alive(): void;
-
-    /**
      * Heartbeat.
      *
      * @return void
@@ -146,6 +140,21 @@ abstract class Worker
     public function heartbeat(): void
     {
         $this->updatedAt = new \DateTime();
+    }
+
+    /**
+     * Capture the worker status.
+     * 
+     * @return WorkerStatus
+     */
+    protected function createStatus(): WorkerStatus
+    {
+        return new WorkerStatus(
+            $this->getPid(),
+            $this->server->getOption('address'),
+            memory_get_usage(false),
+            $this->connections->count()
+        );
     }
 
     /**
@@ -187,4 +196,11 @@ abstract class Worker
      * Close the worker.
      */
     abstract public function close(bool $graceful = false): void;
+
+    /**
+     * Checks the worker is alive.
+     *
+     * @return void
+     */
+    abstract public function alive(): void;
 }
