@@ -16,17 +16,11 @@ namespace Waveman\Server\Worker;
 use React\EventLoop\Factory;
 use Slince\Process\Process;
 use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\CommandInterface;
 use Waveman\Server\Channel\SignalChannel;
 use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\CommandFactory;
-use Waveman\Server\Command\ControlCommand;
 use Waveman\Server\Command\HeartbeatCommand;
-use Waveman\Server\Command\WorkerConnectionsCommand;
-use Waveman\Server\Command\WorkerPingCommand;
-use Waveman\Server\Command\WorkerStatusCommand;
-use Waveman\Server\ConnectionDescriptor;
 use Waveman\Server\Exception\RuntimeException;
 
 final class ForkWorker extends Worker
@@ -120,27 +114,10 @@ final class ForkWorker extends Worker
         $this->control->listen([$this, 'handleCommand']);
     }
 
-    private function handleCommand(CommandInterface $command): void
-    {
-        switch ($command->getCommandId()) {
-            case 'CLOSE':
-                $this->handleClose($command->isGraceful());
-                break;
-            case 'HEARTBEAT':
-                $this->control->send(new WorkerPingCommand($this->getPid()));
-                break;
-            case 'CONTROL':
-                if (($command->getFlags() & ControlCommand::CONNECTIONS) === ControlCommand::CONNECTIONS) {
-                    $this->control->send(new WorkerConnectionsCommand($this->getPid(), ConnectionDescriptor::fromConnectionPool($this->connections)));
-                }
-                if (($command->getFlags() & ControlCommand::STATUS) === ControlCommand::STATUS) {
-                    $this->control->send(new WorkerStatusCommand($this->getPid(), $this->createStatus()));
-                }
-                break;
-        }
-    }
-
-    private function handleClose(bool $grace): void
+    /**
+     * {@inheritdoc}
+     */
+    public function handleClose(bool $grace): void
     {
         $this->requireInChildProcess();
         $this->logger->info('Receive close command.');
@@ -149,6 +126,14 @@ final class ForkWorker extends Worker
             return;
         }
         exit(0);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getControl(): ChannelInterface
+    {
+        return $this->control;
     }
 
     private function requireInChildProcess(): void

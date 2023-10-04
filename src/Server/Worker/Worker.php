@@ -16,6 +16,13 @@ namespace Waveman\Server\Worker;
 use Psr\Log\LoggerInterface;
 use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
+use Waveman\Server\Channel\ChannelInterface;
+use Waveman\Server\Channel\CommandInterface;
+use Waveman\Server\Command\ControlCommand;
+use Waveman\Server\Command\WorkerConnectionsCommand;
+use Waveman\Server\Command\WorkerPingCommand;
+use Waveman\Server\Command\WorkerStatusCommand;
+use Waveman\Server\ConnectionDescriptor;
 use Waveman\Server\ConnectionPool;
 use Waveman\Server\Server;
 use Waveman\Server\ServerInterface;
@@ -133,6 +140,14 @@ abstract class Worker
     }
 
     /**
+     * Close the worker.
+     * {@internal}
+     * @param bool $grace
+     * @return void
+     */
+    abstract public function handleClose(bool $grace): void;
+
+    /**
      * Heartbeat.
      *
      * @return void
@@ -144,7 +159,7 @@ abstract class Worker
 
     /**
      * Capture the worker status.
-     * 
+     *
      * @return WorkerStatus
      */
     protected function createStatus(): WorkerStatus
@@ -155,6 +170,29 @@ abstract class Worker
             memory_get_usage(false),
             $this->connections->count()
         );
+    }
+
+    /**
+     * {@internal}
+     */
+    public function handleCommand(CommandInterface $command): void
+    {
+        switch ($command->getCommandId()) {
+            case 'CLOSE':
+                $this->handleClose($command->isGraceful());
+                break;
+            case 'HEARTBEAT':
+                $this->getControl()->send(new WorkerPingCommand($this->getPid()));
+                break;
+            case 'CONTROL':
+                if (($command->getFlags() & ControlCommand::CONNECTIONS) === ControlCommand::CONNECTIONS) {
+                    $this->getControl()->send(new WorkerConnectionsCommand($this->getPid(), ConnectionDescriptor::fromConnectionPool($this->connections)));
+                }
+                if (($command->getFlags() & ControlCommand::STATUS) === ControlCommand::STATUS) {
+                    $this->getControl()->send(new WorkerStatusCommand($this->getPid(), $this->createStatus()));
+                }
+                break;
+        }
     }
 
     /**
@@ -187,6 +225,13 @@ abstract class Worker
         return time() - $this->createdAt->getTimestamp();
     }
 
+    /**
+     * Return the worker's control channel.
+     *
+     * @return ChannelInterface
+     */
+    abstract public function getControl(): ChannelInterface;
+    
     /**
      * Starts the worker.
      */
