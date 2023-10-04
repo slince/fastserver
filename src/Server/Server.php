@@ -225,6 +225,7 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->stop($command->isGraceful());
                 break;
             case 'WORKER_CLOSE':
+                // Only for that enabled sigchid
                 $pid = \pcntl_wait($status);
                 if (-1 === $pid) {
                     return;
@@ -237,6 +238,7 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->workers->restartAll();
                 break;
             case 'PING':
+                $this->logger->debug(sprintf('Received ping from worker %d.', $command->getWorkerId()));
                 $this->workers->heartbeat($command->getWorkerId());
                 break;
         }

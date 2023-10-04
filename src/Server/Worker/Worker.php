@@ -132,8 +132,15 @@ abstract class Worker
     }
 
     /**
+     * Checks the worker is alive.
+     *
+     * @return void
+     */
+    abstract public function alive(): void;
+
+    /**
      * Heartbeat.
-     * 
+     *
      * @return void
      */
     public function heartbeat(): void

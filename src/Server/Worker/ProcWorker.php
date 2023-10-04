@@ -48,4 +48,12 @@ class ProcWorker extends Worker
     {
         $this->process->stop();
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function alive(): void
+    {
+
+    }
 }
