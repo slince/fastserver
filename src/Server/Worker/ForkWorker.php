@@ -60,8 +60,9 @@ final class ForkWorker extends Worker
     {
         $this->sockets = UnixSocketChannel::createSocketPair();
         $this->process = new Process($this->createCallable());
-        $this->createChannel();
         $this->process->start();
+        $this->createChannel();
+        $this->logger->debug(sprintf('The worker %d is started', $this->getPid()));
     }
 
     /**
@@ -93,6 +94,8 @@ final class ForkWorker extends Worker
             // Reset loop instance.
             $this->loop = Factory::create();
             $this->createChannel();
+            $this->signals->listen([$this, 'handleCommand']);
+            $this->control->listen([$this, 'handleCommand']);
             $this->run();
             $this->loop->run();
         };
@@ -102,16 +105,14 @@ final class ForkWorker extends Worker
     {
         // try to create signal channel.
         if (Process::isSupportPosixSignal()) {
-            $this->signals = new SignalChannel(null, $this->loop, [
+            $this->signals = new SignalChannel($this->process, $this->loop, [
                 \SIGTERM => new CloseCommand(false),
                 \SIGHUP => new CloseCommand(true),
             ]);
-            $this->signals->listen([$this, 'handleCommand']);
         } else {
             $this->logger->warning('Signal channel is not supported.');
         }
         $this->control = new UnixSocketChannel($this->sockets, $this->loop, $this->inChildProcess, CommandFactory::create());
-        $this->control->listen([$this, 'handleCommand']);
     }
 
     /**

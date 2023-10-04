@@ -32,8 +32,6 @@ final class UnixSocketChannel extends StreamChannel
             fclose($sockets[0]);
             $stream = $sockets[1];
         }
-        var_dump($stream, $inChild);
-        stream_set_blocking($stream, false);
         return new DuplexResourceStream($stream, $loop);
     }
 }

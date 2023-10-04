@@ -13,7 +13,8 @@ $server = new HttpServer([
     'keepalive' => true,
     'keepalive_timeout' => 3600,
     'keepalive_requests' => 10000
-]);
+],
+);
 
 $i = 0;
 

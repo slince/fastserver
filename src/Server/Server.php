@@ -148,7 +148,7 @@ final class Server extends EventEmitter implements ServerInterface
         $resolver
             ->setDefaults([
                 'reuseport' => false,
-                'max_workers' => 1,
+                'max_workers' => 0,
                 'plugins' => [],
             ])
             ->setAllowedTypes('plugins', [PluginInterface::class . '[]'])
@@ -220,7 +220,7 @@ final class Server extends EventEmitter implements ServerInterface
 
     /**
      * Handle commands.
-     * 
+     *
      * {@internal}
      * @param CommandInterface $command
      * @return void
@@ -237,7 +237,7 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->workers->restartAll();
                 break;
             // Command from workers.
-            case 'PING':
+            case 'WORKER_PING':
                 $this->logger->debug(sprintf('Received ping from worker %d.', $command->getWorkerId()));
                 $this->workers->heartbeat($command->getWorkerId());
                 break;

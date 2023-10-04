@@ -14,8 +14,6 @@
         "php": ">=8.2",
         "react/socket": "^1.14",
         "react/http": "^1.9",
-        "ext-pcntl": "*",
-        "ext-posix": "*",
         "symfony/process": "^6.3",
         "slince/process": "*@dev",
         "psr/log": "^3.0",
@@ -23,5 +21,12 @@
         "psr/http-server-handler": "^1.0",
         "spiral/goridge": "^4.0",
         "guzzlehttp/psr7": "^2.6"
+    },
+    "require-dev": {
+        "monolog/monolog": "^3.4"
+    },
+    "suggestion": {
+        "ext-pcntl": "*",
+        "ext-posix": "*"
     }
 }
