@@ -20,8 +20,6 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use React\EventLoop\LoopInterface;
-use React\Http\HttpServer as Http;
-use React\Http\Middleware;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Http\Exception\InvalidHeaderException;
@@ -35,7 +33,7 @@ use Waveman\Server\ServerInterface;
 
 final class HttpServer extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['connection', 'request', 'close'];
+    private const EVENT_NAMES = ['connection', 'request'];
 
     /**
      * @var StreamingReader
@@ -102,7 +100,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
         $this->requestHandler = $requestHandler;
     }
 
-    protected function initialize()
+    protected function boot()
     {
         $this->connections = new ConnectionPool();
 
@@ -126,7 +124,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
             $connection->end();
         });
 
-        $this->on('connection', function(ConnectionInterface $connection){
+        $this->server->on('connection', function(ConnectionInterface $connection){
             $this->connections->add($connection);
             $connection->on('close', function() use($connection){
                 $this->connections->remove($connection);
@@ -136,11 +134,11 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
         // Add a timer for connections.
         if ($this->options['keepalive']) {
-            $this->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+            $this->server->getLoop()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
         }
     }
 
-    protected function createStreamReader(): StreamingReader
+    protected static function createStreamReader(): StreamingReader
     {
         $parserFactory = new ParserFactory(HttpParser::class, HttpEmitter::class);
         return new StreamingReader($parserFactory);
@@ -181,14 +179,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
      */
     public function serve(): void
     {
-        $http = new Http(
-            new Middleware\StreamingRequestMiddleware(),
-            new Middleware\LimitConcurrentRequestsMiddleware(100), // 100 concurrent buffering handlers
-            new Middleware\RequestBodyBufferMiddleware(2 * 1024 * 1024), // 2 MiB per request
-            new Middleware\RequestBodyParserMiddleware(),
-        );
         $this->server->serve();
-        $http->listen($this->server->getSocket());
     }
 
     /**

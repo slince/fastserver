@@ -36,8 +36,8 @@ class ProcWorker extends Worker
         $config = [
             'address' => $this->server->getOption('address')
         ];
-        $entryFile = __DIR__ . '/Internal/worker.php';
-        $this->process = Process::fromShellCommandline(sprintf("php %s --config %s", $entryFile, json_encode($config)));
+        $entry = __DIR__ . '/Internal/worker.php';
+        $this->process = Process::fromShellCommandline(sprintf("php %s --config %s", $entry, json_encode($config)));
         $this->process->start();
     }
 
@@ -54,6 +54,16 @@ class ProcWorker extends Worker
      */
     public function alive(): void
     {
+        
+    }
 
+    public function handleClose(bool $grace): void
+    {
+        $this->process->stop();
+    }
+
+    public function getControl(): ChannelInterface
+    {
+        return $this->control;
     }
 }
