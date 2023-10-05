@@ -19,7 +19,9 @@ final class ForkWorkerPool extends WorkerPool
     {
         $pid = \pcntl_wait($status, $blocking ? \WUNTRACED : \WNOHANG | \WUNTRACED);
         if ($pid > 0) {
-            return $this->ensure($pid);
+            $worker = $this->ensure($pid);
+            $worker->terminate();
+            return $worker;
         }
         return null;
     }

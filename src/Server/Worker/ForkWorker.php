@@ -85,7 +85,7 @@ final class ForkWorker extends Worker
         } else {
             $this->control->send($command);
         }
-        $this->status = self::STATUS_TERMINATED;
+        $this->status = self::STATUS_CLOSING;
     }
 
     /**

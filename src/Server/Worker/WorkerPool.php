@@ -185,7 +185,6 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         for ($i = 0; $i < $this->capacity; $i++) {
             $this->start($i);
         }
-        $this->status = self::STATUS_STARTED;
     }
 
     /**

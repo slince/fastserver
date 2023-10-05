@@ -196,6 +196,15 @@ abstract class Worker
     }
 
     /**
+     * Mark the worker terminated.
+     * @return void
+     */
+    public function terminate(): void
+    {
+        $this->status = self::STATUS_TERMINATED;
+    }
+
+    /**
      * Capture the worker status.
      *
      * @return WorkerStatus
