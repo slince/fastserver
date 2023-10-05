@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Waveman\Server\Worker;
 
 use Symfony\Component\Process\Process;
-use Waveman\Server\Channel\ChannelInterface;
 
 class ProcWorker extends Worker
 {
@@ -22,11 +21,6 @@ class ProcWorker extends Worker
      * @var Process
      */
     private Process $process;
-
-    /**
-     * @var ChannelInterface
-     */
-    private ChannelInterface $control;
 
     /**
      * {@inheritdoc}
@@ -55,15 +49,5 @@ class ProcWorker extends Worker
     public function alive(): void
     {
         
-    }
-
-    public function handleClose(bool $grace): void
-    {
-        $this->process->stop();
-    }
-
-    public function getControl(): ChannelInterface
-    {
-        return $this->control;
     }
 }

@@ -97,6 +97,11 @@ abstract class Worker
      */
     protected \DateTimeInterface $updatedAt;
 
+    /**
+     * @var ChannelInterface
+     */
+    protected ChannelInterface $control;
+
     public function __construct(int $id, Server $server)
     {
         $this->id = $id;
@@ -174,6 +179,7 @@ abstract class Worker
      */
     public function handleError(\Exception $error): void
     {
+        $this->logger->error(sprintf('Worker [%s] [%s] Accept connection error %s', $this->getId(), $this->getPid(), $error));
         $this->server->emit('error', [$error]);
     }
 
@@ -224,14 +230,14 @@ abstract class Worker
                 $this->handleClose($command->isGraceful());
                 break;
             case 'HEARTBEAT':
-                $this->getControl()->send(new WorkerPingCommand($this->getPid()));
+                $this->control->send(new WorkerPingCommand($this->getPid()));
                 break;
             case 'CONTROL':
                 if (($command->getFlags() & ControlCommand::CONNECTIONS) === ControlCommand::CONNECTIONS) {
-                    $this->getControl()->send(new WorkerConnectionsCommand($this->getPid(), ConnectionDescriptor::fromConnectionPool($this->connections)));
+                    $this->control->send(new WorkerConnectionsCommand($this->getPid(), ConnectionDescriptor::fromConnectionPool($this->connections)));
                 }
                 if (($command->getFlags() & ControlCommand::STATUS) === ControlCommand::STATUS) {
-                    $this->getControl()->send(new WorkerStatusCommand($this->getPid(), $this->createStatus()));
+                    $this->control->send(new WorkerStatusCommand($this->getPid(), $this->createStatus()));
                 }
                 break;
             default:
@@ -271,13 +277,6 @@ abstract class Worker
     }
 
     /**
-     * Return the worker's control channel.
-     *
-     * @return ChannelInterface
-     */
-    abstract public function getControl(): ChannelInterface;
-
-    /**
      * Starts the worker.
      */
     abstract public function start(): void;
@@ -297,8 +296,19 @@ abstract class Worker
     /**
      * Close the worker.
      * {@internal}
-     * @param bool $grace
+     * @param bool $graceful
      * @return void
      */
-    abstract public function handleClose(bool $grace): void;
+    public function handleClose(bool $graceful): void
+    {
+        $this->logger->info('Receive close command.');
+        if ($graceful) {
+            foreach ($this->connections as $connection => $_) {
+                $connection->end();
+            }
+            $this->loop->stop();
+            return;
+        }
+        exit(0);
+    }
 }

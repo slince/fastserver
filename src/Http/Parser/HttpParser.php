@@ -16,10 +16,10 @@ namespace Waveman\Http\Parser;
 use GuzzleHttp\Psr7\BufferStream;
 use GuzzleHttp\Psr7\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;
-use Waveman\Http\Exception\InvalidArgumentException;
-use Waveman\Http\Exception\InvalidHeaderException;
 use React\Socket\ConnectionInterface;
 use React\Stream\DuplexStreamInterface;
+use Waveman\Http\Exception\InvalidArgumentException;
+use Waveman\Http\Exception\InvalidHeaderException;
 use Waveman\Server\Parser\ParserInterface;
 use Waveman\Server\StreamAwareInterface;
 
@@ -41,7 +41,7 @@ class HttpParser implements ParserInterface, StreamAwareInterface
     /**
      * @var int
      */
-    protected int $length;
+    protected int $length = 0;
 
     /**
      * @var ServerRequestInterface|null

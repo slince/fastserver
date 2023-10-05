@@ -13,9 +13,7 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Worker;
 
-use React\EventLoop\Factory;
 use Slince\Process\Process;
-use Waveman\Server\Channel\ChannelInterface;
 use Waveman\Server\Channel\SignalChannel;
 use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
@@ -29,11 +27,6 @@ final class ForkWorker extends Worker
      * @var Process
      */
     private Process $process;
-
-    /**
-     * @var ChannelInterface
-     */
-    private ChannelInterface $control;
 
     private ?SignalChannel $signals = null;
 
@@ -110,7 +103,7 @@ final class ForkWorker extends Worker
         return function(){
             $this->inChildProcess = true;
             // Reset loop instance.
-            $this->loop = Factory::create();
+//            $this->loop = Factory::create();
             $this->createChannel();
             $this->signals->listen([$this, 'handleCommand']);
             $this->control->listen([$this, 'handleCommand']);
@@ -137,23 +130,10 @@ final class ForkWorker extends Worker
     /**
      * {@inheritdoc}
      */
-    public function handleClose(bool $grace): void
+    public function handleClose(bool $graceful): void
     {
         $this->requireInChildProcess();
-        $this->logger->info('Receive close command.');
-        if ($grace) {
-            $this->loop->stop();
-            return;
-        }
-        exit(0);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getControl(): ChannelInterface
-    {
-        return $this->control;
+        parent::handleClose($graceful);
     }
 
     private function requireInChildProcess(): void

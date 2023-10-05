@@ -160,6 +160,8 @@ final class Server extends EventEmitter implements ServerInterface
     }
 
     /**
+     * Return the loop instance of the server.
+     * 
      * @return LoopInterface
      */
     public function getLoop(): LoopInterface
