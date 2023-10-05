@@ -15,7 +15,6 @@ $logger = new Logger("waveman", [
 $server = new HttpServer([
     'address' => '127.0.0.1:2345',
     'max_workers' => 1,
-    'reuseport' => true,
     'keepalive' => true,
     'keepalive_timeout' => 3600,
     'keepalive_requests' => 10000

@@ -227,7 +227,8 @@ final class Server extends EventEmitter implements ServerInterface
 
     private function boot(): void
     {
-        if (!$this->options['reuseport'] || !Process::isSupported()) {
+        // Create socket firstly.
+        if (false === $this->options['reuseport']) {
             $this->getSocket();
         }
         $this->createChannel();

@@ -217,7 +217,7 @@ abstract class Worker
     public function handleCommand(CommandInterface $command): void
     {
         // dispatch command event.
-        $this->logger->debug(sprintf('Received command %s', get_class($command)), ['pid' => $this->getPid()]);
+        $this->logger->debug(sprintf('Received command %s', get_class($command)), ['pid' => getmypid()]);
         switch ($command->getCommandId()) {
             // for child process.
             case 'CLOSE':

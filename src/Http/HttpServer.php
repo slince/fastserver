@@ -120,6 +120,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
     private function boot(): void
     {
         $this->streamReader = $this->createStreamReader();
+        
         $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
             $this->connections->getMetadata($connection)->incrRequest();
             $this->emit('message', [$request, $connection]);
