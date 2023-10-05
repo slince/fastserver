@@ -115,6 +115,7 @@ final class ForkWorker extends Worker
             $this->signals->listen([$this, 'handleCommand']);
             $this->control->listen([$this, 'handleCommand']);
             $this->run();
+            $this->logger->debug(sprintf('The worker %d is started', $this->getPid()));
             $this->loop->run();
         };
     }

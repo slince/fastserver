@@ -178,14 +178,6 @@ abstract class Worker
     }
 
     /**
-     * Close the worker.
-     * {@internal}
-     * @param bool $grace
-     * @return void
-     */
-    abstract public function handleClose(bool $grace): void;
-
-    /**
      * Heartbeat.
      *
      * @return void
@@ -225,6 +217,7 @@ abstract class Worker
     public function handleCommand(CommandInterface $command): void
     {
         // dispatch command event.
+        $this->logger->debug(sprintf('Received command %s', get_class($command)), ['pid' => $this->getPid()]);
         switch ($command->getCommandId()) {
             // for child process.
             case 'CLOSE':
@@ -300,4 +293,12 @@ abstract class Worker
      * @return void
      */
     abstract public function alive(): void;
+
+    /**
+     * Close the worker.
+     * {@internal}
+     * @param bool $grace
+     * @return void
+     */
+    abstract public function handleClose(bool $grace): void;
 }
