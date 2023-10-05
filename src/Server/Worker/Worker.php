@@ -152,6 +152,7 @@ abstract class Worker
         $socket = $this->server->getSocket();
         $socket->on('connection', [$this, 'handleConnection']);
         $socket->on('error', [$this, 'handleError']);
+        $this->server->emit('worker');
     }
 
     /**

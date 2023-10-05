@@ -18,7 +18,6 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -34,7 +33,7 @@ use Waveman\Server\ServerInterface;
 
 final class HttpServer extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['connection', 'request'];
+    private const EVENT_NAMES = ['connection', 'request', 'error'];
 
     /**
      * @var StreamingReader
@@ -46,9 +45,9 @@ final class HttpServer extends EventEmitter implements ServerInterface
      */
     private RequestHandlerInterface $requestHandler;
 
-    private LoggerInterface $logger;
-
     private ServerInterface $server;
+
+    private LoggerInterface $logger;
 
     private ConnectionPool $connections;
 
@@ -56,19 +55,10 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
     public function __construct(array $options, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
     {
-        $this->logger = $logger ?? new NullLogger();
-        $this->server = new Server($options, $this->logger, $loop);
+        $this->server = new Server($options, $logger, $loop);
         $this->connections = $this->server->getConnections();
-
+        $this->logger = $this->server->getLogger();
         $this->configure($options);
-
-        $this->server->on('connection', function (ConnectionInterface $connection) {
-            $this->emit('connection', [$connection]);
-        });
-        $this->server->on('error', function (\Exception $error) {
-            $this->emit('error', [$error]);
-        });
-
         $this->boot();
     }
 
@@ -120,7 +110,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
     private function boot(): void
     {
         $this->streamReader = $this->createStreamReader();
-        
+
         $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
             $this->connections->getMetadata($connection)->incrRequest();
             $this->emit('message', [$request, $connection]);
@@ -142,12 +132,19 @@ final class HttpServer extends EventEmitter implements ServerInterface
         });
 
         $this->server->on('connection', function(ConnectionInterface $connection){
+            $this->emit('connection', [$connection]);
             $this->streamReader->listen($connection);
+        });
+
+        $this->server->on('error', function (\Exception $error) {
+            $this->emit('error', [$error]);
         });
 
         // Add a timer for connections.
         if ($this->options['keepalive']) {
-            $this->server->getLoop()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+            $this->server->on('worker', function (){
+                $this->server->getLoop()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+            });
         }
     }
 

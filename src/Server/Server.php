@@ -32,7 +32,7 @@ use Waveman\Server\Worker\WorkerPool;
 
 final class Server extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['start', 'connection', 'close', 'error', 'command'];
+    private const EVENT_NAMES = ['start', 'close', 'error', 'worker', 'command', 'connection'];
 
     /**
      * process status,running
@@ -161,7 +161,7 @@ final class Server extends EventEmitter implements ServerInterface
 
     /**
      * Return the loop instance of the server.
-     * 
+     *
      * @return LoopInterface
      */
     public function getLoop(): LoopInterface
