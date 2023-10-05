@@ -19,34 +19,6 @@ use Waveman\Server\Server;
 abstract class WorkerPool implements \IteratorAggregate, \Countable
 {
     /**
-     * process status,running
-     * @var string
-     */
-    const STATUS_READY = 'ready';
-
-    /**
-     * process status,running
-     * @var string
-     */
-    const STATUS_STARTED = 'started';
-
-    /**
-     * closing.
-     */
-    const STATUS_CLOSING = 'closing';
-
-    /**
-     * process status,terminated
-     * @var string
-     */
-    const STATUS_TERMINATED = 'terminated';
-
-    /**
-     * @var string
-     */
-    protected string $status = self::STATUS_READY;
-
-    /**
      * The capacity of the pool.
      *
      * @var int
@@ -142,7 +114,9 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     {
         $worker = $this->ensure($pid);
         $this->start($worker->getId());
-        $worker->close(true);
+        if ($worker->getStatus() === Worker::STATUS_STARTED) {
+            $worker->close(true);
+        }
         $this->remove($worker);
     }
 

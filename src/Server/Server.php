@@ -305,9 +305,15 @@ final class Server extends EventEmitter implements ServerInterface
     public function waitWorkers(): void
     {
         $worker = $this->workers->wait(false);
-        if (null !== $worker && $this->status !== self::STATUS_CLOSING) {
+        if (null === $worker) {
+            return;
+        }
+        if ($this->status !== self::STATUS_CLOSING) {
             $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $worker->getPid()));
             $this->workers->restart($worker->getPid());
+        } else {
+            $this->logger->debug(sprintf('Checked that the worker %d has exited', $worker->getPid()));
+            $this->workers->remove($worker);
         }
     }
 

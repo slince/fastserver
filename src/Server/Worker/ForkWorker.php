@@ -58,10 +58,14 @@ final class ForkWorker extends Worker
      */
     public function start(): void
     {
+        if ($this->status !== self::STATUS_READY) {
+            throw new RuntimeException('The worker is already running.');
+        }
         $this->sockets = UnixSocketChannel::createSocketPair();
         $this->process = new Process($this->createCallable());
         $this->process->start();
         $this->createChannel();
+        $this->status = self::STATUS_STARTED;
         $this->logger->debug(sprintf('The worker %d is started', $this->getPid()));
     }
 
@@ -70,7 +74,11 @@ final class ForkWorker extends Worker
      */
     public function close(bool $graceful = false): void
     {
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException('The worker is not running.');
+        }
         $this->control->send(new CloseCommand($graceful));
+        $this->status = self::STATUS_TERMINATED;
     }
 
     /**
@@ -78,6 +86,9 @@ final class ForkWorker extends Worker
      */
     public function alive(): void
     {
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException('The worker is not running.');
+        }
         $command = new HeartbeatCommand();
         if (null !== $this->signals) {
             $this->signals->send($command);

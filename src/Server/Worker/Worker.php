@@ -31,6 +31,34 @@ use Waveman\Server\WorkerStatus;
 abstract class Worker
 {
     /**
+     * process status,running
+     * @var string
+     */
+    const STATUS_READY = 'ready';
+
+    /**
+     * process status,running
+     * @var string
+     */
+    const STATUS_STARTED = 'started';
+
+    /**
+     * closing.
+     */
+    const STATUS_CLOSING = 'closing';
+
+    /**
+     * process status,terminated
+     * @var string
+     */
+    const STATUS_TERMINATED = 'terminated';
+
+    /**
+     * @var string
+     */
+    protected string $status = self::STATUS_READY;
+
+    /**
      * @var int
      */
     protected int $id;
@@ -77,6 +105,16 @@ abstract class Worker
         $this->loop = $server->getLoop();
         $this->logger = $server->getLogger();
         $this->createdAt = $this->updatedAt = new \DateTime();
+    }
+
+    /**
+     * Return the worker status.
+     * 
+     * @return string
+     */
+    public function getStatus(): string
+    {
+        return $this->status;
     }
 
     /**
@@ -231,7 +269,7 @@ abstract class Worker
      * @return ChannelInterface
      */
     abstract public function getControl(): ChannelInterface;
-    
+
     /**
      * Starts the worker.
      */
