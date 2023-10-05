@@ -16,11 +16,8 @@ namespace Waveman\Server\Worker;
 use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\Server;
 
-final class WorkerPool implements \IteratorAggregate, \Countable
+abstract class WorkerPool implements \IteratorAggregate, \Countable
 {
-    const WORKER_PROC = 'proc';
-    const WORKER_FORK = 'fork';
-
     /**
      * process status,running
      * @var string
@@ -49,8 +46,6 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      */
     protected string $status = self::STATUS_READY;
 
-    protected string $type;
-
     /**
      * The capacity of the pool.
      *
@@ -68,9 +63,8 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      */
     protected Server $server;
 
-    public function __construct(string $type, int $capacity, Server $server)
+    public function __construct(int $capacity, Server $server)
     {
-        $this->type = $type;
         $this->capacity = $capacity;
         $this->server = $server;
     }
@@ -129,7 +123,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
         $this->remove($worker);
     }
 
-    private function ensure(int $pid): Worker
+    protected function ensure(int $pid): Worker
     {
         $worker = $this->get($pid);
         if (null === $worker) {
@@ -188,7 +182,7 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function start(int $id): void
     {
-        $worker = $this->createWorker($id);
+        $worker = $this->create($id);
         $this->add($worker);
         $worker->start();
     }
@@ -237,13 +231,15 @@ final class WorkerPool implements \IteratorAggregate, \Countable
      * @param int $id
      * @return Worker
      */
-    public function createWorker(int $id): Worker
-    {
-        if ($this->type === self::WORKER_FORK) {
-            return new ForkWorker($id, $this->server);
-        }
-        return new ProcWorker($id, $this->server);
-    }
+    abstract public function create(int $id): Worker;
+
+    /**
+     * Wait a worker close.
+     *
+     * @param bool $blocking
+     * @return Worker|null
+     */
+    abstract public function wait(bool $blocking = true): ?Worker;
 
     /**
      * Creates a worker pool.
@@ -255,12 +251,11 @@ final class WorkerPool implements \IteratorAggregate, \Countable
     public static function createPool(int $capacity, Server $server): WorkerPool
     {
         if (function_exists('pcntl_fork')) {
-            $type = self::WORKER_FORK;
-        } elseif (function_exists('proc_open')) {
-            $type = self::WORKER_PROC;
-        } else {
-            throw new InvalidArgumentException('Cannot create worker pool.');
+            return new ForkWorkerPool($capacity, $server);
         }
-        return new WorkerPool($type, $capacity, $server);
+        if (function_exists('proc_open')) {
+            return new ProcWorkerPool($capacity, $server);
+        }
+        throw new InvalidArgumentException('Cannot create worker pool.');
     }
 }

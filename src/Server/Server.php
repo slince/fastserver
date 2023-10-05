@@ -216,20 +216,12 @@ final class Server extends EventEmitter implements ServerInterface
             throw new RuntimeException("The server is already running");
         }
         $this->boot();
-        $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
         $this->workers->run();
         // Register signal handlers after workers created.
         $this->signals->listen([$this, 'handleCommand']);
         $this->status = self::STATUS_STARTED;
+        $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
         $this->emit('start', [$this]);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function run(): void
-    {
-        $this->serve();
         $this->loop->run();
     }
 
@@ -241,6 +233,7 @@ final class Server extends EventEmitter implements ServerInterface
         $this->createChannel();
         $this->createWorkers();
         $this->activatePlugins();
+        $this->loop->addPeriodicTimer(5, [$this, 'waitWorkers']);
     }
 
     private function createChannel(): void
@@ -299,22 +292,23 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->workers->heartbeat($command->getWorkerId());
                 break;
             case 'WORKER_CLOSE':
-                if ($this->status !== self::STATUS_CLOSING) {
-                   $this->handleWorkerClose();
-                }
+                $this->waitWorkers();
                 break;
         }
     }
 
-    private function handleWorkerClose(): void
+    /**
+     * Wait one worker close.
+     * {@internal}
+     * @return void
+     */
+    public function waitWorkers(): void
     {
-        // Only for that enabled sigchid
-        $pid = \pcntl_wait($status);
-        if (-1 === $pid) {
-            return;
+        $worker = $this->workers->wait(false);
+        if (null !== $worker && $this->status !== self::STATUS_CLOSING) {
+            $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $worker->getPid()));
+            $this->workers->restart($worker->getPid());
         }
-        $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $pid));
-        $this->workers->restart($pid);
     }
 
     /**
