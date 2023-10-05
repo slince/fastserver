@@ -206,7 +206,6 @@ final class Server extends EventEmitter implements ServerInterface
     {
         $this->status = self::STATUS_CLOSING;
         $this->workers->close($graceful);
-        $this->emit('close');
     }
 
     /**
@@ -311,12 +310,15 @@ final class Server extends EventEmitter implements ServerInterface
         if (null === $worker) {
             return;
         }
-        if ($this->status !== self::STATUS_CLOSING) {
+        if ($this->status === self::STATUS_STARTED) {
             $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $worker->getPid()));
             $this->workers->restart($worker->getPid());
-        } else {
+        } else if ($this->status === self::STATUS_CLOSING) {
             $this->logger->debug(sprintf('Checked that the worker %d has exited', $worker->getPid()));
             $this->workers->remove($worker);
+            if ($this->workers->count() === 0) {
+                $this->emit('close');
+            }
         }
     }
 
