@@ -241,9 +241,9 @@ final class Server extends EventEmitter implements ServerInterface
         // if the signal is supported, create it.
         if (Process::isSupportPosixSignal()) {
             $this->signals = new SignalChannel(null, $this->loop, [
-                \SIGTERM => new CloseCommand(true),
-                \SIGHUP => new CloseCommand(true),
-                \SIGINT => new CloseCommand(true),
+                \SIGTERM => new CloseCommand(false),
+                \SIGHUP => new CloseCommand(false),
+                \SIGINT => new CloseCommand(false),
                 \SIGQUIT => new CloseCommand(true),
                 \SIGCHLD => new WorkerCloseCommand()
             ]);

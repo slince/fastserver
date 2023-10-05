@@ -64,7 +64,9 @@ final class ForkWorker extends Worker
         $this->sockets = UnixSocketChannel::createSocketPair();
         $this->process = new Process($this->createCallable());
         $this->process->start();
+        // for master process
         $this->createChannel();
+        $this->control->listen([$this, 'handleCommand']);
         $this->status = self::STATUS_STARTED;
         $this->logger->debug(sprintf('The worker %d is started', $this->getPid()));
     }
@@ -77,7 +79,12 @@ final class ForkWorker extends Worker
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
-        $this->control->send(new CloseCommand($graceful));
+        $command = new CloseCommand($graceful);
+        if (null !== $this->signals) {
+            $this->signals->send($command);
+        } else {
+            $this->control->send($command);
+        }
         $this->status = self::STATUS_TERMINATED;
     }
 
@@ -117,8 +124,8 @@ final class ForkWorker extends Worker
         // try to create signal channel.
         if (Process::isSupportPosixSignal()) {
             $this->signals = new SignalChannel($this->process, $this->loop, [
-                \SIGTERM => new CloseCommand(false),
-                \SIGHUP => new CloseCommand(true),
+                \SIGINT => new CloseCommand(false),
+                \SIGQUIT => new CloseCommand(true),
             ]);
         } else {
             $this->logger->warning('Signal channel is not supported.');

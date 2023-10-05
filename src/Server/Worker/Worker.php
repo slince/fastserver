@@ -109,7 +109,7 @@ abstract class Worker
 
     /**
      * Return the worker status.
-     * 
+     *
      * @return string
      */
     public function getStatus(): string
@@ -216,6 +216,7 @@ abstract class Worker
     public function handleCommand(CommandInterface $command): void
     {
         switch ($command->getCommandId()) {
+            // for child process.
             case 'CLOSE':
                 $this->handleClose($command->isGraceful());
                 break;
@@ -230,6 +231,8 @@ abstract class Worker
                     $this->getControl()->send(new WorkerStatusCommand($this->getPid(), $this->createStatus()));
                 }
                 break;
+            // for master process.
+            
         }
     }
 
