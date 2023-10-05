@@ -29,6 +29,13 @@ interface ServerInterface
     public function serve(): void;
 
     /**
+     * Run the server.
+     *
+     * @return void
+     */
+    public function run(): void;
+
+    /**
      * Close the server and exit.
      * @param bool $graceful
      * @return void

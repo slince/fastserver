@@ -27,6 +27,7 @@ use Waveman\Server\Channel\SignalChannel;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\WorkerCloseCommand;
 use Waveman\Server\Exception\InvalidArgumentException;
+use Waveman\Server\Exception\RuntimeException;
 use Waveman\Server\Worker\WorkerPool;
 
 final class Server extends EventEmitter implements ServerInterface
@@ -201,9 +202,9 @@ final class Server extends EventEmitter implements ServerInterface
      */
     public function stop(bool $graceful = false): void
     {
+        $this->status = self::STATUS_CLOSING;
         $this->workers->close($graceful);
         $this->emit('stop');
-        $this->loop->stop();
     }
 
     /**
@@ -211,11 +212,24 @@ final class Server extends EventEmitter implements ServerInterface
      */
     public function serve(): void
     {
+        if ($this->status !== self::STATUS_READY) {
+            throw new RuntimeException("The server is already running");
+        }
         $this->boot();
-        $this->emit('start', [$this]);
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
         $this->workers->run();
+        // Register signal handlers after workers created.
         $this->signals->listen([$this, 'handleCommand']);
+        $this->status = self::STATUS_STARTED;
+        $this->emit('start', [$this]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function run(): void
+    {
+        $this->serve();
         $this->loop->run();
     }
 
@@ -246,6 +260,20 @@ final class Server extends EventEmitter implements ServerInterface
         }
     }
 
+    private function createWorkers(): void
+    {
+        $this->logger->debug(sprintf("Create %d workers.", $this->options['max_workers']));
+        $this->workers = WorkerPool::createPool($this->options['max_workers'], $this);
+    }
+
+    private function activatePlugins(): void
+    {
+        $this->logger->debug('Activate plugins.');
+        foreach ($this->options['plugins'] as $plugin) {
+            $plugin->activate($this);
+        }
+    }
+
     /**
      * Handle commands.
      *
@@ -271,29 +299,22 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->workers->heartbeat($command->getWorkerId());
                 break;
             case 'WORKER_CLOSE':
-                // Only for that enabled sigchid
-                $pid = \pcntl_wait($status);
-                if (-1 === $pid) {
-                    return;
+                if ($this->status !== self::STATUS_CLOSING) {
+                   $this->handleWorkerClose();
                 }
-                $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $pid));
-                $this->workers->removeByPid($pid);
                 break;
         }
     }
 
-    private function createWorkers(): void
+    private function handleWorkerClose(): void
     {
-        $this->logger->debug(sprintf("Create %d workers.", $this->options['max_workers']));
-        $this->workers = WorkerPool::createPool($this->options['max_workers'], $this);
-    }
-
-    private function activatePlugins(): void
-    {
-        $this->logger->debug('Activate plugins.');
-        foreach ($this->options['plugins'] as $plugin) {
-            $plugin->activate($this);
+        // Only for that enabled sigchid
+        $pid = \pcntl_wait($status);
+        if (-1 === $pid) {
+            return;
         }
+        $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $pid));
+        $this->workers->restart($pid);
     }
 
     /**
