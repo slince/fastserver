@@ -195,8 +195,8 @@ final class HttpServer extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function stop(bool $graceful = true): void
+    public function close(bool $graceful = true): void
     {
-        $this->server->stop($graceful);
+        $this->server->close($graceful);
     }
 }

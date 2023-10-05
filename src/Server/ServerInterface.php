@@ -33,5 +33,5 @@ interface ServerInterface
      * @param bool $graceful
      * @return void
      */
-    public function stop(bool $graceful = true): void;
+    public function close(bool $graceful = true): void;
 }

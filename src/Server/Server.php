@@ -202,11 +202,11 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function stop(bool $graceful = false): void
+    public function close(bool $graceful = false): void
     {
         $this->status = self::STATUS_CLOSING;
         $this->workers->close($graceful);
-        $this->emit('stop');
+        $this->emit('close');
     }
 
     /**
@@ -244,10 +244,8 @@ final class Server extends EventEmitter implements ServerInterface
         // if the signal is supported, create it.
         if (Process::isSupportPosixSignal()) {
             $this->signals = new SignalChannel(null, $this->loop, [
-                \SIGTERM => new CloseCommand(false),
-                \SIGHUP => new CloseCommand(false),
+                \SIGTERM => new CloseCommand(true),
                 \SIGINT => new CloseCommand(false),
-                \SIGQUIT => new CloseCommand(true),
                 \SIGCHLD => new WorkerCloseCommand()
             ]);
             $this->logger->debug("Register signals successfully.");
@@ -283,7 +281,7 @@ final class Server extends EventEmitter implements ServerInterface
         $this->logger->debug(sprintf('Received command %s', get_class($command)), ['pid' => getmypid()]);
         switch ($command->getCommandId()) {
             case 'CLOSE':
-                $this->stop($command->isGraceful());
+                $this->close($command->isGraceful());
                 break;
             case 'RELOAD':
                 $this->logger->debug('Reload workers.');

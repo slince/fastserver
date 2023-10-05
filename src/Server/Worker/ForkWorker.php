@@ -118,8 +118,8 @@ final class ForkWorker extends Worker
         // try to create signal channel.
         if (Process::isSupportPosixSignal()) {
             $this->signals = new SignalChannel($this->process, $this->loop, [
+                \SIGTERM => new CloseCommand(true),
                 \SIGINT => new CloseCommand(false),
-                \SIGQUIT => new CloseCommand(true),
             ]);
         } else {
             $this->logger->warning('Signal channel is not supported.');
