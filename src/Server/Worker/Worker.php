@@ -215,6 +215,7 @@ abstract class Worker
      */
     public function handleCommand(CommandInterface $command): void
     {
+        // dispatch command event.
         switch ($command->getCommandId()) {
             // for child process.
             case 'CLOSE':
@@ -231,8 +232,9 @@ abstract class Worker
                     $this->getControl()->send(new WorkerStatusCommand($this->getPid(), $this->createStatus()));
                 }
                 break;
-            // for master process.
-            
+            default:
+                // for master process.
+                $this->server->handleCommand($command);
         }
     }
 

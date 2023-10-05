@@ -294,6 +294,8 @@ final class Server extends EventEmitter implements ServerInterface
             case 'WORKER_CLOSE':
                 $this->waitWorkers();
                 break;
+            default:
+                $this->logger->debug(sprintf('Ignore command %s', get_class($command)));
         }
     }
 
