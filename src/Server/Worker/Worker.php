@@ -340,16 +340,20 @@ abstract class Worker
      */
     public function handleClose(bool $graceful): void
     {
-        $this->logger->info('Receive close command.');
         $this->status = self::STATUS_TERMINATED;
         if ($graceful) {
+            // close all connections of the worker.
             foreach ($this->connections as $connection => $_) {
                 $connection->end();
             }
+            // stop event loop
             $this->loop->stop();
-            return;
         }
         $this->server->emit('worker.close');
+        $this->logger->info(sprintf('The worker %d is closed.', $this->getPid()));
+        if ($graceful) {
+            return;
+        }
         exit(0);
     }
 }

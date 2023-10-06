@@ -339,6 +339,7 @@ final class Server extends EventEmitter implements ServerInterface
         }
         $this->loop->stop();
         $this->status = self::STATUS_TERMINATED;
+        $this->logger->info('All workers have been closed and exit the server');
         $this->emit('close');
     }
 
