@@ -281,9 +281,10 @@ final class Server extends EventEmitter implements ServerInterface
     public function handleCommand(CommandInterface $command): void
     {
         $this->emit('command', [$command]);
-        $this->logger->debug(sprintf('Received command %s', get_class($command)), ['pid' => getmypid()]);
+        $this->logger->debug(sprintf('Received command %s', $command->getCommandId()), ['pid' => getmypid()]);
         switch ($command->getCommandId()) {
             case 'CLOSE':
+                $this->logger->error('status' . $this->status);
                 if ($this->status === self::STATUS_STARTED) {
                     $this->close($command->isGraceful());
                 }
@@ -317,10 +318,10 @@ final class Server extends EventEmitter implements ServerInterface
             return;
         }
         if ($this->status === self::STATUS_STARTED) {
-            $this->logger->debug(sprintf('Checked that the worker %d has exited, restart a new worker', $worker->getPid()));
+            $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
             $this->workers->restart($worker->getPid());
         } else if ($this->status === self::STATUS_CLOSING) {
-            $this->logger->debug(sprintf('Checked that the worker %d has exited', $worker->getPid()));
+            $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
             $this->workers->remove($worker);
             if ($this->workers->count() === 0) {
                 $this->handleClose();
