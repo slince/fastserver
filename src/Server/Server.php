@@ -181,6 +181,7 @@ final class Server extends EventEmitter implements ServerInterface
                 'reuseport' => false,
                 'max_workers' => 0,
                 'plugins' => [],
+                'worker_type' => getenv('X_WORKER_TYPE')
             ])
             ->setAllowedTypes('plugins', [PluginInterface::class . '[]'])
             ->setRequired(['address'])

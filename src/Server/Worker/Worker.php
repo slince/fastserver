@@ -24,6 +24,7 @@ use Waveman\Server\Command\WorkerPingCommand;
 use Waveman\Server\Command\WorkerStatusCommand;
 use Waveman\Server\ConnectionDescriptor;
 use Waveman\Server\ConnectionPool;
+use Waveman\Server\Exception\RuntimeException;
 use Waveman\Server\Server;
 use Waveman\Server\ServerInterface;
 use Waveman\Server\WorkerStatus;
@@ -280,19 +281,57 @@ abstract class Worker
     /**
      * Starts the worker.
      */
-    abstract public function start(): void;
+    public function start(): void
+    {
+        if ($this->status !== self::STATUS_READY) {
+            throw new RuntimeException('The worker is already running.');
+        }
+        $this->doStart();
+        $this->status = self::STATUS_STARTED;
+        $this->logger->debug(sprintf('The worker %d is started', $this->getPid()));
+    }
+
+    /**
+     * Actual execution start method.
+     */
+    abstract protected function doStart(): void;
 
     /**
      * Close the worker.
      */
-    abstract public function close(bool $graceful = false): void;
+    public function close(bool $graceful = false): void
+    {
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException('The worker is not running.');
+        }
+        $this->doClose($graceful);
+        $this->status = self::STATUS_CLOSING;
+    }
+
+    /**
+     * Actual close the worker.
+     */
+    abstract protected function doClose(bool $graceful = false): void;
 
     /**
      * Checks the worker is alive.
      *
      * @return void
      */
-    abstract public function alive(): void;
+    public function alive(): void
+    {
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException('The worker is not running.');
+        }
+        $this->doAlive();
+    }
+
+    /**
+     * Checks the worker is alive.
+     *
+     * @return void
+     */
+    abstract protected function doAlive(): void;
 
     /**
      * Close the worker.

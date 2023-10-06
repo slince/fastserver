@@ -14,8 +14,9 @@ declare(strict_types=1);
 namespace Waveman\Server\Worker;
 
 use Symfony\Component\Process\Process;
+use Waveman\Server\Exception\RuntimeException;
 
-class ProcWorker extends Worker
+final class ProcWorker extends Worker
 {
     /**
      * @var Process
@@ -25,20 +26,28 @@ class ProcWorker extends Worker
     /**
      * {@inheritdoc}
      */
-    public function start(): void
+    public function doStart(): void
     {
-        $config = [
-            'address' => $this->server->getOption('address')
-        ];
-        $entry = __DIR__ . '/Internal/worker.php';
-        $this->process = Process::fromShellCommandline(sprintf("php %s --config %s", $entry, json_encode($config)));
+        $entry = self::getEntryFile();
+        $this->process = Process::fromShellCommandline(sprintf("php %s --config %s", $entry));
         $this->process->start();
+    }
+
+    private static function getEntryFile(): string
+    {
+        global $argv;
+        foreach($argv as $file) {
+            if(\is_file($file)) {
+                return $file;
+            }
+        }
+        throw new RuntimeException('Cannot find entry file.');
     }
 
     /**
      * {@inheritdoc}
      */
-    public function close(bool $graceful = false): void
+    public function doClose(bool $graceful = false): void
     {
         $this->process->stop();
     }
@@ -46,7 +55,7 @@ class ProcWorker extends Worker
     /**
      * {@inheritdoc}
      */
-    public function alive(): void
+    public function doAlive(): void
     {
         
     }
