@@ -90,8 +90,6 @@ final class ForkWorker extends Worker
     {
         return function(){
             $this->inChildProcess = true;
-            // Reset loop instance.
-//            $this->loop = Factory::create();
             $this->createChannel();
             $this->signals->listen([$this, 'handleCommand']);
             $this->control->listen([$this, 'handleCommand']);
