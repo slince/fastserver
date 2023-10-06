@@ -142,7 +142,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
         // Add a timer for connections.
         if ($this->options['keepalive']) {
-            $this->server->on('worker', function (){
+            $this->server->on('worker.start', function (){
                 $this->server->getLoop()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
             });
         }

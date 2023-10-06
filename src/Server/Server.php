@@ -32,7 +32,7 @@ use Waveman\Server\Worker\WorkerPool;
 
 final class Server extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['start', 'close', 'error', 'worker', 'command', 'connection'];
+    private const EVENT_NAMES = ['start', 'close', 'error', 'command', 'connection', 'worker.start', 'worker.close'];
 
     /**
      * process status,running
@@ -323,9 +323,23 @@ final class Server extends EventEmitter implements ServerInterface
             $this->logger->debug(sprintf('Checked that the worker %d has exited', $worker->getPid()));
             $this->workers->remove($worker);
             if ($this->workers->count() === 0) {
-                $this->emit('close');
+                $this->handleClose();
             }
         }
+    }
+
+    /**
+     * Handle close when all workers are exited.
+     * @return void
+     */
+    private function handleClose(): void
+    {
+        if (null !== $this->socket) {
+            $this->socket->close();
+        }
+        $this->loop->stop();
+        $this->status = self::STATUS_TERMINATED;
+        $this->emit('close');
     }
 
     /**

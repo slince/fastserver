@@ -153,7 +153,7 @@ abstract class Worker
         $socket = $this->server->getSocket();
         $socket->on('connection', [$this, 'handleConnection']);
         $socket->on('error', [$this, 'handleError']);
-        $this->server->emit('worker');
+        $this->server->emit('worker.start');
     }
 
     /**
@@ -341,6 +341,7 @@ abstract class Worker
     public function handleClose(bool $graceful): void
     {
         $this->logger->info('Receive close command.');
+        $this->status = self::STATUS_TERMINATED;
         if ($graceful) {
             foreach ($this->connections as $connection => $_) {
                 $connection->end();
@@ -348,6 +349,7 @@ abstract class Worker
             $this->loop->stop();
             return;
         }
+        $this->server->emit('worker.close');
         exit(0);
     }
 }
