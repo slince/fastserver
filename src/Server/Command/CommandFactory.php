@@ -12,15 +12,16 @@ use Waveman\Server\WorkerStatus;
 final class CommandFactory implements CommandFactoryInterface
 {
     private array $commands = [
-        CloseCommand::class => 0,
-        ErrorCommand::class => 1,
-        WorkerCloseCommand::class => 2,
-        ControlCommand::class => 3,
-        HeartbeatCommand::class => 4,
-        ReloadCommand::class => 5,
-        WorkerPingCommand::class => 6,
-        WorkerConnectionsCommand::class => 7,
-        WorkerStatusCommand::class => 8
+        NopCommand::class,
+        CloseCommand::class,
+        ErrorCommand::class,
+        WorkerCloseCommand::class,
+        ControlCommand::class,
+        HeartbeatCommand::class,
+        ReloadCommand::class,
+        WorkerPingCommand::class,
+        WorkerConnectionsCommand::class,
+        WorkerStatusCommand::class
     ];
 
     /**
@@ -29,7 +30,7 @@ final class CommandFactory implements CommandFactoryInterface
     public function createMessage(CommandInterface $command): Message
     {
         $class = get_class($command);
-        if (!isset($this->commands[$class])) {
+        if (false === ($index = array_search($class, $this->commands))) {
             throw new InvalidArgumentException(sprintf('The command %s is not supported', $class));
         }
         $payload = match ($class) {
@@ -41,7 +42,7 @@ final class CommandFactory implements CommandFactoryInterface
              WorkerStatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getWorkerStatus()],
              default => null
         };
-        return new Message($this->commands[$class],$payload ? Message::PAYLOAD_JSON : Message::PAYLOAD_NONE, $payload);
+        return new Message($index,$payload ? Message::PAYLOAD_JSON : Message::PAYLOAD_NONE, $payload);
     }
 
     /**
@@ -49,10 +50,10 @@ final class CommandFactory implements CommandFactoryInterface
      */
     public function createCommand(Message $message): CommandInterface
     {
-        $class = array_search($message->getType(), $this->commands);
-        if (false === $class) {
+        if (isset($this->commands[$message->getType()])) {
             throw new InvalidArgumentException(sprintf('The command type %d is not supported', $message->getType()));
         }
+        $class = $this->commands[$message->getType()];
         $payload = $message->getPayload();
         return match($class){
             CloseCommand::class => new CloseCommand($message->getPayload()['graceful']),

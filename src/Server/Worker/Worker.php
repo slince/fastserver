@@ -288,7 +288,6 @@ abstract class Worker
         }
         $this->doStart();
         $this->status = self::STATUS_STARTED;
-        $this->logger->debug(sprintf('The worker %d is started', $this->getPid()));
     }
 
     /**

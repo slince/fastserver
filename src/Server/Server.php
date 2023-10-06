@@ -205,6 +205,9 @@ final class Server extends EventEmitter implements ServerInterface
      */
     public function close(bool $graceful = false): void
     {
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException("The server is not running");
+        }
         $this->status = self::STATUS_CLOSING;
         $this->workers->close($graceful);
     }
@@ -281,7 +284,9 @@ final class Server extends EventEmitter implements ServerInterface
         $this->logger->debug(sprintf('Received command %s', get_class($command)), ['pid' => getmypid()]);
         switch ($command->getCommandId()) {
             case 'CLOSE':
-                $this->close($command->isGraceful());
+                if ($this->status === self::STATUS_STARTED) {
+                    $this->close($command->isGraceful());
+                }
                 break;
             case 'RELOAD':
                 $this->logger->debug('Reload workers.');

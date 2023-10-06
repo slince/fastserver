@@ -19,6 +19,7 @@ use Waveman\Server\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\CommandFactory;
 use Waveman\Server\Command\HeartbeatCommand;
+use Waveman\Server\Command\NopCommand;
 use Waveman\Server\Exception\RuntimeException;
 
 final class ForkWorker extends Worker
@@ -105,7 +106,8 @@ final class ForkWorker extends Worker
         if (Process::isSupportPosixSignal()) {
             $this->signals = new SignalChannel($this->process, $this->loop, [
                 \SIGTERM => new CloseCommand(true),
-                \SIGINT => new CloseCommand(false),
+                \SIGQUIT => new CloseCommand(false),
+                \SIGINT => new NopCommand(), // ignore ctrl+c
             ]);
         } else {
             $this->logger->warning('Signal channel is not supported.');
