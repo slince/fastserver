@@ -28,4 +28,12 @@ interface ChannelInterface
      * @param callable $callback
      */
     public function listen(callable $callback): void;
+
+    /**
+     * Checks whether channel support the command.
+     *
+     * @param CommandInterface $command
+     * @return bool
+     */
+    public function supports(CommandInterface $command): bool;
 }

@@ -26,11 +26,11 @@ final class SignalChannel implements ChannelInterface
      * @param array $signalMap
      * @return void
      */
-    public function setSignalMap(array $signalMap): void
+    private function setSignalMap(array $signalMap): void
     {
         $this->signalMap = $signalMap;
         foreach ($this->signalMap as $signal => $command) {
-            $this->commandMap[$command->getCommandKey()] = $signal;
+            $this->commandMap[self::getCommandKey($command)] = $signal;
         }
     }
 
@@ -43,6 +43,11 @@ final class SignalChannel implements ChannelInterface
             throw new InvalidArgumentException(sprintf('The command %s is not supported by signal channel', $command->getCommandKey()));
         }
         $this->process->signal($this->commandMap[$command->getCommandKey()]);
+    }
+
+    private static function getCommandKey(CommandInterface $command): string
+    {
+        return $command instanceof PayloadCommandInterface ? $command->getCommandKey() : $command->getCommandId();
     }
 
     /**
@@ -60,5 +65,13 @@ final class SignalChannel implements ChannelInterface
         foreach ($this->signalMap as $signal => $_) {
             $this->loop->addSignal($signal, $signalHandler);
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supports(CommandInterface $command): bool
+    {
+        return isset($this->commandMap[self::getCommandKey($command)]);
     }
 }

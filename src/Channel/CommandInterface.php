@@ -21,11 +21,4 @@ interface CommandInterface
      * @return string
      */
     public function getCommandId(): string;
-
-    /**
-     * Return the command key.
-     *
-     * @return string
-     */
-    public function getCommandKey(): string;
 }

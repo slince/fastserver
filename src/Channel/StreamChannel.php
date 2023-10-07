@@ -54,4 +54,12 @@ class StreamChannel implements ChannelInterface
             }
         });
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supports(CommandInterface $command): bool
+    {
+        return $this->commandFactory->supportCommand($command);
+    }
 }
