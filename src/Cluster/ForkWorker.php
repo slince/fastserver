@@ -11,15 +11,13 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Worker;
+namespace Waveman\Cluster;
 
 use Slince\Process\Process;
 use Waveman\Channel\SignalChannel;
 use Waveman\Channel\UnixSocketChannel;
 use Waveman\Server\Command\CloseCommand;
-use Waveman\Server\Command\CommandFactory;
 use Waveman\Server\Command\HeartbeatCommand;
-use Waveman\Server\Command\NopCommand;
 
 final class ForkWorker extends Worker
 {
@@ -84,27 +82,11 @@ final class ForkWorker extends Worker
     {
         return function(){
             $this->inChildProcess = true;
-            $this->createChannel();
             $this->signals->listen([$this, 'handleCommand']);
             $this->control->listen([$this, 'handleCommand']);
             $this->run();
             $this->logger->debug(sprintf('The worker %d is started', $this->getPid()));
             $this->loop->run();
         };
-    }
-
-    private function createChannel(): void
-    {
-        // try to create signal channel.
-        if (Process::isSupportPosixSignal()) {
-            $this->signals = new SignalChannel($this->process, $this->loop, [
-                \SIGTERM => new CloseCommand(true),
-                \SIGQUIT => new CloseCommand(false),
-                \SIGINT => new NopCommand(), // ignore ctrl+c
-            ]);
-        } else {
-            $this->logger->warning('Signal channel is not supported.');
-        }
-        $this->control = new UnixSocketChannel($this->sockets, $this->loop, $this->inChildProcess, CommandFactory::create());
     }
 }

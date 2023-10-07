@@ -15,7 +15,7 @@ namespace Waveman\Server\Command\Handler;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
-use Waveman\Server\Channel\CommandInterface;
+use Waveman\Channel\CommandInterface;
 
 final class HandlerResolver
 {

@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Command\Handler;
 
-use Waveman\Server\Channel\ChannelInterface;
-use Waveman\Server\Channel\CommandInterface;
+use Waveman\Channel\ChannelInterface;
+use Waveman\Channel\CommandInterface;
 use Waveman\Server\Exception\InvalidArgumentException;
 
 final class DelegatingHandler implements HandlerInterface

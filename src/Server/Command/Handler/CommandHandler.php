@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Command\Handler;
 
-use Waveman\Server\Channel\CommandInterface;
+use Waveman\Channel\CommandInterface;
 
 abstract class CommandHandler implements HandlerInterface
 {

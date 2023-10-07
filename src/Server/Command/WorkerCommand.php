@@ -2,7 +2,7 @@
 
 namespace Waveman\Server\Command;
 
-use Waveman\Server\Channel\CommandInterface;
+use Waveman\Channel\CommandInterface;
 
 abstract class WorkerCommand implements CommandInterface
 {

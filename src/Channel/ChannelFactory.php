@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Channel;
+namespace Waveman\Channel;
 
 use React\Stream\DuplexStreamInterface as Stream;
 

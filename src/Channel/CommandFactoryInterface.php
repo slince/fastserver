@@ -1,6 +1,6 @@
 <?php
 
-namespace Waveman\Server\Channel;
+namespace Waveman\Channel;
 
 interface CommandFactoryInterface
 {

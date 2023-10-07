@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace Waveman\Server\Command;
 
-use Waveman\Server\Channel\CommandInterface;
-use Waveman\Server\Channel\Message;
+use Waveman\Channel\CommandInterface;
+use Waveman\Channel\Message;
 
 final class CloseCommand implements CommandInterface
 {

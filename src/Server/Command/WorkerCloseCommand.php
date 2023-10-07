@@ -2,7 +2,7 @@
 
 namespace Waveman\Server\Command;
 
-use Waveman\Server\Channel\CommandInterface;
+use Waveman\Channel\CommandInterface;
 
 final class WorkerCloseCommand implements CommandInterface
 {

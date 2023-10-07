@@ -11,25 +11,14 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Worker;
+namespace Waveman\Cluster;
 
-use Psr\Log\LoggerInterface;
-use React\EventLoop\LoopInterface;
+use Evenement\EventEmitter;
 use React\Socket\ConnectionInterface;
 use Waveman\Channel\ChannelInterface;
-use Waveman\Channel\CommandInterface;
-use Waveman\Server\Command\ControlCommand;
-use Waveman\Server\Command\WorkerConnectionsCommand;
-use Waveman\Server\Command\WorkerPingCommand;
-use Waveman\Server\Command\WorkerStatusCommand;
-use Waveman\Server\ConnectionDescriptor;
-use Waveman\Server\ConnectionPool;
-use Waveman\Server\Exception\RuntimeException;
-use Waveman\Server\Server;
-use Waveman\Server\ServerInterface;
-use Waveman\Server\WorkerStatus;
+use Waveman\Cluster\Exception\RuntimeException;
 
-abstract class Worker
+abstract class Worker extends EventEmitter
 {
     /**
      * process status,running
@@ -55,34 +44,14 @@ abstract class Worker
     const STATUS_TERMINATED = 'terminated';
 
     /**
-     * @var string
-     */
-    protected string $status = self::STATUS_READY;
-
-    /**
      * @var int
      */
     protected int $id;
 
     /**
-     * @var Server
+     * @var string
      */
-    protected ServerInterface $server;
-
-    /**
-     * @var LoopInterface
-     */
-    protected LoopInterface $loop;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected LoggerInterface $logger;
-
-    /**
-     * @var ConnectionPool
-     */
-    protected ConnectionPool $connections;
+    protected string $status = self::STATUS_READY;
 
     /**
      * Created time.
@@ -109,13 +78,9 @@ abstract class Worker
      */
     protected bool $inChildProcess = false;
 
-    public function __construct(int $id, Server $server)
+    public function __construct(int $id)
     {
         $this->id = $id;
-        $this->server = $server;
-        $this->connections = $server->getConnections();
-        $this->loop = $server->getLoop();
-        $this->logger = $server->getLogger();
         $this->createdAt = $this->updatedAt = new \DateTime();
     }
 

@@ -2,9 +2,9 @@
 
 namespace Waveman\Server\Command;
 
-use Waveman\Server\Channel\CommandFactoryInterface;
-use Waveman\Server\Channel\CommandInterface;
-use Waveman\Server\Channel\Message;
+use Waveman\Channel\CommandFactoryInterface;
+use Waveman\Channel\CommandInterface;
+use Waveman\Channel\Message;
 use Waveman\Server\ConnectionDescriptor;
 use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\WorkerStatus;

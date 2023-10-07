@@ -2,7 +2,7 @@
 
 namespace Waveman\Server;
 
-use Waveman\Server\Channel\CommandInterface;
+use Waveman\Channel\CommandInterface;
 use Waveman\Server\Worker\Worker;
 
 class CommandEvent
