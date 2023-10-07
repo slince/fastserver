@@ -13,18 +13,23 @@ declare(strict_types=1);
 
 namespace Waveman\Channel;
 
-use React\Stream\DuplexStreamInterface;
+use React\Stream\ReadableStreamInterface;
+use React\Stream\WritableStreamInterface;
 
 class StreamChannel implements ChannelInterface
 {
     /**
-     * @var DuplexStreamInterface
+     * @var WritableStreamInterface|ReadableStreamInterface
      */
-    protected DuplexStreamInterface $stream;
+    protected WritableStreamInterface|ReadableStreamInterface $stream;
 
     protected CommandFactoryInterface $commandFactory;
 
-    public function __construct(DuplexStreamInterface $stream, CommandFactoryInterface $commandFactory)
+    /**
+     * @param WritableStreamInterface|ReadableStreamInterface $stream
+     * @param CommandFactoryInterface $commandFactory
+     */
+    public function __construct(WritableStreamInterface|ReadableStreamInterface $stream, CommandFactoryInterface $commandFactory)
     {
         $this->stream = $stream;
         $this->commandFactory = $commandFactory;

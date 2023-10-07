@@ -4,17 +4,26 @@ namespace Waveman\Channel;
 
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
+use Symfony\Component\Process\Process as SymfonyProcess;
 use Waveman\Server\Exception\InvalidArgumentException;
 
 final class SignalChannel implements ChannelInterface
 {
-    protected ?Process $process;
+    /**
+     * @var Process|SymfonyProcess
+     */
+    protected mixed $process;
     protected LoopInterface $loop;
 
     protected array $signalMap;
     protected array $commandMap;
 
-    public function __construct(array $signalMap, ?Process $process, LoopInterface $loop)
+    /**
+     * @param array $signalMap
+     * @param Process|SymfonyProcess|null $process
+     * @param LoopInterface $loop
+     */
+    public function __construct(array $signalMap, mixed $process, LoopInterface $loop)
     {
         $this->process = $process;
         $this->loop = $loop;

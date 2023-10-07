@@ -15,14 +15,13 @@ final class ForkWorkerPool extends WorkerPool
     /**
      * {@inheritdoc}
      */
-    public function wait(bool $blocking = true): ?Worker
+    public function wait(bool $blocking = true): \Traversable
     {
         $pid = \pcntl_wait($status, $blocking ? \WUNTRACED : \WNOHANG | \WUNTRACED);
         if ($pid > 0) {
             $worker = $this->ensure($pid);
             $worker->terminate();
-            return $worker;
+            yield $worker;
         }
-        return null;
     }
 }

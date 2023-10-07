@@ -185,9 +185,9 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      * Wait a worker close.
      *
      * @param bool $blocking
-     * @return Worker|null
+     * @return \Traversable|Worker[]
      */
-    abstract public function wait(bool $blocking = true): ?Worker;
+    abstract public function wait(bool $blocking = true): \Traversable;
 
     /**
      * Creates a worker pool.

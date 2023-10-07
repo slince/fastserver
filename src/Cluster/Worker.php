@@ -17,6 +17,7 @@ use Evenement\EventEmitter;
 use Waveman\Channel\ChannelInterface;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Command\WorkerPingCommand;
+use Waveman\Cluster\Exception\LogicException;
 use Waveman\Cluster\Exception\RuntimeException;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\HeartbeatCommand;
@@ -151,6 +152,7 @@ abstract class Worker extends EventEmitter
     {
         $this->requireInMainProcess(__METHOD__);
         $this->status = self::STATUS_TERMINATED;
+        $this->emit('close', [true]);
     }
 
     /**
@@ -270,14 +272,14 @@ abstract class Worker extends EventEmitter
     protected function requireInChildProcess(string $method): void
     {
         if (!$this->inChildProcess) {
-            throw new RuntimeException(sprintf('The method %s can only be executed in child process.', $method));
+            throw new LogicException(sprintf('The method %s can only be executed in child process.', $method));
         }
     }
 
     protected function requireInMainProcess(string $method): void
     {
         if ($this->inChildProcess) {
-            throw new RuntimeException(sprintf('The method %s can only be executed in main process.', $method));
+            throw new LogicException(sprintf('The method %s can only be executed in main process.', $method));
         }
     }
 }
