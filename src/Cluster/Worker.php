@@ -18,6 +18,8 @@ use Waveman\Channel\ChannelInterface;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Command\WorkerPingCommand;
 use Waveman\Cluster\Exception\RuntimeException;
+use Waveman\Server\Command\CloseCommand;
+use Waveman\Server\Command\HeartbeatCommand;
 
 abstract class Worker extends EventEmitter
 {
@@ -232,14 +234,10 @@ abstract class Worker extends EventEmitter
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
-        $this->doClose($graceful);
+        $command = new CloseCommand($graceful);
+        $this->control->send($command);
         $this->status = self::STATUS_CLOSING;
     }
-
-    /**
-     * Actual close the worker.
-     */
-    abstract protected function doClose(bool $graceful = false): void;
 
     /**
      * Checks the worker is alive.
@@ -252,7 +250,8 @@ abstract class Worker extends EventEmitter
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
-        $this->doAlive();
+        $command = new HeartbeatCommand();
+        $this->control->send($command);
     }
 
     /**
@@ -268,7 +267,7 @@ abstract class Worker extends EventEmitter
      * @param bool $graceful
      * @return void
      */
-    public function handleClose(bool $graceful): void
+    protected function handleClose(bool $graceful): void
     {
         $this->requireInChildProcess(__METHOD__);
         $this->status = self::STATUS_TERMINATED;
