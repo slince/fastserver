@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Waveman\Cluster;
 
+use Symfony\Component\Process\PhpProcess;
 use Symfony\Component\Process\Process;
 use Waveman\Server\Exception\RuntimeException;
 
@@ -29,19 +30,17 @@ final class ProcWorker extends Worker
     public function doStart(): void
     {
         $entry = self::getEntryFile();
-        $this->process = Process::fromShellCommandline(sprintf("php %s --config %s", $entry));
+        $this->process = new PhpProcess($entry, null, [Cluster::WAVE_MAN_NAME => $this->getPid()], 0);
         $this->process->start();
     }
 
     private static function getEntryFile(): string
     {
-        global $argv;
-        foreach($argv as $file) {
-            if(\is_file($file)) {
-                return $file;
-            }
+        $filename = $_SERVER['PHP_SELF'] ?? $_SERVER['SCRIPT_FILENAME'] ?? $_SERVER['SCRIPT_NAME'];
+        if (empty($filename)) {
+            throw new RuntimeException('Cannot find entry file.');
         }
-        throw new RuntimeException('Cannot find entry file.');
+        return $filename;
     }
 
     /**

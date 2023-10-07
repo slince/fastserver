@@ -6,7 +6,9 @@ use React\Socket\SocketServer;
 
 final class Cluster
 {
-    public bool $isPrimary = false;
+    public const WAVE_MAN_NAME = 'X_WAVE_MAN_ID';
+
+    public bool $isPrimary;
 
     private int $id = 0;
 
@@ -16,6 +18,7 @@ final class Cluster
 
     private function __construct()
     {
+        $this->isPrimary = getenv(self::WAVE_MAN_NAME) === false;
         $this->workers = WorkerPool::createPool();
     }
 

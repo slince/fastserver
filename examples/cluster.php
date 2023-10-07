@@ -5,6 +5,9 @@ use Waveman\Cluster\Cluster;
 
 include __DIR__ . '/../vendor/autoload.php';
 
+//print_r($_SERVER);
+//print_r(getenv());
+//exit;
 $cluster = Cluster::get();
 
 if ($cluster->isPrimary) {
