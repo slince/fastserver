@@ -32,6 +32,11 @@ final class Cluster
         return $this->workers->start($this->id ++);
     }
 
+    public function run(bool $blocking = true): void
+    {
+        $this->workers->wait($blocking);
+    }
+
     public function listen(string $address, array $context = []): SocketServer
     {
         if ($this->workers instanceof ForkWorkerPool) {

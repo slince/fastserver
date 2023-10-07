@@ -20,7 +20,7 @@ use React\Socket\ConnectionInterface;
 use React\Stream\DuplexStreamInterface;
 use Waveman\Http\Exception\InvalidArgumentException;
 use Waveman\Http\Exception\InvalidHeaderException;
-use Waveman\Server\Parser\ParserInterface;
+use Waveman\Parser\ParserInterface;
 use Waveman\Server\StreamAwareInterface;
 
 class HttpParser implements ParserInterface, StreamAwareInterface

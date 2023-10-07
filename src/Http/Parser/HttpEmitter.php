@@ -17,7 +17,7 @@ use GuzzleHttp\Psr7\BufferStream;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Stream\WritableStreamInterface;
-use Waveman\Server\Parser\WriterInterface;
+use Waveman\Parser\WriterInterface;
 
 final class HttpEmitter implements WriterInterface
 {

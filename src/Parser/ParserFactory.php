@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Parser;
+namespace Waveman\Parser;
 
 use React\Stream\DuplexStreamInterface as Stream;
 use Waveman\Server\Exception\InvalidArgumentException;

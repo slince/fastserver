@@ -11,10 +11,11 @@ if ($cluster->isPrimary) {
 
     $worker = $cluster->fork();
 
-    $worker->on('message', function ($message){
-
+    $worker->on('message', function (string $message){
+        echo 'received message from worker: ', $message, PHP_EOL;
     });
 
+    $cluster->run();
 } else {
     $socket = $cluster->listen('tcp://127.0.0.1:2345');
 

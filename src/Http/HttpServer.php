@@ -24,10 +24,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Http\Exception\InvalidHeaderException;
 use Waveman\Http\Parser\HttpEmitter;
 use Waveman\Http\Parser\HttpParser;
+use Waveman\Parser\ParserFactory;
+use Waveman\Parser\StreamingReader;
 use Waveman\Server\ConnectionPool;
 use Waveman\Server\Exception\InvalidArgumentException;
-use Waveman\Server\Parser\ParserFactory;
-use Waveman\Server\Parser\StreamingReader;
 use Waveman\Server\Server;
 use Waveman\Server\ServerInterface;
 

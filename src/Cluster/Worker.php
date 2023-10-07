@@ -255,13 +255,6 @@ abstract class Worker extends EventEmitter
     }
 
     /**
-     * Checks the worker is alive.
-     *
-     * @return void
-     */
-    abstract protected function doAlive(): void;
-
-    /**
      * Close the worker.
      * {@internal}
      * @param bool $graceful

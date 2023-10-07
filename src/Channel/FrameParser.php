@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Waveman\Channel;
 
-use Waveman\Server\Parser\ParserInterface;
+use Waveman\Parser\ParserInterface;
 
 final class FrameParser implements ParserInterface
 {
