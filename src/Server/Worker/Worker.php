@@ -103,6 +103,12 @@ abstract class Worker
      */
     protected ChannelInterface $control;
 
+    /**
+     * Whether in the child process.
+     * @var bool
+     */
+    protected bool $inChildProcess = false;
+
     public function __construct(int $id, Server $server)
     {
         $this->id = $id;
@@ -150,9 +156,14 @@ abstract class Worker
      */
     protected function run(): void
     {
+        $this->requireInChildProcess(__METHOD__);
+        if ($this->status !== self::STATUS_READY) {
+            throw new RuntimeException('The worker is already running.');
+        }
         $socket = $this->server->getSocket();
         $socket->on('connection', [$this, 'handleConnection']);
         $socket->on('error', [$this, 'handleError']);
+        $this->status = self::STATUS_STARTED;
         $this->server->emit('worker.start');
     }
 
@@ -164,6 +175,7 @@ abstract class Worker
      */
     public function handleConnection(ConnectionInterface $connection): void
     {
+        $this->requireInChildProcess(__METHOD__);
         $this->logger->debug(sprintf('Worker [%s] [%s] Accept connection from %s', $this->getId(),
             $this->getPid(), $connection->getLocalAddress()));
         $this->server->getConnections()->add($connection);
@@ -181,6 +193,7 @@ abstract class Worker
      */
     public function handleError(\Exception $error): void
     {
+        $this->requireInChildProcess(__METHOD__);
         $this->logger->error(sprintf('Worker [%s] [%s] Accept connection error %s', $this->getId(), $this->getPid(), $error));
         $this->server->emit('error', [$error]);
     }
@@ -192,6 +205,7 @@ abstract class Worker
      */
     public function heartbeat(): void
     {
+        $this->requireInMainProcess(__METHOD__);
         $this->updatedAt = new \DateTime();
     }
 
@@ -201,6 +215,7 @@ abstract class Worker
      */
     public function terminate(): void
     {
+        $this->requireInMainProcess(__METHOD__);
         $this->status = self::STATUS_TERMINATED;
     }
 
@@ -211,6 +226,7 @@ abstract class Worker
      */
     protected function createStatus(): WorkerStatus
     {
+        $this->requireInChildProcess(__METHOD__);
         return new WorkerStatus(
             $this->getPid(),
             $this->server->getOption('address'),
@@ -255,6 +271,7 @@ abstract class Worker
      */
     public function getCreatedAt(): \DateTimeInterface
     {
+        $this->requireInMainProcess(__METHOD__);
         return $this->createdAt;
     }
 
@@ -265,6 +282,7 @@ abstract class Worker
      */
     public function getUpdatedAt(): \DateTimeInterface
     {
+        $this->requireInMainProcess(__METHOD__);
         return $this->updatedAt;
     }
 
@@ -275,6 +293,7 @@ abstract class Worker
      */
     public function getAliveSeconds(): int
     {
+        $this->requireInMainProcess(__METHOD__);
         return time() - $this->createdAt->getTimestamp();
     }
 
@@ -283,6 +302,7 @@ abstract class Worker
      */
     public function start(): void
     {
+        $this->requireInMainProcess(__METHOD__);
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException('The worker is already running.');
         }
@@ -300,6 +320,7 @@ abstract class Worker
      */
     public function close(bool $graceful = false): void
     {
+        $this->requireInMainProcess(__METHOD__);
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
@@ -319,6 +340,7 @@ abstract class Worker
      */
     public function alive(): void
     {
+        $this->requireInMainProcess(__METHOD__);
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
@@ -340,7 +362,7 @@ abstract class Worker
      */
     public function handleClose(bool $graceful): void
     {
-        $this->status = self::STATUS_TERMINATED;
+        $this->requireInChildProcess(__METHOD__);
         if ($graceful) {
             // close all connections of the worker.
             foreach ($this->connections as $connection => $_) {
@@ -349,11 +371,26 @@ abstract class Worker
             // stop event loop
             $this->loop->stop();
         }
+        $this->status = self::STATUS_TERMINATED;
         $this->server->emit('worker.close');
         $this->logger->info(sprintf('The worker %d is closed.', $this->getPid()));
         if ($graceful) {
             return;
         }
         exit(0);
+    }
+
+    protected function requireInChildProcess(string $method): void
+    {
+        if (!$this->inChildProcess) {
+            throw new RuntimeException(sprintf('The method %s can only be executed in child process.', $method));
+        }
+    }
+
+    protected function requireInMainProcess(string $method): void
+    {
+        if ($this->inChildProcess) {
+            throw new RuntimeException(sprintf('The method %s can only be executed in main process.', $method));
+        }
     }
 }

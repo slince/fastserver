@@ -20,7 +20,6 @@ use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\CommandFactory;
 use Waveman\Server\Command\HeartbeatCommand;
 use Waveman\Server\Command\NopCommand;
-use Waveman\Server\Exception\RuntimeException;
 
 final class ForkWorker extends Worker
 {
@@ -30,12 +29,6 @@ final class ForkWorker extends Worker
     private Process $process;
 
     private ?SignalChannel $signals = null;
-
-    /**
-     * Whether in the child process.
-     * @var bool
-     */
-    private bool $inChildProcess = false;
 
     private array $sockets;
 
@@ -69,7 +62,7 @@ final class ForkWorker extends Worker
         if (null !== $this->signals) {
             $this->signals->send($command);
         } else {
-            $this->control->send($command);
+            $this->signals->send($command);
         }
     }
 
@@ -113,21 +106,5 @@ final class ForkWorker extends Worker
             $this->logger->warning('Signal channel is not supported.');
         }
         $this->control = new UnixSocketChannel($this->sockets, $this->loop, $this->inChildProcess, CommandFactory::create());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function handleClose(bool $graceful): void
-    {
-        $this->requireInChildProcess();
-        parent::handleClose($graceful);
-    }
-
-    private function requireInChildProcess(): void
-    {
-        if (!$this->inChildProcess) {
-            throw new RuntimeException('The action can only be executed in child process.');
-        }
     }
 }

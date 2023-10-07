@@ -284,7 +284,7 @@ final class Server extends EventEmitter implements ServerInterface
         $this->logger->debug(sprintf('Received command %s', $command->getCommandId()), ['pid' => getmypid()]);
         switch ($command->getCommandId()) {
             case 'CLOSE':
-                $this->logger->debug(sprintf('Current server status: %s', $this->status));
+                $this->logger->debug(sprintf('The server current status: %s', $this->status));
                 if ($this->status === self::STATUS_STARTED) {
                     $this->close($command->isGraceful());
                 }
@@ -302,7 +302,7 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->waitWorkers();
                 break;
             default:
-                $this->logger->debug(sprintf('Ignore command %s', get_class($command)));
+                $this->logger->debug(sprintf('Ignore command %s', $command->getCommandId()));
         }
     }
 
