@@ -18,6 +18,7 @@ use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
 use Waveman\Channel\ChannelInterface;
 use Waveman\Channel\CommandInterface;
+use Waveman\Cluster\WorkerStatus;
 use Waveman\Server\Command\ControlCommand;
 use Waveman\Server\Command\WorkerConnectionsCommand;
 use Waveman\Server\Command\WorkerPingCommand;
@@ -27,7 +28,6 @@ use Waveman\Server\ConnectionPool;
 use Waveman\Server\Exception\RuntimeException;
 use Waveman\Server\Server;
 use Waveman\Server\ServerInterface;
-use Waveman\Server\WorkerStatus;
 
 abstract class Worker
 {

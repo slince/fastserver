@@ -14,8 +14,9 @@ declare(strict_types=1);
 namespace Waveman\Cluster;
 
 use Evenement\EventEmitter;
-use React\Socket\ConnectionInterface;
 use Waveman\Channel\ChannelInterface;
+use Waveman\Channel\CommandInterface;
+use Waveman\Cluster\Command\WorkerPingCommand;
 use Waveman\Cluster\Exception\RuntimeException;
 
 abstract class Worker extends EventEmitter
@@ -119,48 +120,14 @@ abstract class Worker extends EventEmitter
      * 
      * @return void
      */
-    protected function run(): void
+    public function run(): void
     {
         $this->requireInChildProcess(__METHOD__);
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException('The worker is already running.');
         }
-        $socket = $this->server->getSocket();
-        $socket->on('connection', [$this, 'handleConnection']);
-        $socket->on('error', [$this, 'handleError']);
         $this->status = self::STATUS_STARTED;
-        $this->server->emit('worker.start');
-    }
-
-    /**
-     * Handles the new connection.
-     * {@internal}
-     * @param ConnectionInterface $connection
-     * @return void
-     */
-    public function handleConnection(ConnectionInterface $connection): void
-    {
-        $this->requireInChildProcess(__METHOD__);
-        $this->logger->debug(sprintf('Worker [%s] [%s] Accept connection from %s', $this->getId(),
-            $this->getPid(), $connection->getLocalAddress()));
-        $this->server->getConnections()->add($connection);
-        $connection->on('close', function() use($connection){
-            $this->server->getConnections()->remove($connection);
-        });
-        $this->server->emit('connection', [$connection]);
-    }
-
-    /**
-     * Handles the error.
-     * {@internal}
-     * @param \Exception $error
-     * @return void
-     */
-    public function handleError(\Exception $error): void
-    {
-        $this->requireInChildProcess(__METHOD__);
-        $this->logger->error(sprintf('Worker [%s] [%s] Accept connection error %s', $this->getId(), $this->getPid(), $error));
-        $this->server->emit('error', [$error]);
+        $this->emit('start');
     }
 
     /**
@@ -185,47 +152,23 @@ abstract class Worker extends EventEmitter
     }
 
     /**
-     * Capture the worker status.
-     *
-     * @return WorkerStatus
-     */
-    protected function createStatus(): WorkerStatus
-    {
-        $this->requireInChildProcess(__METHOD__);
-        return new WorkerStatus(
-            $this->getPid(),
-            $this->server->getOption('address'),
-            memory_get_usage(false),
-            $this->connections->count()
-        );
-    }
-
-    /**
      * {@internal}
      */
     public function handleCommand(CommandInterface $command): void
     {
         // dispatch command event.
-        $this->logger->debug(sprintf('Received command %s', $command->getCommandId()), ['pid' => getmypid()]);
         switch ($command->getCommandId()) {
             // for child process.
+            case 'NOP':
+                break;
             case 'CLOSE':
                 $this->handleClose($command->isGraceful());
                 break;
             case 'HEARTBEAT':
                 $this->control->send(new WorkerPingCommand($this->getPid()));
                 break;
-            case 'CONTROL':
-                if (($command->getFlags() & ControlCommand::CONNECTIONS) === ControlCommand::CONNECTIONS) {
-                    $this->control->send(new WorkerConnectionsCommand($this->getPid(), ConnectionDescriptor::fromConnectionPool($this->connections)));
-                }
-                if (($command->getFlags() & ControlCommand::STATUS) === ControlCommand::STATUS) {
-                    $this->control->send(new WorkerStatusCommand($this->getPid(), $this->createStatus()));
-                }
-                break;
             default:
-                // for master process.
-                $this->server->handleCommand($command);
+                $this->emit('command', [$command]);
         }
     }
 
@@ -328,21 +271,8 @@ abstract class Worker extends EventEmitter
     public function handleClose(bool $graceful): void
     {
         $this->requireInChildProcess(__METHOD__);
-        if ($graceful) {
-            // close all connections of the worker.
-            foreach ($this->connections as $connection => $_) {
-                $connection->end();
-            }
-            // stop event loop
-            $this->loop->stop();
-        }
         $this->status = self::STATUS_TERMINATED;
-        $this->server->emit('worker.close');
-        $this->logger->info(sprintf('The worker %d is closed.', $this->getPid()));
-        if ($graceful) {
-            return;
-        }
-        exit(0);
+        $this->emit('close', [$graceful]);
     }
 
     protected function requireInChildProcess(string $method): void

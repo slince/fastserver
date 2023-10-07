@@ -2,6 +2,8 @@
 
 namespace Waveman\Cluster;
 
+use React\Socket\SocketServer;
+
 final class Cluster
 {
     public bool $isPrimary = false;
@@ -28,5 +30,14 @@ final class Cluster
     public function fork(): Worker
     {
         return $this->workers->start($this->id ++);
+    }
+
+    public function listen(string $address, array $context = []): SocketServer
+    {
+        if ($this->workers instanceof ForkWorkerPool) {
+            $context['tcp'] ??= [];
+            $context['tcp']['so_reuseport'] = true;
+        }
+        return new SocketServer($address, $context);
     }
 }

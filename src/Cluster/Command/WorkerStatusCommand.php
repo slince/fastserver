@@ -10,26 +10,28 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace Waveman\Cluster\Command;
 
 use Waveman\Channel\PayloadCommandInterface;
+use Waveman\Cluster\WorkerStatus;
 
-final class MessageCommand implements PayloadCommandInterface
+final class WorkerStatusCommand extends WorkerCommand implements PayloadCommandInterface
 {
-    private string $message;
+    private WorkerStatus $workerStatus;
 
-    public function __construct(string $message)
+    public function __construct(int $workerId, WorkerStatus $workerStatus)
     {
-        $this->message = $message;
+        parent::__construct($workerId);
+        $this->workerStatus = $workerStatus;
     }
 
     /**
-     *
-     * @return string
+     * @return WorkerStatus
      */
-    public function getMessage(): string
+    public function getWorkerStatus(): WorkerStatus
     {
-        return $this->message;
+        return $this->workerStatus;
     }
 
     /**
@@ -37,7 +39,7 @@ final class MessageCommand implements PayloadCommandInterface
      */
     public function getCommandId(): string
     {
-        return 'NOP';
+        return 'WORKER_STATUS';
     }
 
     /**
@@ -45,6 +47,6 @@ final class MessageCommand implements PayloadCommandInterface
      */
     public function getCommandKey(): string
     {
-        return $this->getCommandId() . $this->message;
+        return $this->getCommandId() . json_encode($this->workerStatus);
     }
 }

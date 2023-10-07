@@ -2,7 +2,7 @@
 
 namespace Waveman\Server\Command;
 
-use Waveman\Server\WorkerStatus;
+use Waveman\Cluster\WorkerStatus;
 
 final class WorkerStatusCommand extends WorkerCommand
 {

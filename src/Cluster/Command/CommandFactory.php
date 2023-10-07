@@ -1,27 +1,23 @@
 <?php
 
-namespace Waveman\Server\Command;
+namespace Waveman\Cluster\Command;
 
 use Waveman\Channel\CommandFactoryInterface;
 use Waveman\Channel\CommandInterface;
 use Waveman\Channel\Frame;
-use Waveman\Cluster\Command\NopCommand;
+use Waveman\Cluster\Exception\InvalidArgumentException;
 use Waveman\Cluster\WorkerStatus;
-use Waveman\Server\ConnectionDescriptor;
-use Waveman\Server\Exception\InvalidArgumentException;
 
 final class CommandFactory implements CommandFactoryInterface
 {
     private array $commands = [
         NopCommand::class,
         CloseCommand::class,
-        ErrorCommand::class,
         WorkerCloseCommand::class,
         ControlCommand::class,
         HeartbeatCommand::class,
-        ReloadCommand::class,
+        MessageCommand::class,
         WorkerPingCommand::class,
-        WorkerConnectionsCommand::class,
         WorkerStatusCommand::class
     ];
 
@@ -36,14 +32,14 @@ final class CommandFactory implements CommandFactoryInterface
         }
         $payload = match ($class) {
              CloseCommand::class => ['graceful' => $command->isGraceful()],
-             ErrorCommand::class => ['message' => $command->getMessage()],
-             ControlCommand::class => ['flags' => $command->getFlags()],
-             WorkerPingCommand::class => ['worker_id' => $command->getWorkerId()],
-             WorkerConnectionsCommand::class => ['worker_id' => $command->getWorkerId(), 'connections' => $command->getConnections()],
+             ControlCommand::class => (string)$command->getFlags(),
+             MessageCommand::class => $command->getMessage(),
+             WorkerPingCommand::class => (string)$command->getWorkerId(),
              WorkerStatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getWorkerStatus()],
              default => null
         };
-        return new Frame($index,$payload ? Frame::PAYLOAD_JSON : Frame::PAYLOAD_NONE, $payload);
+        $flags = $payload ? (is_string($payload) ? Frame::PAYLOAD_RAW: Frame::PAYLOAD_JSON) : Frame::PAYLOAD_NONE;
+        return new Frame($index,$flags, $payload);
     }
 
     /**
@@ -58,12 +54,20 @@ final class CommandFactory implements CommandFactoryInterface
         $payload = $frame->getPayload();
         return match($class){
             CloseCommand::class => new CloseCommand($frame->getPayload()['graceful']),
-            ErrorCommand::class => new ErrorCommand($frame->getPayload()),
-            WorkerCloseCommand::class => new WorkerCloseCommand(),
-            WorkerConnectionsCommand::class => new WorkerConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(...$item), $payload['connections'])),
+            ControlCommand::class => new ControlCommand(intval($frame->getPayload())),
+            MessageCommand::class => new MessageCommand($frame->getPayload()),
+            WorkerPingCommand::class => new WorkerPingCommand(intval($frame->getPayload())),
             WorkerStatusCommand::class => new WorkerStatusCommand($payload['worker_id'], new WorkerStatus(...$payload['status'])),
             default => new $class()
         };
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supportCommand(CommandInterface $command): bool
+    {
+        return in_array(get_class($command), $this->commands);
     }
 
     /**

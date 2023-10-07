@@ -23,8 +23,7 @@ final class Frame
     /** Payload flags.*/
     public const PAYLOAD_NONE    = 2;
     public const PAYLOAD_RAW     = 4;
-    public const PAYLOAD_ERROR   = 8;
-    public const PAYLOAD_JSON = 16;
+    public const PAYLOAD_JSON = 8;
 
     private int $type;
     
