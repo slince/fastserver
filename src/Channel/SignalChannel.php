@@ -14,7 +14,7 @@ final class SignalChannel implements ChannelInterface
     protected array $signalMap;
     protected array $commandMap;
 
-    public function __construct(?Process $process, LoopInterface $loop, array $signalMap)
+    public function __construct(array $signalMap, ?Process $process, LoopInterface $loop)
     {
         $this->process = $process;
         $this->loop = $loop;

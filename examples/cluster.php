@@ -13,6 +13,7 @@ if ($cluster->isPrimary) {
     $worker->on('message', function ($message){
 
     });
+
 } else {
     $socket = $cluster->listen('tcp://127.0.0.1:2345');
 

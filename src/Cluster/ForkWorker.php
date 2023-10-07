@@ -13,10 +13,14 @@ declare(strict_types=1);
 
 namespace Waveman\Cluster;
 
+use React\EventLoop\Loop;
 use Slince\Process\Process;
+use Waveman\Channel\DelegatingChannel;
 use Waveman\Channel\SignalChannel;
 use Waveman\Channel\UnixSocketChannel;
+use Waveman\Cluster\Command\NopCommand;
 use Waveman\Server\Command\CloseCommand;
+use Waveman\Server\Command\CommandFactory;
 use Waveman\Server\Command\HeartbeatCommand;
 
 final class ForkWorker extends Worker
@@ -88,5 +92,21 @@ final class ForkWorker extends Worker
             $this->logger->debug(sprintf('The worker %d is started', $this->getPid()));
             $this->loop->run();
         };
+    }
+
+    private function createChannel(): void
+    {
+        $loop = Loop::get();
+        // try to create signal channel.
+        $channels = [];
+        if (Process::isSupportPosixSignal()) {
+            $channels[] = new SignalChannel([
+                \SIGTERM => new CloseCommand(true),
+                \SIGQUIT => new CloseCommand(false),
+                \SIGINT => new NopCommand(), // ignore ctrl+c
+            ], $this->process, $loop);
+        }
+        $channels[] = new UnixSocketChannel($this->sockets, $loop, $this->inChildProcess, CommandFactory::create());
+        $this->control = count($channels) > 1 ? new DelegatingChannel($channels) : $channels[0];
     }
 }
