@@ -62,7 +62,7 @@ final class ForkWorker extends Worker
         if (null !== $this->signals) {
             $this->signals->send($command);
         } else {
-            $this->signals->send($command);
+            $this->control->send($command);
         }
     }
 

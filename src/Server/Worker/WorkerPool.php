@@ -194,7 +194,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     public function close(bool $graceful): void
     {
         foreach ($this->workers as $worker) {
-            $this->server->getLogger()->warning("sending stop command to " . $worker->getPid());
+            $this->server->getLogger()->debug(sprintf('Send close command to %d', $worker->getPid()));
             $worker->close($graceful);
         }
     }
