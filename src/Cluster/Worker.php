@@ -276,14 +276,14 @@ abstract class Worker extends EventEmitter
 
     protected function requireInChildProcess(string $method): void
     {
-        if (!$this->cluster->isPrimary) {
+        if ($this->cluster->isPrimary) {
             throw new LogicException(sprintf('The method %s can only be executed in child process.', $method));
         }
     }
 
     protected function requireInMainProcess(string $method): void
     {
-        if ($this->cluster->isPrimary) {
+        if (!$this->cluster->isPrimary) {
             throw new LogicException(sprintf('The method %s can only be executed in main process.', $method));
         }
     }

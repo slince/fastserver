@@ -67,6 +67,14 @@ final class CommandFactory implements CommandFactoryInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function supportCommand(CommandInterface $command): bool
+    {
+        return in_array(get_class($command), $this->commands);
+    }
+
+    /**
      * Create one new command factory.
      * 
      * @return CommandFactory
