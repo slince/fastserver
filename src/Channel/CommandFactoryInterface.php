@@ -7,9 +7,9 @@ interface CommandFactoryInterface
     /**
      * Creates the message instance.
      * @param CommandInterface $command
-     * @return Message
+     * @return Frame
      */
-    public function createMessage(CommandInterface $command): Message;
+    public function createMessage(CommandInterface $command): Frame;
 
     /**
      * Checks whether support the command.
@@ -20,10 +20,10 @@ interface CommandFactoryInterface
     public function supportCommand(CommandInterface $command): bool;
 
     /**
-     * Creates the command from message.
+     * Creates the command from frame.
      *
-     * @param Message $message
+     * @param Frame $frame
      * @return CommandInterface
      */
-    public function createCommand(Message $message): CommandInterface;
+    public function createCommand(Frame $frame): CommandInterface;
 }

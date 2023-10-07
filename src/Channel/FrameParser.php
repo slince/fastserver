@@ -15,7 +15,7 @@ namespace Waveman\Channel;
 
 use Waveman\Server\Parser\ParserInterface;
 
-final class MessageParser implements ParserInterface
+final class FrameParser implements ParserInterface
 {
     /**
      * @var string
@@ -47,31 +47,31 @@ final class MessageParser implements ParserInterface
      */
     public function evaluate(): array
     {
-        $messages = [];
+        $frames = [];
 
-        if (null === $this->meta && $this->length >= Message::HEADER_SIZE) {
-            $header = substr($this->buffer, 0, Message::HEADER_SIZE);
-            $this->meta = Message::parseHeader($header);
-            $this->buffer = substr($this->buffer, Message::HEADER_SIZE); // reset buffer
+        if (null === $this->meta && $this->length >= Frame::HEADER_SIZE) {
+            $header = substr($this->buffer, 0, Frame::HEADER_SIZE);
+            $this->meta = Frame::parseHeader($header);
+            $this->buffer = substr($this->buffer, Frame::HEADER_SIZE); // reset buffer
             $this->length -= strlen($header);
         }
 
         if (null !== $this->meta && $this->length >= $this->meta['size']) {
             $body = substr($this->buffer, 0, $this->meta['size']);
-            $payload = Message::parsePayload($this->meta['flags'], $body);
-            $message = new Message($this->meta['type'], $this->meta['flags'], $payload);
+            $payload = Frame::parsePayload($this->meta['flags'], $body);
+            $frame = new Frame($this->meta['type'], $this->meta['flags'], $payload);
             $this->buffer = substr($this->buffer, $this->meta['size']); // reset buffer
             $this->length -= strlen($body);
             $this->meta = null;
 
-            $messages[] = $message;
+            $frames[] = $frame;
 
-            // maybe buffer contains 2+ message.
-            if ($this->length >= Message::HEADER_SIZE && ($rest = $this->evaluate())) {
-                $messages = array_merge($messages, $rest);
+            // maybe buffer contains 2+ frame.
+            if ($this->length >= Frame::HEADER_SIZE && ($rest = $this->evaluate())) {
+                $frames = array_merge($frames, $rest);
             }
         }
 
-        return $messages;
+        return $frames;
     }
 }

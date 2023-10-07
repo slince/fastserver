@@ -16,10 +16,10 @@ namespace Waveman\Server\Worker;
 use Slince\Process\Process;
 use Waveman\Channel\SignalChannel;
 use Waveman\Channel\UnixSocketChannel;
+use Waveman\Cluster\Command\NopCommand;
 use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\CommandFactory;
 use Waveman\Server\Command\HeartbeatCommand;
-use Waveman\Server\Command\NopCommand;
 
 final class ForkWorker extends Worker
 {

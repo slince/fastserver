@@ -4,7 +4,8 @@ namespace Waveman\Server\Command;
 
 use Waveman\Channel\CommandFactoryInterface;
 use Waveman\Channel\CommandInterface;
-use Waveman\Channel\Message;
+use Waveman\Channel\Frame;
+use Waveman\Cluster\Command\NopCommand;
 use Waveman\Server\ConnectionDescriptor;
 use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\WorkerStatus;
@@ -27,7 +28,7 @@ final class CommandFactory implements CommandFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function createMessage(CommandInterface $command): Message
+    public function createMessage(CommandInterface $command): Frame
     {
         $class = get_class($command);
         if (false === ($index = array_search($class, $this->commands))) {
@@ -42,22 +43,22 @@ final class CommandFactory implements CommandFactoryInterface
              WorkerStatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getWorkerStatus()],
              default => null
         };
-        return new Message($index,$payload ? Message::PAYLOAD_JSON : Message::PAYLOAD_NONE, $payload);
+        return new Frame($index,$payload ? Frame::PAYLOAD_JSON : Frame::PAYLOAD_NONE, $payload);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function createCommand(Message $message): CommandInterface
+    public function createCommand(Frame $frame): CommandInterface
     {
-        if (isset($this->commands[$message->getType()])) {
-            throw new InvalidArgumentException(sprintf('The command type %d is not supported', $message->getType()));
+        if (isset($this->commands[$frame->getType()])) {
+            throw new InvalidArgumentException(sprintf('The command type %d is not supported', $frame->getType()));
         }
-        $class = $this->commands[$message->getType()];
-        $payload = $message->getPayload();
+        $class = $this->commands[$frame->getType()];
+        $payload = $frame->getPayload();
         return match($class){
-            CloseCommand::class => new CloseCommand($message->getPayload()['graceful']),
-            ErrorCommand::class => new ErrorCommand($message->getPayload()),
+            CloseCommand::class => new CloseCommand($frame->getPayload()['graceful']),
+            ErrorCommand::class => new ErrorCommand($frame->getPayload()),
             WorkerCloseCommand::class => new WorkerCloseCommand(),
             WorkerConnectionsCommand::class => new WorkerConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(...$item), $payload['connections'])),
             WorkerStatusCommand::class => new WorkerStatusCommand($payload['worker_id'], new WorkerStatus(...$payload['status'])),

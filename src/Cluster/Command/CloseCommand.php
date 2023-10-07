@@ -11,12 +11,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server\Command;
+namespace Waveman\Cluster\Command;
 
-use Waveman\Channel\CommandInterface;
-use Waveman\Channel\Frame;
+use Waveman\Channel\PayloadCommandInterface;
 
-final class CloseCommand implements CommandInterface
+final class CloseCommand implements PayloadCommandInterface
 {
     /**
      * Close gracefully
@@ -51,21 +50,5 @@ final class CloseCommand implements CommandInterface
     public function getCommandKey(): string
     {
         return $this->getCommandId() . '_' . $this->isGraceful();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function createMessage(): Frame
-    {
-        return new Frame(Frame::PAYLOAD_CONTROL, ['graceful' => $this->graceful]);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function fromMessage(Frame $message): CommandInterface
-    {
-        return new static($message->getArgument('graceful'));
     }
 }

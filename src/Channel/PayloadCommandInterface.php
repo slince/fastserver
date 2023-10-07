@@ -2,7 +2,7 @@
 
 namespace Waveman\Channel;
 
-interface PayloadCommandInterface
+interface PayloadCommandInterface extends CommandInterface
 {
     /**
      * Return the command key.

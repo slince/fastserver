@@ -23,7 +23,7 @@ interface ChannelInterface
     public function send(CommandInterface $command): void;
 
     /**
-     * Add a listener to listen message.
+     * Add a listener to listen command.
      *
      * @param callable $callback
      */

@@ -23,7 +23,7 @@ interface ParserInterface
     public function push(string $chunk): void;
 
     /**
-     * Evaluate messages.
+     * Evaluate frames.
      *
      * @return array
      */

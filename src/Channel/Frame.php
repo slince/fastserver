@@ -15,7 +15,7 @@ namespace Waveman\Channel;
 
 use Waveman\Server\Exception\MetaException;
 
-final class Message
+final class Frame
 {
     public const HEADER_SIZE = 10;
     public const BUFFER_SIZE = 65536;
@@ -72,10 +72,10 @@ final class Message
     /**
      * Pack the given message.
      * 
-     * @param Message $message
+     * @param Frame $message
      * @return string
      */
-    public static function pack(Message $message): string
+    public static function pack(Frame $message): string
     {
         $flags = $message->getFlags();
         if (($flags & self::PAYLOAD_JSON) === self::PAYLOAD_JSON) {
@@ -86,7 +86,7 @@ final class Message
         $size = strlen($payload);
         $body = pack('CCJ', $message->getType(), $flags, $size);
 
-        if (!($flags & Message::PAYLOAD_NONE)) {
+        if (!($flags & Frame::PAYLOAD_NONE)) {
             $body .= $payload;
         }
         return $body;

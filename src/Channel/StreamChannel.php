@@ -36,7 +36,7 @@ class StreamChannel implements ChannelInterface
     public function send(CommandInterface $command): void
     {
         $message = $this->commandFactory->createMessage($command);
-        $message = Message::pack($message);
+        $message = Frame::pack($message);
         $this->stream->write($message);
     }
 
@@ -45,11 +45,11 @@ class StreamChannel implements ChannelInterface
      */
     public function listen(callable $callback): void
     {
-        $parser = new MessageParser();
+        $parser = new FrameParser();
         $this->stream->once('data', function(string $chunk) use ($parser, $callback){
             $parser->push($chunk);
-            foreach ($parser->evaluate() as $message) {
-                $command = $this->commandFactory->createCommand($message);
+            foreach ($parser->evaluate() as $frame) {
+                $command = $this->commandFactory->createCommand($frame);
                 $callback($command);
             }
         });
