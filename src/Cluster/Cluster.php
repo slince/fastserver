@@ -16,8 +16,8 @@ use React\Socket\SocketServer;
 
 final class Cluster
 {
-    public const WAVE_MAN_NAME = 'X_WAVE_MAN_PID';
-    public const WAVE_MAN_WORKER_NAME = 'X_WAVE_MAN_WID';
+    public const WAVE_MAN_PID = 'X_WAVE_MAN_PID';
+    public const WAVE_MAN_WORKER_ID = 'X_WAVE_MAN_WID';
 
     public bool $isPrimary;
 
@@ -31,18 +31,31 @@ final class Cluster
 
     private function __construct(callable $callback = null)
     {
-        $this->isPrimary = getenv(self::WAVE_MAN_NAME) === false;
-        $this->workers = WorkerPool::createPool($callback);
+        $this->isPrimary = getenv(self::WAVE_MAN_PID) === false;
+        $this->workers = WorkerPool::createPool($this, $callback);
+
         if (!$this->isPrimary) {
-            $workerId = getenv(self::WAVE_MAN_WORKER_NAME) ?? 0;
+            $workerId = getenv(self::WAVE_MAN_WORKER_ID) ?? 0;
             $this->worker = $this->workers->create($workerId);
-            $this->worker->run();
         }
     }
 
     /**
-     * Returns the cluster instance.
+     * Creates a cluster instance.
      *
+     * @param callable|null $callback
+     * @return Cluster
+     */
+    public static function create(callable $callback = null): Cluster
+    {
+        if (null === self::$instance) {
+            self::$instance = new Cluster($callback);
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Returns the cluster instance.
      * @return Cluster
      */
     public static function get(): Cluster
@@ -71,7 +84,11 @@ final class Cluster
      */
     public function run(bool $blocking = true): void
     {
-        $this->workers->wait($blocking);
+        if ($this->isPrimary) {
+            $this->workers->wait($blocking);
+        } else {
+            $this->worker->run();
+        }
     }
 
     /**

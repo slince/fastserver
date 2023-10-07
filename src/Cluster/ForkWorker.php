@@ -31,14 +31,6 @@ final class ForkWorker extends Worker
 
     private array $sockets;
 
-    private $callback;
-
-    public function __construct(int $id, Cluster $cluster, callable $callback = null)
-    {
-        parent::__construct($id, $cluster);
-        $this->callback = $callback;
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -63,8 +55,9 @@ final class ForkWorker extends Worker
     private function createCallable(): \Closure
     {
         return function(){
-            $this->control->listen([$this, 'handleCommand']);
-            call_user_func($this->callback);
+            $this->cluster->isPrimary = false;
+            $this->cluster->worker = $this;
+            $this->createChannel();
             $this->run();
         };
     }
@@ -81,7 +74,8 @@ final class ForkWorker extends Worker
                 \SIGINT => new NopCommand(), // ignore ctrl+c
             ], $this->process, $loop);
         }
-        $channels[] = new UnixSocketChannel($this->sockets, $loop, $this->inChildProcess, CommandFactory::create());
+        $channels[] = new UnixSocketChannel($this->sockets, $loop, !$this->cluster->isPrimary, CommandFactory::create());
         $this->control = count($channels) > 1 ? new DelegatingChannel($channels) : $channels[0];
+        $this->control->listen([$this, 'handleCommand']);
     }
 }

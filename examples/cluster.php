@@ -5,21 +5,8 @@ use Waveman\Cluster\Cluster;
 
 include __DIR__ . '/../vendor/autoload.php';
 
-//print_r($_SERVER);
-//print_r(getenv());
-//exit;
-$cluster = Cluster::get();
+$cluster = Cluster::create(function(Cluster $cluster){
 
-if ($cluster->isPrimary) {
-
-    $worker = $cluster->fork();
-
-    $worker->on('message', function (string $message){
-        echo 'received message from worker: ', $message, PHP_EOL;
-    });
-
-    $cluster->run();
-} else {
     $socket = $cluster->listen('tcp://127.0.0.1:2345');
 
     $socket->on('connection', function (ConnectionInterface $connection) {
@@ -38,4 +25,13 @@ if ($cluster->isPrimary) {
     $socket->on('error', function (Exception $e) {
         echo 'Error: ' . $e->getMessage() . PHP_EOL;
     });
+});
+
+if ($cluster->isPrimary) {
+    $worker = $cluster->fork();
+    $worker->on('message', function (string $message){
+        echo 'received message from worker: ', $message, PHP_EOL;
+    });
 }
+
+$cluster->run();

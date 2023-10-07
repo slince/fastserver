@@ -48,14 +48,14 @@ final class ProcWorker extends Worker
     {
         return $this->process;
     }
-    
+
     /**
      * {@inheritdoc}
      */
     public function doStart(): void
     {
         $entry = self::getEntryFile();
-        $this->process = new PhpProcess($entry, null, [Cluster::WAVE_MAN_NAME => $this->getPid()], 0);
+        $this->process = new PhpProcess($entry, null, [Cluster::WAVE_MAN_PID => $this->getPid()], 0);
         $stream = fopen('php://temporary', 'w+');
         $this->process->setInput($stream);
         $this->createChannel($stream);

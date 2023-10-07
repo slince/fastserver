@@ -78,10 +78,13 @@ abstract class Worker extends EventEmitter
 
     protected Cluster $cluster;
 
-    public function __construct(int $id, Cluster $cluster)
+    private $callback;
+
+    public function __construct(int $id, Cluster $cluster, callable $callback = null)
     {
         $this->id = $id;
         $this->cluster = $cluster;
+        $this->callback = $callback;
         $this->createdAt = $this->updatedAt = new \DateTime();
     }
 
@@ -125,6 +128,9 @@ abstract class Worker extends EventEmitter
         $this->requireInChildProcess(__METHOD__);
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException('The worker is already running.');
+        }
+        if (null !== $this->callback) {
+            call_user_func($this->callback, $this->cluster);
         }
         $this->status = self::STATUS_STARTED;
         $this->emit('start');
