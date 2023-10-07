@@ -76,15 +76,12 @@ abstract class Worker extends EventEmitter
      */
     protected ChannelInterface $control;
 
-    /**
-     * Whether in the child process.
-     * @var bool
-     */
-    protected bool $inChildProcess = false;
+    protected Cluster $cluster;
 
-    public function __construct(int $id)
+    public function __construct(int $id, Cluster $cluster)
     {
         $this->id = $id;
+        $this->cluster = $cluster;
         $this->createdAt = $this->updatedAt = new \DateTime();
     }
 
@@ -171,6 +168,10 @@ abstract class Worker extends EventEmitter
             case 'HEARTBEAT':
                 $this->control->send(new WorkerPingCommand($this->getPid()));
                 break;
+            // for main process.
+            case 'WORKER_PING':
+                $this->heartbeat();
+                break;
             default:
                 $this->emit('command', [$command]);
         }
@@ -183,7 +184,6 @@ abstract class Worker extends EventEmitter
      */
     public function getCreatedAt(): \DateTimeInterface
     {
-        $this->requireInMainProcess(__METHOD__);
         return $this->createdAt;
     }
 
@@ -205,7 +205,6 @@ abstract class Worker extends EventEmitter
      */
     public function getAliveSeconds(): int
     {
-        $this->requireInMainProcess(__METHOD__);
         return time() - $this->createdAt->getTimestamp();
     }
 
@@ -271,14 +270,14 @@ abstract class Worker extends EventEmitter
 
     protected function requireInChildProcess(string $method): void
     {
-        if (!$this->inChildProcess) {
+        if (!$this->cluster->isPrimary) {
             throw new LogicException(sprintf('The method %s can only be executed in child process.', $method));
         }
     }
 
     protected function requireInMainProcess(string $method): void
     {
-        if ($this->inChildProcess) {
+        if ($this->cluster->isPrimary) {
             throw new LogicException(sprintf('The method %s can only be executed in main process.', $method));
         }
     }
