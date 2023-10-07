@@ -22,6 +22,13 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     protected array $workers = [];
 
+    protected Cluster $cluster;
+
+    public function __construct(Cluster $cluster)
+    {
+        $this->cluster = $cluster;
+    }
+
     /**
      * Add a worker to this pool.
      *
@@ -191,15 +198,17 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
 
     /**
      * Creates a worker pool.
+     * @param Cluster $cluster
+     * @param callable|null $callback
      * @return WorkerPool
      */
-    public static function createPool(): WorkerPool
+    public static function createPool(Cluster $cluster, callable $callback = null): WorkerPool
     {
         if (function_exists('pcntl_fork')) {
-            return new ForkWorkerPool();
+            return new ForkWorkerPool($cluster, $callback);
         }
         if (function_exists('proc_open')) {
-            return new ProcWorkerPool();
+            return new ProcWorkerPool($cluster);
         }
         throw new InvalidArgumentException('Cannot create worker pool.');
     }

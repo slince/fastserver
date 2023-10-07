@@ -31,6 +31,14 @@ final class ForkWorker extends Worker
 
     private array $sockets;
 
+    private $callback;
+
+    public function __construct(int $id, Cluster $cluster, callable $callback = null)
+    {
+        parent::__construct($id, $cluster);
+        $this->callback = $callback;
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -55,8 +63,8 @@ final class ForkWorker extends Worker
     private function createCallable(): \Closure
     {
         return function(){
-            $this->inChildProcess = true;
             $this->control->listen([$this, 'handleCommand']);
+            call_user_func($this->callback);
             $this->run();
         };
     }

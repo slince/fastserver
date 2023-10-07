@@ -16,20 +16,28 @@ use React\Socket\SocketServer;
 
 final class Cluster
 {
-    public const WAVE_MAN_NAME = 'X_WAVE_MAN_ID';
+    public const WAVE_MAN_NAME = 'X_WAVE_MAN_PID';
+    public const WAVE_MAN_WORKER_NAME = 'X_WAVE_MAN_WID';
 
     public bool $isPrimary;
 
-    private int $id = 0;
+    public ?Worker $worker = null;
 
-    private WorkerPool $workers;
+    public WorkerPool $workers;
+
+    private int $id = 0;
 
     private static ?Cluster $instance = null;
 
-    private function __construct()
+    private function __construct(callable $callback = null)
     {
         $this->isPrimary = getenv(self::WAVE_MAN_NAME) === false;
-        $this->workers = WorkerPool::createPool();
+        $this->workers = WorkerPool::createPool($callback);
+        if (!$this->isPrimary) {
+            $workerId = getenv(self::WAVE_MAN_WORKER_NAME) ?? 0;
+            $this->worker = $this->workers->create($workerId);
+            $this->worker->run();
+        }
     }
 
     /**
@@ -68,7 +76,7 @@ final class Cluster
 
     /**
      * Create a socket server by given address.
-     * 
+     *
      * @param string $address
      * @param array $context
      * @return SocketServer

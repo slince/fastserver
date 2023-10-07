@@ -4,12 +4,20 @@ namespace Waveman\Cluster;
 
 final class ForkWorkerPool extends WorkerPool
 {
+    private $callback;
+
+    public function __construct(Cluster $cluster, callable $callback)
+    {
+        parent::__construct($cluster);
+        $this->callback = $callback;
+    }
+
     /**
      * {@inheritdoc}
      */
     public function create(int $id): Worker
     {
-        return new ForkWorker($id);
+        return new ForkWorker($id, $this->cluster, $this->callback);
     }
 
     /**

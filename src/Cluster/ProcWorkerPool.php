@@ -7,9 +7,9 @@ final class ProcWorkerPool extends WorkerPool
     /**
      * {@inheritdoc}
      */
-    public function create(int $id): Worker
+    public function create(int $id, Cluster $cluster): Worker
     {
-        return new ProcWorker($id);
+        return new ProcWorker($id, $cluster);
     }
 
     /**
