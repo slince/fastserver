@@ -12,7 +12,7 @@ $cluster = Cluster::create(function(Cluster $cluster){
         echo 'received command:', $command->getCommandId(), PHP_EOL;
     });
 
-    $cluster->worker->onSignals('signal', function(int $signal){
+    $cluster->worker->onSignals([\SIGTERM], function(int $signal){
         echo 'received signal:', $signal;
     });
 
@@ -34,6 +34,8 @@ $cluster = Cluster::create(function(Cluster $cluster){
     $socket->on('error', function (Exception $e) {
         echo 'Error: ' . $e->getMessage() . PHP_EOL;
     });
+
+
 });
 
 if ($cluster->isPrimary) {
