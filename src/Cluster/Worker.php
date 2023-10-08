@@ -16,6 +16,7 @@ namespace Waveman\Cluster;
 use Evenement\EventEmitter;
 use Waveman\Channel\ChannelInterface;
 use Waveman\Channel\CommandInterface;
+use Waveman\Cluster\Command\MessageCommand;
 use Waveman\Cluster\Command\WorkerPingCommand;
 use Waveman\Cluster\Exception\LogicException;
 use Waveman\Cluster\Exception\RuntimeException;
@@ -172,7 +173,10 @@ abstract class Worker extends EventEmitter
                 $this->handleClose($command->isGraceful());
                 break;
             case 'HEARTBEAT':
-                $this->control->send(new WorkerPingCommand($this->getPid()));
+                $this->send(new WorkerPingCommand($this->getPid()));
+                break;
+            case 'MESSAGE':
+                $this->emit('message', [$command->getMessage()]);
                 break;
             // for main process.
             case 'WORKER_PING':
@@ -241,8 +245,7 @@ abstract class Worker extends EventEmitter
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
-        $command = new CloseCommand($graceful);
-        $this->control->send($command);
+        $this->send(new CloseCommand($graceful));
         $this->status = self::STATUS_CLOSING;
     }
 
@@ -257,8 +260,28 @@ abstract class Worker extends EventEmitter
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
-        $command = new HeartbeatCommand();
+        $this->send(new HeartbeatCommand());
+    }
+
+    /**
+     * Send command to the worker.
+     *
+     * @param CommandInterface $command
+     * @return void
+     */
+    public function send(CommandInterface $command): void
+    {
         $this->control->send($command);
+    }
+
+    /**
+     * Send message to the worker.
+     * @param string $message
+     * @return void
+     */
+    public function sendMessage(string $message): void
+    {
+        $this->send(new MessageCommand($message));
     }
 
     /**

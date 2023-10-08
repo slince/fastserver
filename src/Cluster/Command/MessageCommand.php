@@ -37,7 +37,7 @@ final class MessageCommand implements PayloadCommandInterface
      */
     public function getCommandId(): string
     {
-        return 'NOP';
+        return 'MESSAGE';
     }
 
     /**

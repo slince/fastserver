@@ -13,7 +13,9 @@ declare(strict_types=1);
 
 namespace Waveman\Cluster;
 
+use React\EventLoop\Factory;
 use React\EventLoop\Loop;
+use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
 use Waveman\Channel\DelegatingChannel;
 use Waveman\Channel\SignalChannel;
@@ -48,7 +50,7 @@ final class ForkWorker extends Worker
         $this->process = new Process($this->createCallable());
         $this->process->start();
         // for master process
-        $this->createChannel();
+        $this->createChannel(Loop::get());
         $this->control->listen([$this, 'handleCommand']);
     }
 
@@ -57,14 +59,21 @@ final class ForkWorker extends Worker
         return function(){
             $this->cluster->isPrimary = false;
             $this->cluster->worker = $this;
-            $this->createChannel();
+            // reset loop instance.
+            Loop::get()->stop();
+            $loop = Factory::create();
+            $this->createChannel($loop);
             $this->run();
         };
     }
 
-    private function createChannel(): void
+    private function stopLoop(LoopInterface $loop)
     {
-        $loop = Loop::get();
+        $loop->removeSignal();
+    }
+
+    private function createChannel(LoopInterface $loop): void
+    {
         // try to create signal channel.
         $channels = [];
         if (Process::isSupportPosixSignal()) {

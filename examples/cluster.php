@@ -1,11 +1,16 @@
 <?php
 
 use React\Socket\ConnectionInterface;
+use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Cluster;
 
 include __DIR__ . '/../vendor/autoload.php';
 
 $cluster = Cluster::create(function(Cluster $cluster){
+
+    $cluster->worker->on('command', function(CommandInterface $command){
+        echo 'received command:', $command->getCommandId(), PHP_EOL;
+    });
 
     $socket = $cluster->listen('tcp://127.0.0.1:2345');
 
