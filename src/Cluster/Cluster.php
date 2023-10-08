@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Waveman\Cluster;
 
 use React\Socket\SocketServer;
+use Slince\Process\Process;
 
 final class Cluster
 {
@@ -64,6 +65,16 @@ final class Cluster
             self::$instance = new Cluster();
         }
         return self::$instance;
+    }
+
+    /**
+     * Checks whether support signal.
+     * 
+     * @return bool
+     */
+    public static function supportSignal(): bool
+    {
+        return Process::isSupportPosixSignal();
     }
 
     /**

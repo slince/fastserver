@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace Waveman\Cluster;
 
 use Evenement\EventEmitter;
+use React\EventLoop\Loop;
+use Slince\Process\Process;
 use Waveman\Channel\ChannelInterface;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Command\MessageCommand;
@@ -90,16 +92,6 @@ abstract class Worker extends EventEmitter
     }
 
     /**
-     * Return the worker status.
-     *
-     * @return string
-     */
-    public function getStatus(): string
-    {
-        return $this->status;
-    }
-
-    /**
      * Return the worker id.
      *
      * @return int
@@ -120,6 +112,16 @@ abstract class Worker extends EventEmitter
     }
 
     /**
+     * Return the worker status.
+     *
+     * @return string
+     */
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    /**
      * Run the worker.
      * 
      * @return void
@@ -130,11 +132,19 @@ abstract class Worker extends EventEmitter
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException('The worker is already running.');
         }
+        $this->doRun();
         if (null !== $this->callback) {
             call_user_func($this->callback, $this->cluster);
         }
         $this->status = self::STATUS_STARTED;
         $this->emit('start');
+    }
+
+    /**
+     * Custom method when the worker is run.
+     */
+    protected function doRun(): void
+    {
     }
 
     /**
@@ -154,9 +164,123 @@ abstract class Worker extends EventEmitter
      */
     public function terminate(): void
     {
-        $this->requireInMainProcess(__METHOD__);
         $this->status = self::STATUS_TERMINATED;
-        $this->emit('close', [true]);
+        $this->emit('close');
+    }
+
+    /**
+     * Starts the worker.
+     */
+    public function start(): void
+    {
+        $this->requireInMainProcess(__METHOD__);
+        if ($this->status !== self::STATUS_READY) {
+            throw new RuntimeException('The worker is already running.');
+        }
+        $this->doStart();
+        $this->status = self::STATUS_STARTED;
+    }
+
+    /**
+     * Actual execution start method.
+     */
+    abstract protected function doStart(): void;
+
+    /**
+     * Close the worker.
+     */
+    public function close(bool $graceful = false): void
+    {
+        $this->requireInMainProcess(__METHOD__);
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException('The worker is not running.');
+        }
+        if ($graceful) {
+            $this->send(new CloseCommand($graceful));
+            $this->status = self::STATUS_CLOSING;
+        } else {
+            $this->doClose();
+            $this->terminate();
+        }
+    }
+
+    /**
+     * Actual execution close method.
+     */
+    abstract protected function doClose(): void;
+
+    /**
+     * Send a signal to the worker process.
+     *
+     * @param int $signal
+     * @return void
+     */
+    public function signal(int $signal): void
+    {
+        $this->requireInMainProcess(__METHOD__);
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException('The worker is not running.');
+        }
+        $this->doSignal($signal);
+    }
+
+    /**
+     * Actual execution signal method.
+     */
+    abstract protected function doSignal(int $signal): void;
+
+    /**
+     * Register signals handler for the worker.
+     *
+     * @param int|array $signals
+     * @param callable|int $handler
+     * @return void
+     */
+    public function onSignals(int|array $signals, callable|int $handler): void
+    {
+        $this->requireInChildProcess(__METHOD__);
+        if (is_int($handler)) {
+            Process::current()->signal($signals, $handler);
+        } else {
+            foreach ((array)$signals as $signal) {
+                Loop::get()->addSignal($signal, $handler);
+            }
+        }
+    }
+
+    /**
+     * Checks the worker is alive.
+     *
+     * @return void
+     */
+    public function alive(): void
+    {
+        $this->requireInMainProcess(__METHOD__);
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException('The worker is not running.');
+        }
+        $this->send(new HeartbeatCommand());
+    }
+
+    /**
+     * Send command to the worker.
+     *
+     * @param CommandInterface $command
+     * @return void
+     */
+    public function send(CommandInterface $command): void
+    {
+        $this->control->send($command);
+    }
+
+    /**
+     * Send message to the worker.
+     * @param string $message
+     * @return void
+     */
+    public function sendMessage(string $message): void
+    {
+        $this->send(new MessageCommand($message));
     }
 
     /**
@@ -170,7 +294,7 @@ abstract class Worker extends EventEmitter
             case 'NOP':
                 break;
             case 'CLOSE':
-                $this->handleClose($command->isGraceful());
+                $this->terminate();
                 break;
             case 'HEARTBEAT':
                 $this->send(new WorkerPingCommand($this->getPid()));
@@ -216,85 +340,6 @@ abstract class Worker extends EventEmitter
     public function getAliveSeconds(): int
     {
         return time() - $this->createdAt->getTimestamp();
-    }
-
-    /**
-     * Starts the worker.
-     */
-    public function start(): void
-    {
-        $this->requireInMainProcess(__METHOD__);
-        if ($this->status !== self::STATUS_READY) {
-            throw new RuntimeException('The worker is already running.');
-        }
-        $this->doStart();
-        $this->status = self::STATUS_STARTED;
-    }
-
-    /**
-     * Actual execution start method.
-     */
-    abstract protected function doStart(): void;
-
-    /**
-     * Close the worker.
-     */
-    public function close(bool $graceful = false): void
-    {
-        $this->requireInMainProcess(__METHOD__);
-        if ($this->status !== self::STATUS_STARTED) {
-            throw new RuntimeException('The worker is not running.');
-        }
-        $this->send(new CloseCommand($graceful));
-        $this->status = self::STATUS_CLOSING;
-    }
-
-    /**
-     * Checks the worker is alive.
-     *
-     * @return void
-     */
-    public function alive(): void
-    {
-        $this->requireInMainProcess(__METHOD__);
-        if ($this->status !== self::STATUS_STARTED) {
-            throw new RuntimeException('The worker is not running.');
-        }
-        $this->send(new HeartbeatCommand());
-    }
-
-    /**
-     * Send command to the worker.
-     *
-     * @param CommandInterface $command
-     * @return void
-     */
-    public function send(CommandInterface $command): void
-    {
-        $this->control->send($command);
-    }
-
-    /**
-     * Send message to the worker.
-     * @param string $message
-     * @return void
-     */
-    public function sendMessage(string $message): void
-    {
-        $this->send(new MessageCommand($message));
-    }
-
-    /**
-     * Close the worker.
-     * {@internal}
-     * @param bool $graceful
-     * @return void
-     */
-    protected function handleClose(bool $graceful): void
-    {
-        $this->requireInChildProcess(__METHOD__);
-        $this->status = self::STATUS_TERMINATED;
-        $this->emit('close', [$graceful]);
     }
 
     protected function requireInChildProcess(string $method): void

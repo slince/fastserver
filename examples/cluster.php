@@ -12,13 +12,17 @@ $cluster = Cluster::create(function(Cluster $cluster){
         echo 'received command:', $command->getCommandId(), PHP_EOL;
     });
 
+    $cluster->worker->onSignals('signal', function(int $signal){
+        echo 'received signal:', $signal;
+    });
+
     $socket = $cluster->listen('tcp://127.0.0.1:2345');
 
     $socket->on('connection', function (ConnectionInterface $connection) {
         echo '[' . $connection->getRemoteAddress() . ' connected]' . PHP_EOL;
 
         $connection->once('data', function () use ($connection) {
-            $body = "<html><h1>Hello world!</h1></html>\r\n";
+            $body = "Hello world!\r\n";
             $connection->end("HTTP/1.1 200 OK\r\nContent-Length: " . strlen($body) . "\r\nConnection: close\r\n\r\n" . $body);
         });
 

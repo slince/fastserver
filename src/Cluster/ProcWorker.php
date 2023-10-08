@@ -13,17 +13,12 @@ declare(strict_types=1);
 
 namespace Waveman\Cluster;
 
-use React\EventLoop\Loop;
+use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
-use Slince\Process\Process;
 use Symfony\Component\Process\PhpProcess;
 use Symfony\Component\Process\Process as SymfonyProcess;
-use Waveman\Channel\DelegatingChannel;
-use Waveman\Channel\SignalChannel;
 use Waveman\Channel\StreamChannel;
 use Waveman\Cluster\Command\CommandFactory;
-use Waveman\Cluster\Command\NopCommand;
-use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Exception\RuntimeException;
 
 final class ProcWorker extends Worker
@@ -52,30 +47,38 @@ final class ProcWorker extends Worker
     /**
      * {@inheritdoc}
      */
+    protected function doRun(): void
+    {
+        $this->control = new StreamChannel(new ReadableResourceStream(STDIN), CommandFactory::create());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function doStart(): void
     {
         $entry = self::getEntryFile();
         $this->process = new PhpProcess($entry, null, [Cluster::WAVE_MAN_PID => $this->getPid()], 0);
         $stream = fopen('php://temporary', 'w+');
         $this->process->setInput($stream);
-        $this->createChannel($stream);
+        $this->control = new StreamChannel(new WritableResourceStream($stream), CommandFactory::create());
         $this->process->start();
     }
 
-    private function createChannel($stream): void
+    /**
+     * {@inheritdoc}
+     */
+    protected function doClose(): void
     {
-        $loop = Loop::get();
-        // try to create signal channel.
-        $channels = [];
-        if (Process::isSupportPosixSignal()) {
-            $channels[] = new SignalChannel([
-                \SIGTERM => new CloseCommand(true),
-                \SIGQUIT => new CloseCommand(false),
-                \SIGINT => new NopCommand(), // ignore ctrl+c
-            ], $this->process, $loop);
-        }
-        $channels[] = new StreamChannel(new WritableResourceStream($stream), CommandFactory::create());
-        $this->control = count($channels) > 1 ? new DelegatingChannel($channels) : $channels[0];
+        $this->process->stop(10,\SIGKILL);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doSignal(int $signal): void
+    {
+        $this->process->signal($signal);
     }
 
     private static function getEntryFile(): string

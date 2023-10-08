@@ -17,11 +17,7 @@ use React\EventLoop\Factory;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
-use Waveman\Channel\DelegatingChannel;
-use Waveman\Channel\SignalChannel;
 use Waveman\Channel\UnixSocketChannel;
-use Waveman\Cluster\Command\NopCommand;
-use Waveman\Server\Command\CloseCommand;
 use Waveman\Server\Command\CommandFactory;
 
 final class ForkWorker extends Worker
@@ -44,6 +40,22 @@ final class ForkWorker extends Worker
     /**
      * {@inheritdoc}
      */
+    protected function doClose(): void
+    {
+        $this->process->signal(\SIGKILL);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doSignal(int $signal): void
+    {
+        $this->process->signal($signal);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     protected function doStart(): void
     {
         $this->sockets = UnixSocketChannel::createSocketPair();
@@ -60,31 +72,22 @@ final class ForkWorker extends Worker
             $this->cluster->isPrimary = false;
             $this->cluster->worker = $this;
             // reset loop instance.
-            Loop::get()->stop();
+            $this->stopLoop(Loop::get());
             $loop = Factory::create();
             $this->createChannel($loop);
             $this->run();
         };
     }
 
-    private function stopLoop(LoopInterface $loop)
+    private function stopLoop(LoopInterface $loop): void
     {
-        $loop->removeSignal();
+        $loop->stop();
     }
 
     private function createChannel(LoopInterface $loop): void
     {
         // try to create signal channel.
-        $channels = [];
-        if (Process::isSupportPosixSignal()) {
-            $channels[] = new SignalChannel([
-                \SIGTERM => new CloseCommand(true),
-                \SIGQUIT => new CloseCommand(false),
-                \SIGINT => new NopCommand(), // ignore ctrl+c
-            ], $this->process, $loop);
-        }
-        $channels[] = new UnixSocketChannel($this->sockets, $loop, !$this->cluster->isPrimary, CommandFactory::create());
-        $this->control = count($channels) > 1 ? new DelegatingChannel($channels) : $channels[0];
+        $this->control = new UnixSocketChannel($this->sockets, $loop, !$this->cluster->isPrimary, CommandFactory::create());
         $this->control->listen([$this, 'handleCommand']);
     }
 }
