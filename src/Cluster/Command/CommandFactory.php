@@ -4,8 +4,8 @@ namespace Waveman\Cluster\Command;
 
 use Waveman\Channel\CommandFactoryInterface;
 use Waveman\Channel\CommandInterface;
+use Waveman\Channel\Exception\InvalidArgumentException;
 use Waveman\Channel\Frame;
-use Waveman\Cluster\Exception\InvalidArgumentException;
 use Waveman\Cluster\WorkerStatus;
 
 final class CommandFactory implements CommandFactoryInterface
@@ -24,7 +24,7 @@ final class CommandFactory implements CommandFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function createMessage(CommandInterface $command): Frame
+    public function createFrame(CommandInterface $command): Frame
     {
         $class = get_class($command);
         if (false === ($index = array_search($class, $this->commands))) {

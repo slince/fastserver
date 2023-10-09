@@ -2,6 +2,8 @@
 
 namespace Waveman\Server\Command;
 
+use Waveman\Cluster\Command\WorkerCommand;
+
 final class WorkerConnectionsCommand extends WorkerCommand
 {
     private array $connections;

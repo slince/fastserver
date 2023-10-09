@@ -15,11 +15,11 @@ namespace Waveman\Channel;
 interface CommandFactoryInterface
 {
     /**
-     * Creates the message instance.
+     * Creates the frame instance.
      * @param CommandInterface $command
      * @return Frame
      */
-    public function createMessage(CommandInterface $command): Frame;
+    public function createFrame(CommandInterface $command): Frame;
 
     /**
      * Checks whether support the command.

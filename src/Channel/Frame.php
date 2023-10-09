@@ -33,7 +33,7 @@ final class Frame
     private int $flags;
 
     /**
-     * @var string
+     * @var mixed
      */
     private mixed $payload;
 

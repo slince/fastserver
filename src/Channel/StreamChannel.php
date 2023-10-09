@@ -40,7 +40,7 @@ class StreamChannel implements ChannelInterface
      */
     public function send(CommandInterface $command): void
     {
-        $message = $this->commandFactory->createMessage($command);
+        $message = $this->commandFactory->createFrame($command);
         $message = Frame::pack($message);
         $this->stream->write($message);
     }
