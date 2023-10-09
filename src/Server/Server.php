@@ -70,6 +70,8 @@ final class Server extends EventEmitter implements ServerInterface
 
     private ConnectionPool $connections;
 
+    private Cluster $cluster;
+
     public function __construct(array $options, ?LoggerInterface $logger = null)
     {
         $this->configure($options);
@@ -167,6 +169,17 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
+    public function close(bool $graceful = false): void
+    {
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException("The server is not running");
+        }
+        $this->status = self::STATUS_CLOSING;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function serve(): void
     {
         if ($this->status !== self::STATUS_READY) {
@@ -183,13 +196,13 @@ final class Server extends EventEmitter implements ServerInterface
 
     private function boot(): void
     {
-        $cluster = Cluster::create();
+        $this->cluster = Cluster::create();
 
-        if ($cluster->isPrimary) {
+        if ($this->cluster->isPrimary) {
             for ($i = 0; $i < $this->options['workers']; $i++) {
-                $cluster->fork();
+                $this->cluster->fork();
             }
-            $cluster->on('worker.close');
+            $this->cluster->on('worker.close');
         }
         $this->activatePlugins();
         $this->loop->addPeriodicTimer(5, [$this, 'waitWorkers']);
