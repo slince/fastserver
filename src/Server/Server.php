@@ -17,18 +17,14 @@ use Evenement\EventEmitter;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
-use React\EventLoop\LoopInterface;
-use React\Socket\SocketServer;
-use Slince\Process\Process;
+use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Waveman\Channel\ChannelInterface;
 use Waveman\Channel\CommandInterface;
-use Waveman\Channel\SignalChannel;
-use Waveman\Server\Command\CloseCommand;
-use Waveman\Server\Command\WorkerCloseCommand;
+use Waveman\Cluster\Cluster;
+use Waveman\Cluster\Exception\LogicException;
 use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\Exception\RuntimeException;
-use Waveman\Server\Worker\WorkerPool;
+use Waveman\Server\Worker\Worker;
 
 final class Server extends EventEmitter implements ServerInterface
 {
@@ -68,37 +64,16 @@ final class Server extends EventEmitter implements ServerInterface
     private array $options;
 
     /**
-     * @var SocketServer|null
-     */
-    private ?SocketServer $socket = null;
-
-    /**
      * @var LoggerInterface
      */
     private LoggerInterface $logger;
 
-    /**
-     * @var LoopInterface
-     */
-    private LoopInterface $loop;
-
-    /**
-     * @var WorkerPool
-     */
-    private WorkerPool $workers;
-
-    /**
-     * @var ChannelInterface
-     */
-    private ChannelInterface $signals;
-
     private ConnectionPool $connections;
 
-    public function __construct(array $options, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
+    public function __construct(array $options, ?LoggerInterface $logger = null)
     {
         $this->configure($options);
         $this->logger = $logger ?? new NullLogger();
-        $this->loop = $loop ?? Loop::get();
         $this->connections = new ConnectionPool();
     }
 
@@ -160,16 +135,6 @@ final class Server extends EventEmitter implements ServerInterface
     }
 
     /**
-     * Return the loop instance of the server.
-     *
-     * @return LoopInterface
-     */
-    public function getLoop(): LoopInterface
-    {
-        return $this->loop;
-    }
-
-    /**
      * Configure options resolver for the server.
      *
      * @param OptionsResolver $resolver
@@ -180,8 +145,7 @@ final class Server extends EventEmitter implements ServerInterface
             ->setDefaults([
                 'reuseport' => false,
                 'max_workers' => 0,
-                'plugins' => [],
-                'worker_type' => getenv('X_WORKER_TYPE')
+                'plugins' => []
             ])
             ->setAllowedTypes('plugins', [PluginInterface::class . '[]'])
             ->setRequired(['address'])
@@ -203,25 +167,12 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function close(bool $graceful = false): void
-    {
-        if ($this->status !== self::STATUS_STARTED) {
-            throw new RuntimeException("The server is not running");
-        }
-        $this->status = self::STATUS_CLOSING;
-        $this->workers->close($graceful);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function serve(): void
     {
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException("The server is already running");
         }
         $this->boot();
-        $this->workers->run();
         // Register signal handlers after workers created.
         $this->signals->listen([$this, 'handleCommand']);
         $this->status = self::STATUS_STARTED;
@@ -232,35 +183,54 @@ final class Server extends EventEmitter implements ServerInterface
 
     private function boot(): void
     {
-        // Create socket firstly.
-        if (false === $this->options['reuseport']) {
-            $this->getSocket();
+        $cluster = Cluster::create();
+
+        if ($cluster->isPrimary) {
+            for ($i = 0; $i < $this->options['workers']; $i++) {
+                $cluster->fork();
+            }
+            $cluster->on('worker.close');
         }
-        $this->createChannel();
-        $this->createWorkers();
         $this->activatePlugins();
         $this->loop->addPeriodicTimer(5, [$this, 'waitWorkers']);
     }
 
-    private function createChannel(): void
+    private function handleWorkerClose(Cluster $cluster, Worker $worker): void
     {
-        // if the signal is supported, create it.
-        if (Process::isSupportPosixSignal()) {
-            $this->signals = new SignalChannel(null, $this->loop, [
-                \SIGTERM => new CloseCommand(true),
-                \SIGINT => new CloseCommand(false),
-                \SIGCHLD => new WorkerCloseCommand()
-            ]);
-            $this->logger->debug("Register signals successfully.");
-        } else {
-            $this->logger->warning("Cannot register signals.");
+        if ($this->status === self::STATUS_STARTED) {
+            $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
+            $cluster->fork();
+        } else if ($this->status === self::STATUS_CLOSING) {
+            $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
         }
     }
 
-    private function createWorkers(): void
+    private function createCallable(): \Closure
     {
-        $this->logger->debug(sprintf("Create %d workers.", $this->options['max_workers']));
-        $this->workers = WorkerPool::createPool($this->options['max_workers'], $this);
+        return function (Cluster $cluster) {
+            $loop = Loop::get();
+            $socket = $cluster->listen($this->options['address'], $this->options);
+
+            // handle connection
+            $socket->on('connection', function(ConnectionInterface $connection) use ($cluster){
+                $this->logger->debug(sprintf('Worker [%s] [%s] Accept connection from %s', $cluster->worker->getId(), $cluster->worker->getPid(), $connection->getLocalAddress()));
+                $connection->on('close', function() use($connection){
+                    $this->connections->remove($connection);
+                });
+                $this->emit('connection', [$connection]);
+            });
+
+            // handler error
+            $socket->on('error', function (\Exception $error) use ($cluster){
+                $this->logger->error(sprintf('Worker [%s] [%s] Accept connection error %s', $cluster->worker->getId(), $cluster->worker->getPid(), $error));
+                $this->emit('error', [$error]);
+            });
+
+            $cluster->worker->on('close', function (){
+
+            });
+            $loop->run();
+        };
     }
 
     private function activatePlugins(): void
@@ -317,17 +287,7 @@ final class Server extends EventEmitter implements ServerInterface
         if (null === $worker) {
             return;
         }
-        if ($this->status === self::STATUS_STARTED) {
-            $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
-            $this->workers->restart($worker->getPid());
-            $this->logger->debug(sprintf('Worker pool size: %d', $this->workers->count()));
-        } else if ($this->status === self::STATUS_CLOSING) {
-            $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
-            $this->workers->remove($worker);
-            if ($this->workers->count() === 0) {
-                $this->handleClose();
-            }
-        }
+
     }
 
     /**
@@ -336,25 +296,24 @@ final class Server extends EventEmitter implements ServerInterface
      */
     private function handleClose(): void
     {
-        if (null !== $this->socket) {
-            $this->socket->close();
-        }
+
         $this->loop->stop();
         $this->status = self::STATUS_TERMINATED;
         $this->logger->info('All workers have been closed and exit the server');
         $this->emit('close');
     }
 
-    /**
-     * Returns the socket instance.
-     *
-     * @return SocketServer
-     */
-    public function getSocket(): SocketServer
+    protected function requireInChildProcess(string $method): void
     {
-        if (null === $this->socket) {
-            $this->socket = new SocketServer($this->options['address'], $this->options, $this->loop);
+        if ($this->cluster->isPrimary) {
+            throw new LogicException(sprintf('The method %s can only be executed in child process.', $method));
         }
-        return $this->socket;
+    }
+
+    protected function requireInMainProcess(string $method): void
+    {
+        if (!$this->cluster->isPrimary) {
+            throw new LogicException(sprintf('The method %s can only be executed in main process.', $method));
+        }
     }
 }

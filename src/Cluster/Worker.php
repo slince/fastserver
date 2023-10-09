@@ -18,12 +18,12 @@ use React\EventLoop\Loop;
 use Slince\Process\Process;
 use Waveman\Channel\ChannelInterface;
 use Waveman\Channel\CommandInterface;
+use Waveman\Cluster\Command\CloseCommand;
+use Waveman\Cluster\Command\HeartbeatCommand;
 use Waveman\Cluster\Command\MessageCommand;
 use Waveman\Cluster\Command\WorkerPingCommand;
 use Waveman\Cluster\Exception\LogicException;
 use Waveman\Cluster\Exception\RuntimeException;
-use Waveman\Server\Command\CloseCommand;
-use Waveman\Server\Command\HeartbeatCommand;
 
 abstract class Worker extends EventEmitter
 {

@@ -15,6 +15,7 @@ namespace Waveman\Cluster;
 use Evenement\EventEmitter;
 use React\Socket\SocketServer;
 use Slince\Process\Process;
+use Waveman\Cluster\Exception\RuntimeException;
 
 final class Cluster extends EventEmitter
 {
@@ -30,6 +31,8 @@ final class Cluster extends EventEmitter
     private int $id = 0;
 
     private static ?Cluster $instance = null;
+
+    private static bool $frozen = false;
 
     private function __construct(callable $callback = null)
     {
@@ -50,10 +53,11 @@ final class Cluster extends EventEmitter
      */
     public static function create(callable $callback = null): Cluster
     {
-        if (null === self::$instance) {
-            self::$instance = new Cluster($callback);
+        if (self::$frozen) {
+            throw new RuntimeException('Cluster can only be created once');
         }
-        return self::$instance;
+        self::$frozen = true;
+        return self::$instance = new Cluster($callback);
     }
 
     /**
