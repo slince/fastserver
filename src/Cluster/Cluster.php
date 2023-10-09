@@ -12,10 +12,11 @@ declare(strict_types=1);
  */
 namespace Waveman\Cluster;
 
+use Evenement\EventEmitter;
 use React\Socket\SocketServer;
 use Slince\Process\Process;
 
-final class Cluster
+final class Cluster extends EventEmitter
 {
     public const WAVE_MAN_PID = 'X_WAVE_MAN_PID';
     public const WAVE_MAN_WORKER_ID = 'X_WAVE_MAN_WID';
@@ -69,7 +70,7 @@ final class Cluster
 
     /**
      * Checks whether support signal.
-     * 
+     *
      * @return bool
      */
     public static function supportSignal(): bool
@@ -96,10 +97,28 @@ final class Cluster
     public function run(bool $blocking = true): void
     {
         if ($this->isPrimary) {
-            $this->workers->wait($blocking);
+            $this->waitWorkers($blocking);
         } else {
             $this->worker->run();
         }
+    }
+
+
+    private function waitWorkers(bool $blocking = true): void
+    {
+        do {
+            $closed = $this->workers->wait($blocking);
+            foreach ($closed as $worker) {
+                $this->emit('worker.close', [$worker]);
+                $this->workers->remove($worker);
+            }
+            if ($this->workers->isEmpty()) {
+                $this->emit('close');
+                break;
+            } else {
+                usleep(2000);
+            }
+        } while ($blocking);
     }
 
     /**

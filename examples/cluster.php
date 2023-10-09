@@ -1,5 +1,6 @@
 <?php
 
+use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Cluster;
@@ -10,6 +11,11 @@ $cluster = Cluster::create(function(Cluster $cluster){
 
     $cluster->worker->on('command', function(CommandInterface $command){
         echo 'received command:', $command->getCommandId(), PHP_EOL;
+    });
+
+    $cluster->worker->on('close', function (){
+        // close the worker.
+        echo 'close the worker';
     });
 
     $cluster->worker->onSignals([\SIGTERM], function(int $signal){
@@ -35,13 +41,16 @@ $cluster = Cluster::create(function(Cluster $cluster){
         echo 'Error: ' . $e->getMessage() . PHP_EOL;
     });
 
-
+    Loop::get()->run();
 });
 
 if ($cluster->isPrimary) {
     $worker = $cluster->fork();
     $worker->on('message', function (string $message){
         echo 'received message from worker: ', $message, PHP_EOL;
+    });
+    $cluster->on('worker.close', function () use($cluster){
+        $cluster->fork();
     });
 }
 

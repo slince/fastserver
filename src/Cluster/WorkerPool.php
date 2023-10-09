@@ -162,6 +162,16 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     }
 
     /**
+     * Checks whether the worker pool is empty.
+     *
+     * @return bool
+     */
+    public function isEmpty(): bool
+    {
+        return $this->count() === 0;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getIterator(): \Iterator
