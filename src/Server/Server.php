@@ -22,9 +22,9 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Cluster;
 use Waveman\Cluster\Exception\LogicException;
+use Waveman\Cluster\Worker;
 use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\Exception\RuntimeException;
-use Waveman\Server\Worker\Worker;
 
 final class Server extends EventEmitter implements ServerInterface
 {
@@ -92,9 +92,6 @@ final class Server extends EventEmitter implements ServerInterface
         foreach ($this->options['plugins'] as $plugin) {
             $this->configurePlugin($plugin, $options[$plugin->getId()] ?? []);
         }
-        if ($this->options['reuseport']) {
-            $this->options['tls']['so_reuseport'] = true;
-        }
     }
 
     private function configurePlugin(PluginInterface $plugin, array $options): void
@@ -103,17 +100,6 @@ final class Server extends EventEmitter implements ServerInterface
         $plugin->configureOptions($optionsResolver);
         $resolved = $optionsResolver->resolve($options);
         $plugin->configure($resolved);
-    }
-
-    /**
-     * Gets the specific option.
-     *
-     * @param string $name
-     * @return mixed
-     */
-    public function getOption(string $name): mixed
-    {
-        return $this->options[$name] ?? null;
     }
 
     /**
@@ -145,7 +131,6 @@ final class Server extends EventEmitter implements ServerInterface
     {
         $resolver
             ->setDefaults([
-                'reuseport' => false,
                 'max_workers' => 0,
                 'plugins' => []
             ])
@@ -187,35 +172,38 @@ final class Server extends EventEmitter implements ServerInterface
         }
         $this->boot();
         // Register signal handlers after workers created.
-        $this->signals->listen([$this, 'handleCommand']);
         $this->status = self::STATUS_STARTED;
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
         $this->emit('start', [$this]);
-        $this->loop->run();
+        Loop::get()->run();
     }
 
     private function boot(): void
     {
-        $this->cluster = Cluster::create();
+        $this->activatePlugins();
+        $this->cluster = Cluster::create($this->createCallable());
 
         if ($this->cluster->isPrimary) {
+            $this->cluster->on('worker.close', function (Worker $worker){
+                if ($this->status === self::STATUS_STARTED) {
+                    $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
+                    $this->cluster->fork();
+                } else if ($this->status === self::STATUS_CLOSING) {
+                    $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
+                }
+            });
+
+            $this->cluster->on('close', function (){
+                $this->status = self::STATUS_TERMINATED;
+                $this->logger->info('All workers have been closed and exit the server');
+                $this->emit('close');
+            });
+
             for ($i = 0; $i < $this->options['workers']; $i++) {
                 $this->cluster->fork();
             }
-            $this->cluster->on('worker.close');
         }
-        $this->activatePlugins();
-        $this->loop->addPeriodicTimer(5, [$this, 'waitWorkers']);
-    }
-
-    private function handleWorkerClose(Cluster $cluster, Worker $worker): void
-    {
-        if ($this->status === self::STATUS_STARTED) {
-            $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
-            $cluster->fork();
-        } else if ($this->status === self::STATUS_CLOSING) {
-            $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
-        }
+        Loop::get()->addPeriodicTimer(5, [$this, 'waitWorkers']);
     }
 
     private function createCallable(): \Closure
@@ -232,7 +220,6 @@ final class Server extends EventEmitter implements ServerInterface
                 });
                 $this->emit('connection', [$connection]);
             });
-
             // handler error
             $socket->on('error', function (\Exception $error) use ($cluster){
                 $this->logger->error(sprintf('Worker [%s] [%s] Accept connection error %s', $cluster->worker->getId(), $cluster->worker->getPid(), $error));
@@ -242,6 +229,7 @@ final class Server extends EventEmitter implements ServerInterface
             $cluster->worker->on('close', function (){
 
             });
+
             $loop->run();
         };
     }
@@ -287,33 +275,6 @@ final class Server extends EventEmitter implements ServerInterface
             default:
                 $this->logger->debug(sprintf('Ignore command %s', $command->getCommandId()));
         }
-    }
-
-    /**
-     * Wait one worker close.
-     * {@internal}
-     * @return void
-     */
-    public function waitWorkers(): void
-    {
-        $worker = $this->workers->wait(false);
-        if (null === $worker) {
-            return;
-        }
-
-    }
-
-    /**
-     * Handle close when all workers are exited.
-     * @return void
-     */
-    private function handleClose(): void
-    {
-
-        $this->loop->stop();
-        $this->status = self::STATUS_TERMINATED;
-        $this->logger->info('All workers have been closed and exit the server');
-        $this->emit('close');
     }
 
     protected function requireInChildProcess(string $method): void

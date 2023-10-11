@@ -18,7 +18,6 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Http\Exception\InvalidHeaderException;
@@ -53,9 +52,9 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
     private array $options;
 
-    public function __construct(array $options, ?LoggerInterface $logger = null, ?LoopInterface $loop = null)
+    public function __construct(array $options, ?LoggerInterface $logger = null)
     {
-        $this->server = new Server($options, $logger, $loop);
+        $this->server = new Server($options, $logger);
         $this->connections = $this->server->getConnections();
         $this->logger = $this->server->getLogger();
         $this->configure($options);
