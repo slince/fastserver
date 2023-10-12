@@ -15,6 +15,7 @@ namespace Waveman\Cluster;
 use Evenement\EventEmitter;
 use React\Socket\SocketServer;
 use Slince\Process\Process;
+use Waveman\Cluster\Exception\LogicException;
 use Waveman\Cluster\Exception\RuntimeException;
 
 final class Cluster extends EventEmitter
@@ -29,6 +30,8 @@ final class Cluster extends EventEmitter
     public WorkerPool $workers;
 
     private int $id = 0;
+
+    private array $signals = [];
 
     private static ?Cluster $instance = null;
 
@@ -83,12 +86,37 @@ final class Cluster extends EventEmitter
     }
 
     /**
+     * Register signals handler for the cluster.
+     *
+     * @param int|array $signals
+     * @param callable|int $handler
+     * @return void
+     */
+    public function onSignals(int|array $signals, callable|int $handler): void
+    {
+        $this->requireInMainProcess(__METHOD__);
+        $this->signals = (array)$signals;
+        SignalHelper::registerSignals($signals, $handler);
+    }
+
+    /**
+     * Return the register signals.
+     *
+     * @return array
+     */
+    public function getSignals(): array
+    {
+        return $this->signals;
+    }
+
+    /**
      * Fork a worker.
      *
      * @return Worker
      */
     public function fork(): Worker
     {
+        $this->requireInMainProcess(__METHOD__);
         return $this->workers->start($this->id ++);
     }
 
@@ -106,7 +134,6 @@ final class Cluster extends EventEmitter
             $this->worker->run();
         }
     }
-
 
     private function waitWorkers(bool $blocking = true): void
     {
@@ -134,10 +161,22 @@ final class Cluster extends EventEmitter
      */
     public function listen(string $address, array $context = []): SocketServer
     {
-        if ($this->workers instanceof ForkWorkerPool) {
-            $context['tcp'] ??= [];
-            $context['tcp']['so_reuseport'] = true;
-        }
+        $context['tcp'] ??= [];
+        $context['tcp']['so_reuseport'] = true;
         return new SocketServer($address, $context);
+    }
+
+    public function requireInChildProcess(string $method): void
+    {
+        if ($this->isPrimary) {
+            throw new LogicException(sprintf('The method %s can only be executed in child process.', $method));
+        }
+    }
+
+    public function requireInMainProcess(string $method): void
+    {
+        if (!$this->isPrimary) {
+            throw new LogicException(sprintf('The method %s can only be executed in main process.', $method));
+        }
     }
 }

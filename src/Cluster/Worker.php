@@ -14,15 +14,12 @@ declare(strict_types=1);
 namespace Waveman\Cluster;
 
 use Evenement\EventEmitter;
-use React\EventLoop\Loop;
-use Slince\Process\Process;
 use Waveman\Channel\ChannelInterface;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Command\CloseCommand;
 use Waveman\Cluster\Command\HeartbeatCommand;
 use Waveman\Cluster\Command\MessageCommand;
 use Waveman\Cluster\Command\WorkerPingCommand;
-use Waveman\Cluster\Exception\LogicException;
 use Waveman\Cluster\Exception\RuntimeException;
 
 abstract class Worker extends EventEmitter
@@ -128,7 +125,7 @@ abstract class Worker extends EventEmitter
      */
     public function run(): void
     {
-        $this->requireInChildProcess(__METHOD__);
+        $this->cluster->requireInChildProcess(__METHOD__);
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException('The worker is already running.');
         }
@@ -154,7 +151,7 @@ abstract class Worker extends EventEmitter
      */
     public function heartbeat(): void
     {
-        $this->requireInMainProcess(__METHOD__);
+        $this->cluster->requireInMainProcess(__METHOD__);
         $this->updatedAt = new \DateTime();
     }
 
@@ -173,7 +170,7 @@ abstract class Worker extends EventEmitter
      */
     public function start(): void
     {
-        $this->requireInMainProcess(__METHOD__);
+        $this->cluster->requireInMainProcess(__METHOD__);
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException('The worker is already running.');
         }
@@ -191,7 +188,7 @@ abstract class Worker extends EventEmitter
      */
     public function close(bool $graceful = false): void
     {
-        $this->requireInMainProcess(__METHOD__);
+        $this->cluster->requireInMainProcess(__METHOD__);
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
@@ -217,7 +214,7 @@ abstract class Worker extends EventEmitter
      */
     public function signal(int $signal): void
     {
-        $this->requireInMainProcess(__METHOD__);
+        $this->cluster->requireInMainProcess(__METHOD__);
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
@@ -238,14 +235,8 @@ abstract class Worker extends EventEmitter
      */
     public function onSignals(int|array $signals, callable|int $handler): void
     {
-        $this->requireInChildProcess(__METHOD__);
-        if (is_int($handler)) {
-            Process::current()->signal($signals, $handler);
-        } else {
-            foreach ((array)$signals as $signal) {
-                Loop::get()->addSignal($signal, $handler);
-            }
-        }
+        $this->cluster->requireInChildProcess(__METHOD__);
+        SignalHelper::registerSignals($signals, $handler);
     }
 
     /**
@@ -255,7 +246,7 @@ abstract class Worker extends EventEmitter
      */
     public function alive(): void
     {
-        $this->requireInMainProcess(__METHOD__);
+        $this->cluster->requireInMainProcess(__METHOD__);
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException('The worker is not running.');
         }
@@ -328,7 +319,7 @@ abstract class Worker extends EventEmitter
      */
     public function getUpdatedAt(): \DateTimeInterface
     {
-        $this->requireInMainProcess(__METHOD__);
+        $this->cluster->requireInMainProcess(__METHOD__);
         return $this->updatedAt;
     }
 
@@ -340,19 +331,5 @@ abstract class Worker extends EventEmitter
     public function getAliveSeconds(): int
     {
         return time() - $this->createdAt->getTimestamp();
-    }
-
-    protected function requireInChildProcess(string $method): void
-    {
-        if ($this->cluster->isPrimary) {
-            throw new LogicException(sprintf('The method %s can only be executed in child process.', $method));
-        }
-    }
-
-    protected function requireInMainProcess(string $method): void
-    {
-        if (!$this->cluster->isPrimary) {
-            throw new LogicException(sprintf('The method %s can only be executed in main process.', $method));
-        }
     }
 }

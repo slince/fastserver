@@ -199,6 +199,19 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->emit('close');
             });
 
+            // Register signal handlers for the cluster.
+            $this->cluster->onSignals(\SIGINT, function (){
+                $this->close(false);
+            });
+
+            $this->cluster->onSignals(\SIGTERM, function (){
+                $this->close(true);
+            });
+
+            $this->cluster->onSignals(\SIGUSR1, function (){
+                $this->cluster->workers->restartAll();
+            });
+
             for ($i = 0; $i < $this->options['workers']; $i++) {
                 $this->cluster->fork();
             }
@@ -227,7 +240,6 @@ final class Server extends EventEmitter implements ServerInterface
             });
 
             $cluster->worker->on('close', function (){
-
             });
 
             $loop->run();

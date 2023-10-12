@@ -81,6 +81,7 @@ final class ForkWorker extends Worker
 
     private function stopLoop(LoopInterface $loop): void
     {
+        SignalHelper::registerSignals($this->cluster->getSignals(), \SIG_DFL);
         $loop->stop();
     }
 
