@@ -21,8 +21,9 @@ use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Cluster;
-use Waveman\Cluster\Exception\LogicException;
+use Waveman\Cluster\Command\CloseCommand;
 use Waveman\Cluster\Worker;
+use Waveman\Server\Command\ReloadCommand;
 use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\Exception\RuntimeException;
 
@@ -159,7 +160,8 @@ final class Server extends EventEmitter implements ServerInterface
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException("The server is not running");
         }
-        $this->status = self::STATUS_CLOSING;
+        $this->cluster->workers->close($graceful);
+        $this->status = $graceful ? self::STATUS_CLOSING : self::STATUS_TERMINATED;
     }
 
     /**
@@ -184,39 +186,44 @@ final class Server extends EventEmitter implements ServerInterface
         $this->cluster = Cluster::create($this->createCallable());
 
         if ($this->cluster->isPrimary) {
-            $this->cluster->on('worker.close', function (Worker $worker){
-                if ($this->status === self::STATUS_STARTED) {
-                    $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
-                    $this->cluster->fork();
-                } else if ($this->status === self::STATUS_CLOSING) {
-                    $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
-                }
-            });
-
-            $this->cluster->on('close', function (){
-                $this->status = self::STATUS_TERMINATED;
-                $this->logger->info('All workers have been closed and exit the server');
-                $this->emit('close');
-            });
-
-            // Register signal handlers for the cluster.
-            $this->cluster->onSignals(\SIGINT, function (){
-                $this->close(false);
-            });
-
-            $this->cluster->onSignals(\SIGTERM, function (){
-                $this->close(true);
-            });
-
-            $this->cluster->onSignals(\SIGUSR1, function (){
-                $this->cluster->workers->restartAll();
-            });
-
-            for ($i = 0; $i < $this->options['workers']; $i++) {
-                $this->cluster->fork();
-            }
+            $this->setupPrimary();
         }
         Loop::get()->addPeriodicTimer(5, [$this, 'waitWorkers']);
+    }
+
+    private function setupPrimary(): void
+    {
+        $this->cluster->on('worker.close', function (Worker $worker){
+            if ($this->status === self::STATUS_STARTED) {
+                $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
+                $this->cluster->fork();
+            } else if ($this->status === self::STATUS_CLOSING) {
+                $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
+            }
+        });
+
+        $this->cluster->on('close', function (){
+            $this->status = self::STATUS_TERMINATED;
+            $this->logger->info('All workers have been closed and exit the server');
+            $this->emit('close');
+        });
+
+        // Register signal handlers for the cluster.
+        $this->cluster->onSignals(\SIGINT, function (){
+            $this->handleCommand(new CloseCommand(false));
+        });
+
+        $this->cluster->onSignals(\SIGTERM, function (){
+            $this->handleCommand(new CloseCommand(true));
+        });
+
+        $this->cluster->onSignals(\SIGUSR1, function (){
+            $this->handleCommand(new ReloadCommand());
+        });
+
+        for ($i = 0; $i < $this->options['workers']; $i++) {
+            $this->cluster->fork();
+        }
     }
 
     private function createCallable(): \Closure
@@ -274,32 +281,15 @@ final class Server extends EventEmitter implements ServerInterface
                 break;
             case 'RELOAD':
                 $this->logger->debug('Reload workers.');
-                $this->workers->restartAll();
+                $this->cluster->workers->restartAll();
                 break;
             // Command from workers.
             case 'WORKER_PING':
                 $this->logger->debug(sprintf('Received ping from worker %d.', $command->getWorkerId()));
-                $this->workers->heartbeat($command->getWorkerId());
-                break;
-            case 'WORKER_CLOSE':
-                $this->waitWorkers();
+                $this->cluster->workers->heartbeat($command->getWorkerId());
                 break;
             default:
                 $this->logger->debug(sprintf('Ignore command %s', $command->getCommandId()));
-        }
-    }
-
-    protected function requireInChildProcess(string $method): void
-    {
-        if ($this->cluster->isPrimary) {
-            throw new LogicException(sprintf('The method %s can only be executed in child process.', $method));
-        }
-    }
-
-    protected function requireInMainProcess(string $method): void
-    {
-        if (!$this->cluster->isPrimary) {
-            throw new LogicException(sprintf('The method %s can only be executed in main process.', $method));
         }
     }
 }

@@ -129,6 +129,11 @@ final class Cluster extends EventEmitter
     public function run(bool $blocking = true): void
     {
         if ($this->isPrimary) {
+            if (Cluster::supportSignal()) {
+                $this->onSignals(\SIGCHLD, function (){
+                    $this->waitWorkers(false);
+                });
+            }
             $this->waitWorkers($blocking);
         } else {
             $this->worker->run();
