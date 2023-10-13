@@ -15,23 +15,37 @@ namespace Waveman\Cluster;
 
 final class WorkerStatus implements \JsonSerializable
 {
+    private int $id;
     private int $pid;
     private string $listening;
     private int $memoryUsage;
     private int $connections;
+    private int $aliveSeconds;
 
     /**
+     * @param int $id
      * @param int $pid
      * @param string $listening
      * @param int $memoryUsage
      * @param int $connections
+     * @param int $aliveSeconds
      */
-    public function __construct(int $pid, string $listening, int $memoryUsage, int $connections)
+    public function __construct(int $id, int $pid, string $listening, int $memoryUsage, int $connections, int $aliveSeconds)
     {
+        $this->id = $id;
         $this->pid = $pid;
         $this->listening = $listening;
         $this->memoryUsage = $memoryUsage;
         $this->connections = $connections;
+        $this->aliveSeconds = $aliveSeconds;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId(): int
+    {
+        return $this->id;
     }
 
     public function getPid(): int
@@ -55,15 +69,25 @@ final class WorkerStatus implements \JsonSerializable
     }
 
     /**
+     * @return int
+     */
+    public function getAliveSeconds(): int
+    {
+        return $this->aliveSeconds;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function jsonSerialize(): array
     {
         return [
+            'id' => $this->id,
             'pid' => $this->pid,
             'listening' => $this->listening,
             'memoryUsage' => $this->memoryUsage,
-            'connections' => $this->connections
+            'connections' => $this->connections,
+            'aliveSeconds' => $this->aliveSeconds
         ];
     }
 }
