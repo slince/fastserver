@@ -96,7 +96,7 @@ final class Cluster extends EventEmitter
     {
         $this->requireInMainProcess(__METHOD__);
         $this->signals = (array)$signals;
-        SignalHelper::registerSignals($signals, $handler);
+        Process::current()->signal($signals, $handler);
     }
 
     /**
@@ -123,18 +123,17 @@ final class Cluster extends EventEmitter
     /**
      * Run the cluster.
      *
-     * @param bool $blocking
      * @return void
      */
-    public function run(bool $blocking = true): void
+    public function run(): void
     {
         if ($this->isPrimary) {
             if (Cluster::supportSignal()) {
                 $this->onSignals(\SIGCHLD, function (){
-                    $this->waitWorkers(false);
+                    $this->wait(false);
                 });
             }
-            $this->wait($blocking);
+            $this->wait();
         } else {
             $this->worker->run();
         }

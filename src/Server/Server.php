@@ -134,12 +134,10 @@ final class Server extends EventEmitter implements ServerInterface
     private function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefaults([
-                'max_workers' => 0,
-                'plugins' => []
-            ])
+            ->setDefaults(['plugins' => []])
             ->setAllowedTypes('plugins', [PluginInterface::class . '[]'])
-            ->setRequired(['address'])
+            ->setRequired(['address', 'worker_num'])
+            ->setInfo('worker_num', 'The worker num of the server')
             ->setIgnoreUndefined()
         ;
     }
@@ -180,7 +178,7 @@ final class Server extends EventEmitter implements ServerInterface
         $this->status = self::STATUS_STARTED;
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
         $this->emit('start', [$this]);
-        Loop::get()->run();
+        $this->cluster->run();
     }
 
     private function boot(): void
@@ -191,9 +189,6 @@ final class Server extends EventEmitter implements ServerInterface
         if ($this->cluster->isPrimary) {
             $this->setupPrimary();
         }
-        Loop::get()->addPeriodicTimer(5, function (){
-            $this->cluster->wait(false);
-        });
     }
 
     private function setupPrimary(): void
@@ -226,7 +221,7 @@ final class Server extends EventEmitter implements ServerInterface
             $this->handleCommand(new ReloadCommand());
         });
 
-        for ($i = 0; $i < $this->options['workers']; $i++) {
+        for ($i = 0; $i < $this->options['worker_num']; $i++) {
             $this->cluster->fork();
         }
     }
