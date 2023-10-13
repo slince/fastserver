@@ -297,6 +297,9 @@ abstract class Worker extends EventEmitter
             case 'WORKER_PING':
                 $this->heartbeat();
                 break;
+            case 'WORKER_STATUS':
+                $this->emit('status', [$command->getWorkerStatus()]);
+                break;
             default:
                 $this->emit('command', [$command]);
         }

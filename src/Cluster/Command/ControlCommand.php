@@ -17,6 +17,9 @@ use Waveman\Channel\PayloadCommandInterface;
 
 final class ControlCommand implements PayloadCommandInterface
 {
+    public const CONNECTIONS = 1;
+    public const STATUS = 2;
+
     private int $flags;
 
     public function __construct(int $flags)

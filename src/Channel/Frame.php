@@ -21,9 +21,9 @@ final class Frame
     public const BUFFER_SIZE = 65536;
 
     /** Payload flags.*/
-    public const PAYLOAD_NONE    = 2;
-    public const PAYLOAD_RAW     = 4;
-    public const PAYLOAD_JSON = 8;
+    public const PAYLOAD_NONE = 1;
+    public const PAYLOAD_RAW = 2;
+    public const PAYLOAD_JSON = 4;
 
     private int $type;
     

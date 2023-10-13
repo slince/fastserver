@@ -6,6 +6,7 @@ use Waveman\Channel\CommandFactoryInterface;
 use Waveman\Channel\CommandInterface;
 use Waveman\Channel\Exception\InvalidArgumentException;
 use Waveman\Channel\Frame;
+use Waveman\Cluster\ConnectionDescriptor;
 use Waveman\Cluster\WorkerStatus;
 
 final class CommandFactory implements CommandFactoryInterface
@@ -17,6 +18,8 @@ final class CommandFactory implements CommandFactoryInterface
         ControlCommand::class,
         HeartbeatCommand::class,
         MessageCommand::class,
+        ReloadCommand::class,
+        WorkerConnectionsCommand::class,
         WorkerPingCommand::class,
         WorkerStatusCommand::class
     ];
@@ -36,7 +39,8 @@ final class CommandFactory implements CommandFactoryInterface
              MessageCommand::class => $command->getMessage(),
              WorkerPingCommand::class => (string)$command->getWorkerId(),
              WorkerStatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getWorkerStatus()],
-             default => null
+             WorkerConnectionsCommand::class => ['worker_id' => $command->getWorkerId(), 'connections' => $command->getConnections()],
+            default => null
         };
         $flags = $payload ? (is_string($payload) ? Frame::PAYLOAD_RAW: Frame::PAYLOAD_JSON) : Frame::PAYLOAD_NONE;
         return new Frame($index,$flags, $payload);
@@ -58,6 +62,7 @@ final class CommandFactory implements CommandFactoryInterface
             MessageCommand::class => new MessageCommand($frame->getPayload()),
             WorkerPingCommand::class => new WorkerPingCommand(intval($frame->getPayload())),
             WorkerStatusCommand::class => new WorkerStatusCommand($payload['worker_id'], new WorkerStatus(...$payload['status'])),
+            WorkerConnectionsCommand::class => new WorkerConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(...$item), $payload['connections'])),
             default => new $class()
         };
     }

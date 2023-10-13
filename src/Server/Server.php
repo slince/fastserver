@@ -22,6 +22,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Cluster;
 use Waveman\Cluster\Command\CloseCommand;
+use Waveman\Cluster\ConnectionMetadata;
+use Waveman\Cluster\ConnectionPool;
 use Waveman\Cluster\Worker;
 use Waveman\Server\Command\ReloadCommand;
 use Waveman\Server\Exception\InvalidArgumentException;
