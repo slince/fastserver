@@ -22,10 +22,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Cluster;
 use Waveman\Cluster\Command\CloseCommand;
+use Waveman\Cluster\Command\ReloadCommand;
 use Waveman\Cluster\ConnectionMetadata;
 use Waveman\Cluster\ConnectionPool;
 use Waveman\Cluster\Worker;
-use Waveman\Server\Command\ReloadCommand;
 use Waveman\Server\Exception\InvalidArgumentException;
 use Waveman\Server\Exception\RuntimeException;
 
@@ -287,11 +287,6 @@ final class Server extends EventEmitter implements ServerInterface
             case 'RELOAD':
                 $this->logger->debug('Reload workers.');
                 $this->cluster->workers->restartAll();
-                break;
-            // Command from workers.
-            case 'WORKER_PING':
-                $this->logger->debug(sprintf('Received ping from worker %d.', $command->getWorkerId()));
-                $this->cluster->workers->heartbeat($command->getWorkerId());
                 break;
             default:
                 $this->logger->debug(sprintf('Ignore command %s', $command->getCommandId()));
