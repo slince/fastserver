@@ -18,7 +18,7 @@ use React\Socket\ConnectionInterface;
 final class ConnectionPool implements \IteratorAggregate, \Countable
 {
     /**
-     * @var \SplObjectStorage
+     * @var \SplObjectStorage<ConnectionInterface, ConnectionMetadata>
      */
     protected \SplObjectStorage $connections;
 
@@ -40,6 +40,13 @@ final class ConnectionPool implements \IteratorAggregate, \Countable
     public function getMetadata(ConnectionInterface $connection): ConnectionMetadata
     {
         return $this->connections->offsetGet($connection);
+    }
+
+    public function close(): void
+    {
+        foreach ($this->connections as $connection => $_) {
+            $connection->end();
+        }
     }
 
     public function getIterator(): \Iterator

@@ -69,6 +69,9 @@ final class Server extends EventEmitter implements ServerInterface
      */
     private LoggerInterface $logger;
 
+    /**
+     * @var ConnectionPool<ConnectionInterface, ConnectionMetadata>
+     */
     private ConnectionPool $connections;
 
     private Cluster $cluster;
@@ -188,7 +191,9 @@ final class Server extends EventEmitter implements ServerInterface
         if ($this->cluster->isPrimary) {
             $this->setupPrimary();
         }
-        Loop::get()->addPeriodicTimer(5, [$this, 'waitWorkers']);
+        Loop::get()->addPeriodicTimer(5, function (){
+            $this->cluster->wait(false);
+        });
     }
 
     private function setupPrimary(): void
@@ -240,15 +245,18 @@ final class Server extends EventEmitter implements ServerInterface
                 });
                 $this->emit('connection', [$connection]);
             });
+
             // handler error
             $socket->on('error', function (\Exception $error) use ($cluster){
                 $this->logger->error(sprintf('Worker [%s] [%s] Accept connection error %s', $cluster->worker->getId(), $cluster->worker->getPid(), $error));
                 $this->emit('error', [$error]);
             });
 
-            $cluster->worker->on('close', function (){
+            // when the worker received close command.
+            $cluster->worker->on('close', function () use($loop){
+                $this->connections->close();
+                $loop->stop();
             });
-
             $loop->run();
         };
     }

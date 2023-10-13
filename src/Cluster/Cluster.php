@@ -134,14 +134,21 @@ final class Cluster extends EventEmitter
                     $this->waitWorkers(false);
                 });
             }
-            $this->waitWorkers($blocking);
+            $this->wait($blocking);
         } else {
             $this->worker->run();
         }
     }
 
-    private function waitWorkers(bool $blocking = true): void
+    /**
+     * Wait the workers exited.
+     *
+     * @param bool $blocking
+     * @return void
+     */
+    public function wait(bool $blocking = true): void
     {
+        $this->requireInMainProcess(__METHOD__);
         do {
             $closed = $this->workers->wait($blocking);
             foreach ($closed as $worker) {
