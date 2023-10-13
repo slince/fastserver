@@ -19,7 +19,7 @@ use Symfony\Component\Process\PhpProcess;
 use Symfony\Component\Process\Process as SymfonyProcess;
 use Waveman\Channel\StreamChannel;
 use Waveman\Cluster\Command\CommandFactory;
-use Waveman\Server\Exception\RuntimeException;
+use Waveman\Cluster\Exception\RuntimeException;
 
 final class ProcWorker extends Worker
 {

@@ -18,7 +18,7 @@ use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
 use Waveman\Channel\UnixSocketChannel;
-use Waveman\Server\Command\CommandFactory;
+use Waveman\Cluster\Command\CommandFactory;
 
 final class ForkWorker extends Worker
 {

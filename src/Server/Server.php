@@ -174,7 +174,7 @@ final class Server extends EventEmitter implements ServerInterface
     public function serve(): void
     {
         if ($this->status !== self::STATUS_READY) {
-            throw new RuntimeException("The server is already running");
+            throw new RuntimeException('The server is already running.');
         }
         $this->boot();
         // Register signal handlers after workers created.
