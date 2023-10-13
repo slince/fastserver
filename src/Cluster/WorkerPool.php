@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Waveman\Cluster;
 
+use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Exception\InvalidArgumentException;
 
 abstract class WorkerPool implements \IteratorAggregate, \Countable
@@ -187,6 +188,18 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     {
         foreach ($this->workers as $worker) {
             $worker->close($graceful);
+        }
+    }
+
+    /**
+     * Send command to all workers.
+     * 
+     * @param CommandInterface $command
+     */
+    public function send(CommandInterface $command): void
+    {
+        foreach ($this->workers as $worker) {
+            $worker->send($command);
         }
     }
 

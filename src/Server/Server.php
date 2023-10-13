@@ -22,6 +22,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Cluster;
 use Waveman\Cluster\Command\CloseCommand;
+use Waveman\Cluster\Command\ControlCommand;
 use Waveman\Cluster\Command\ReloadCommand;
 use Waveman\Cluster\ConnectionMetadata;
 use Waveman\Cluster\ConnectionPool;
@@ -214,13 +215,17 @@ final class Server extends EventEmitter implements ServerInterface
         $this->cluster->onSignals(\SIGINT, function (){
             $this->handleCommand(new CloseCommand(false));
         });
-
         $this->cluster->onSignals(\SIGTERM, function (){
             $this->handleCommand(new CloseCommand(true));
         });
-
-        $this->cluster->onSignals(\SIGUSR1, function (){
+        $this->cluster->onSignals(\SIGQUIT, function (){
             $this->handleCommand(new ReloadCommand());
+        });
+        $this->cluster->onSignals(\SIGUSR1, function (){
+            $this->handleCommand(new ControlCommand(ControlCommand::STATUS));
+        });
+        $this->cluster->onSignals(\SIGUSR2, function (){
+            $this->handleCommand(new ControlCommand(ControlCommand::CONNECTIONS));
         });
 
         for ($i = 0; $i < $this->options['worker_num']; $i++) {
@@ -287,6 +292,10 @@ final class Server extends EventEmitter implements ServerInterface
             case 'RELOAD':
                 $this->logger->debug('Reload workers.');
                 $this->cluster->workers->restartAll();
+                break;
+            case 'CONTROL':
+                $this->logger->debug('Send control command to workers.');
+                $this->cluster->workers->send($command);
                 break;
             default:
                 $this->logger->debug(sprintf('Ignore command %s', $command->getCommandId()));
