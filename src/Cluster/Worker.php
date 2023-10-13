@@ -17,6 +17,7 @@ use Evenement\EventEmitter;
 use Waveman\Channel\ChannelInterface;
 use Waveman\Channel\CommandInterface;
 use Waveman\Cluster\Command\CloseCommand;
+use Waveman\Cluster\Command\ControlCommand;
 use Waveman\Cluster\Command\HeartbeatCommand;
 use Waveman\Cluster\Command\MessageCommand;
 use Waveman\Cluster\Command\WorkerPingCommand;
@@ -126,9 +127,7 @@ abstract class Worker extends EventEmitter
     public function run(): void
     {
         $this->cluster->requireInChildProcess(__METHOD__);
-        if ($this->status !== self::STATUS_READY) {
-            throw new RuntimeException('The worker is already running.');
-        }
+        $this->requireReady();
         $this->doRun();
         if (null !== $this->callback) {
             call_user_func($this->callback, $this->cluster);
@@ -171,9 +170,7 @@ abstract class Worker extends EventEmitter
     public function start(): void
     {
         $this->cluster->requireInMainProcess(__METHOD__);
-        if ($this->status !== self::STATUS_READY) {
-            throw new RuntimeException('The worker is already running.');
-        }
+        $this->requireReady();
         $this->doStart();
         $this->status = self::STATUS_STARTED;
     }
@@ -189,9 +186,7 @@ abstract class Worker extends EventEmitter
     public function close(bool $graceful = false): void
     {
         $this->cluster->requireInMainProcess(__METHOD__);
-        if ($this->status !== self::STATUS_STARTED) {
-            throw new RuntimeException('The worker is not running.');
-        }
+        $this->requireStarted();
         if ($graceful) {
             $this->send(new CloseCommand($graceful));
             $this->status = self::STATUS_CLOSING;
@@ -215,9 +210,7 @@ abstract class Worker extends EventEmitter
     public function signal(int $signal): void
     {
         $this->cluster->requireInMainProcess(__METHOD__);
-        if ($this->status !== self::STATUS_STARTED) {
-            throw new RuntimeException('The worker is not running.');
-        }
+        $this->requireStarted();
         $this->doSignal($signal);
     }
 
@@ -247,10 +240,32 @@ abstract class Worker extends EventEmitter
     public function alive(): void
     {
         $this->cluster->requireInMainProcess(__METHOD__);
-        if ($this->status !== self::STATUS_STARTED) {
-            throw new RuntimeException('The worker is not running.');
-        }
+        $this->requireStarted();
         $this->send(new HeartbeatCommand());
+    }
+
+    /**
+     * Check the worker status. send command to the worker.
+     *
+     * @return void
+     */
+    public function status(): void
+    {
+        $this->cluster->requireInMainProcess(__METHOD__);
+        $this->requireStarted();
+        $this->send(new ControlCommand(ControlCommand::STATUS));
+    }
+
+    /**
+     * Check the worker connections. send command to the worker.
+     *
+     * @return void
+     */
+    public function connections(): void
+    {
+        $this->cluster->requireInMainProcess(__METHOD__);
+        $this->requireStarted();
+        $this->send(new ControlCommand(ControlCommand::CONNECTIONS));
     }
 
     /**
@@ -266,6 +281,7 @@ abstract class Worker extends EventEmitter
 
     /**
      * Send message to the worker.
+     *
      * @param string $message
      * @return void
      */
@@ -299,6 +315,9 @@ abstract class Worker extends EventEmitter
                 break;
             case 'WORKER_STATUS':
                 $this->emit('status', [$command->getWorkerStatus()]);
+                break;
+            case 'WORKER_CONNECTIONS':
+                $this->emit('connections', [$command->getConnections()]);
                 break;
             default:
                 $this->emit('command', [$command]);
@@ -334,5 +353,19 @@ abstract class Worker extends EventEmitter
     public function getAliveSeconds(): int
     {
         return time() - $this->createdAt->getTimestamp();
+    }
+
+    private function requireStarted(): void
+    {
+        if ($this->status !== self::STATUS_STARTED) {
+            throw new RuntimeException('The worker is not running.');
+        }
+    }
+
+    private function requireReady(): void
+    {
+        if ($this->status !== self::STATUS_READY) {
+            throw new RuntimeException('The worker is already running.');
+        }
     }
 }
