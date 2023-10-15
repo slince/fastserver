@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Waveman\Cluster;
 
-use React\EventLoop\Factory;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
@@ -72,17 +71,10 @@ final class ForkWorker extends Worker
             $this->cluster->isPrimary = false;
             $this->cluster->worker = $this;
             // reset loop instance.
-            $this->stopLoop(Loop::get());
-            $loop = Factory::create();
-            $this->createChannel($loop);
+            SignalHelper::registerSignals(array_unique($this->cluster->getSignals()), \SIG_DFL);
+            $this->createChannel(Loop::get());
             $this->run();
         };
-    }
-
-    private function stopLoop(LoopInterface $loop): void
-    {
-        SignalHelper::registerSignals(array_unique($this->cluster->getSignals()), \SIG_DFL);
-        $loop->stop();
     }
 
     private function createChannel(LoopInterface $loop): void

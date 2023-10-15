@@ -187,7 +187,9 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     public function close(bool $graceful): void
     {
         foreach ($this->workers as $worker) {
-            $worker->close($graceful);
+            if ($worker->getStatus() === Worker::STATUS_STARTED) {
+                $worker->close($graceful);
+            }
         }
     }
 
