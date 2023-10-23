@@ -11,7 +11,7 @@ $logger = new Logger("waveman", [
     new StreamHandler(STDOUT)
 ]);
 
-$server = new Server(['address' => 'tcp://127.0.0.1:2345', 'worker_num' => 2], $logger);
+$server = new Server(['address' => 'tcp://127.0.0.1:2345', 'worker_num' => 1], $logger);
 
 $server->on('connection', function (ConnectionInterface $connection) {
     echo '[' . $connection->getRemoteAddress() . ' connected]' . PHP_EOL;
