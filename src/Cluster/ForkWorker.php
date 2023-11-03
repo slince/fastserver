@@ -37,6 +37,14 @@ final class ForkWorker extends Worker
     }
 
     /**
+     * @return Process
+     */
+    public function getProcess(): Process
+    {
+        return $this->process;
+    }
+
+    /**
      * {@inheritdoc}
      */
     protected function doClose(): void

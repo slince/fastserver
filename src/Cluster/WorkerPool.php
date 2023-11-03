@@ -219,7 +219,21 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      * @param bool $blocking
      * @return \Traversable<Worker>
      */
-    abstract public function wait(bool $blocking = true): \Traversable;
+    public function wait(bool $blocking = true): \Traversable
+    {
+        do {
+            /* @var ProcWorker|ForkWorker $worker */
+            foreach ($this->workers as $worker) {
+                $process = $worker->getProcess();
+                if ($process->isTerminated()) {
+                    $worker->terminate();
+                    $this->remove($worker);
+                    yield $worker;
+                }
+            }
+            usleep(1000);
+        } while($blocking && $this->count() > 0);
+    }
 
     /**
      * Creates a worker pool.
