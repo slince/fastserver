@@ -95,11 +95,7 @@ final class Cluster extends EventEmitter
     public function onSignals(int|array $signals, callable|int $handler): void
     {
         $this->requireInMainProcess(__METHOD__);
-        if (is_array($signals)) {
-            array_push($this->signals, ...$signals);
-        } else {
-            $this->signals[] = $signals;
-        }
+        $this->signals = array_unique(array_merge($this->signals, (array)$signals));
         Process::current()->signal($signals, $handler);
     }
 

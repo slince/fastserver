@@ -78,8 +78,7 @@ final class ForkWorker extends Worker
         return function(){
             $this->cluster->isPrimary = false;
             $this->cluster->worker = $this;
-            // reset loop instance.
-            SignalHelper::registerSignals(array_unique($this->cluster->getSignals()), \SIG_IGN);
+            SignalUtils::registerSignals($this->cluster->getSignals(), \SIG_IGN);
             $this->createChannel(Loop::get());
             $this->run();
         };

@@ -15,7 +15,7 @@ namespace Waveman\Cluster;
 use React\EventLoop\Loop;
 use Slince\Process\Process;
 
-final class SignalHelper
+final class SignalUtils
 {
     /**
      * Register signal handlers for the current process.

@@ -229,7 +229,7 @@ abstract class Worker extends EventEmitter
     public function onSignals(int|array $signals, callable|int $handler): void
     {
         $this->cluster->requireInChildProcess(__METHOD__);
-        SignalHelper::registerSignals($signals, $handler);
+        SignalUtils::registerSignals($signals, $handler);
     }
 
     /**
