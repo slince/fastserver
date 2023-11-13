@@ -148,19 +148,13 @@ final class Cluster extends EventEmitter
     public function wait(bool $blocking = true): void
     {
         $this->requireInMainProcess(__METHOD__);
-        do {
-            $closed = $this->workers->wait($blocking);
-            foreach ($closed as $worker) {
-                $this->emit('worker.close', [$worker]);
-                $this->workers->remove($worker);
-            }
-            if ($this->workers->isEmpty()) {
-                $this->emit('close');
-                break;
-            } else {
-                usleep(2000);
-            }
-        } while ($blocking);
+        $closed = $this->workers->wait($blocking);
+        foreach ($closed as $worker) {
+            $this->emit('worker.close', [$worker]);
+        }
+        if ($this->workers->isEmpty()) {
+            $this->emit('close');
+        }
     }
 
     /**
