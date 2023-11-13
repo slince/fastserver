@@ -95,11 +95,7 @@ final class Cluster extends EventEmitter
     public function onSignals(int|array $signals, callable|int $handler): void
     {
         $this->requireInMainProcess(__METHOD__);
-        if (is_array($signals)) {
-            array_push($this->signals, ...$signals);
-        } else {
-            $this->signals[] = $signals;
-        }
+        $this->signals = array_unique(array_merge($this->signals, (array)$signals));
         Process::current()->signal($signals, $handler);
     }
 
@@ -152,19 +148,13 @@ final class Cluster extends EventEmitter
     public function wait(bool $blocking = true): void
     {
         $this->requireInMainProcess(__METHOD__);
-        do {
-            $closed = $this->workers->wait($blocking);
-            foreach ($closed as $worker) {
-                $this->emit('worker.close', [$worker]);
-                $this->workers->remove($worker);
-            }
-            if ($this->workers->isEmpty()) {
-                $this->emit('close');
-                break;
-            } else {
-                usleep(2000);
-            }
-        } while ($blocking);
+        $closed = $this->workers->wait($blocking);
+        foreach ($closed as $worker) {
+            $this->emit('worker.close', [$worker]);
+        }
+        if ($this->workers->isEmpty()) {
+            $this->emit('close');
+        }
     }
 
     /**

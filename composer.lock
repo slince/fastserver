@@ -1229,16 +1229,16 @@
         },
         {
             "name": "spiral/roadrunner",
-            "version": "v2023.3.0",
+            "version": "v2023.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/roadrunner-server/roadrunner.git",
-                "reference": "90544d7075bee888c7cc08acb608b62e646e1842"
+                "reference": "99cbb8923e07c285d8540d68c72f4a04dfa09d32"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/roadrunner-server/roadrunner/zipball/90544d7075bee888c7cc08acb608b62e646e1842",
-                "reference": "90544d7075bee888c7cc08acb608b62e646e1842",
+                "url": "https://api.github.com/repos/roadrunner-server/roadrunner/zipball/99cbb8923e07c285d8540d68c72f4a04dfa09d32",
+                "reference": "99cbb8923e07c285d8540d68c72f4a04dfa09d32",
                 "shasum": ""
             },
             "type": "metapackage",
@@ -1267,7 +1267,7 @@
                 "docs": "https://roadrunner.dev/docs",
                 "forum": "https://forum.roadrunner.dev/",
                 "issues": "https://github.com/roadrunner-server/roadrunner/issues",
-                "source": "https://github.com/roadrunner-server/roadrunner/tree/v2023.3.0"
+                "source": "https://github.com/roadrunner-server/roadrunner/tree/v2023.3.1"
             },
             "funding": [
                 {
@@ -1275,7 +1275,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-10-05T21:53:45+00:00"
+            "time": "2023-10-12T13:43:50+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
@@ -1587,5 +1587,5 @@
         "php": ">=8.2"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.3.0"
 }

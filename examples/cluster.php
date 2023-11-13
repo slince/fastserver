@@ -29,7 +29,7 @@ $cluster = Cluster::create(function(Cluster $cluster){
 
         $connection->once('data', function () use ($connection) {
             $body = "Hello world!\r\n";
-            $connection->end("HTTP/1.1 200 OK\r\nContent-Length: " . strlen($body) . "\r\nConnection: close\r\n\r\n" . $body);
+            $connection->write("HTTP/1.1 200 OK\r\nContent-Length: " . strlen($body) . "\r\nConnection: close\r\n\r\n" . $body);
         });
 
         $connection->on('close', function () use ($connection) {

@@ -29,17 +29,4 @@ final class ForkWorkerPool extends WorkerPool
     {
         return new ForkWorker($id, $this->cluster, $this->callback);
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function wait(bool $blocking = true): \Traversable
-    {
-        $pid = \pcntl_wait($status, $blocking ? \WUNTRACED : \WNOHANG | \WUNTRACED);
-        if ($pid > 0) {
-            $worker = $this->ensure($pid);
-            $worker->terminate();
-            yield $worker;
-        }
-    }
 }

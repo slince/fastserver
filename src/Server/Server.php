@@ -254,11 +254,13 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->emit('error', [$error]);
             });
 
-            // when the worker received close command.
-            $cluster->worker->on('close', function () use($loop){
+            $close = function () use ($loop){
                 $this->connections->close();
                 $loop->stop();
-            });
+            };
+            // when the worker received close command.
+            $cluster->worker->on('close', $close);
+            $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $close);
             $loop->run();
         };
     }
