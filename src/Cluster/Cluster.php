@@ -141,10 +141,8 @@ final class Cluster extends EventEmitter
     {
         $this->requireInMainProcess(__METHOD__);
         $closed = $this->workers->wait($blocking);
-        foreach ($closed as $worker) {
-            $this->emit('worker.close', [$worker]);
-        }
-        if ($this->workers->isEmpty()) {
+        $hasWorkerExited = iterator_count($closed) > 0;
+        if ($hasWorkerExited && $this->workers->isEmpty()) {
             $this->emit('close');
         }
     }

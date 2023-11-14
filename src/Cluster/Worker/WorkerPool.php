@@ -231,7 +231,6 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
                     yield $worker;
                 }
             }
-            echo 'wait pool...', PHP_EOL;
             usleep(1000);
         } while($blocking && $this->count() > 0);
     }

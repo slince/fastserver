@@ -26,7 +26,6 @@ use Viso\Cluster\Command\ControlCommand;
 use Viso\Cluster\Command\ReloadCommand;
 use Viso\Cluster\ConnectionMetadata;
 use Viso\Cluster\ConnectionPool;
-use Viso\Cluster\Worker\Worker;
 use Viso\Server\Exception\InvalidArgumentException;
 use Viso\Server\Exception\RuntimeException;
 
@@ -186,7 +185,7 @@ final class Server extends EventEmitter implements ServerInterface
 
     private function boot(): void
     {
-        $this->cluster = Cluster::create($this->createCallable());
+        $this->cluster = Cluster::create($this->createSetupWorker());
         $this->activatePlugins();
 
         if ($this->cluster->isPrimary) {
@@ -196,15 +195,6 @@ final class Server extends EventEmitter implements ServerInterface
 
     private function setupPrimary(): void
     {
-        $this->cluster->on('worker.close', function (Worker $worker){
-            if ($this->status === self::STATUS_STARTED) {
-                $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
-//                $this->cluster->fork();
-            } else if ($this->status === self::STATUS_CLOSING) {
-                $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
-            }
-        });
-
         $this->cluster->on('close', function (){
             $this->status = self::STATUS_TERMINATED;
             $this->logger->info('All workers have been closed and exit the server');
@@ -229,15 +219,23 @@ final class Server extends EventEmitter implements ServerInterface
         });
 
         for ($i = 0; $i < $this->options['worker_num']; $i++) {
-            $this->cluster->fork();
+            $worker = $this->cluster->fork();
+            $worker->on('close', function () use ($worker){
+                if ($this->status === self::STATUS_STARTED) {
+                    $this->logger->warning(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
+//                $this->cluster->fork();
+                } else if ($this->status === self::STATUS_CLOSING) {
+                    $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
+                }
+            });
         }
     }
 
-    private function createCallable(): \Closure
+    private function createSetupWorker(): \Closure
     {
         return function (Cluster $cluster) {
             $loop = Loop::get();
-            
+
             $socket = $cluster->listen($this->options['address'], $this->options);
 
             // handle connection
