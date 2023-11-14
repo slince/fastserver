@@ -18,6 +18,16 @@ use Slince\Process\Process;
 final class SignalUtils
 {
     /**
+     * Checks whether support signal.
+     *
+     * @return bool
+     */
+    public static function supportSignal(): bool
+    {
+        return Process::isSupportPosixSignal();
+    }
+
+    /**
      * Register signal handlers for the current process.
      *
      * @param int|array $signals

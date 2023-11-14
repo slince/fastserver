@@ -78,16 +78,6 @@ final class Cluster extends EventEmitter
     }
 
     /**
-     * Checks whether support signal.
-     *
-     * @return bool
-     */
-    public static function supportSignal(): bool
-    {
-        return Process::isSupportPosixSignal();
-    }
-
-    /**
      * Register signals handler for the cluster.
      *
      * @param int|array $signals
@@ -130,7 +120,7 @@ final class Cluster extends EventEmitter
     public function run(): void
     {
         if ($this->isPrimary) {
-            if (Cluster::supportSignal()) {
+            if (SignalUtils::supportSignal()) {
                 $this->onSignals(\SIGCHLD, function (){
                     $this->wait(false);
                 });
