@@ -11,13 +11,14 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Viso\Cluster;
+namespace Viso\Cluster\Worker;
 
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
 use Symfony\Component\Process\PhpProcess;
 use Symfony\Component\Process\Process as SymfonyProcess;
 use Viso\Channel\StreamChannel;
+use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CommandFactory;
 use Viso\Cluster\Exception\RuntimeException;
 

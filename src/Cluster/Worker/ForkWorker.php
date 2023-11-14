@@ -11,13 +11,14 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Viso\Cluster;
+namespace Viso\Cluster\Worker;
 
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
 use Viso\Channel\UnixSocketChannel;
 use Viso\Cluster\Command\CommandFactory;
+use Viso\Cluster\SignalUtils;
 
 final class ForkWorker extends Worker
 {

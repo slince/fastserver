@@ -26,7 +26,7 @@ use Viso\Cluster\Command\ControlCommand;
 use Viso\Cluster\Command\ReloadCommand;
 use Viso\Cluster\ConnectionMetadata;
 use Viso\Cluster\ConnectionPool;
-use Viso\Cluster\Worker;
+use Viso\Cluster\Worker\Worker;
 use Viso\Server\Exception\InvalidArgumentException;
 use Viso\Server\Exception\RuntimeException;
 

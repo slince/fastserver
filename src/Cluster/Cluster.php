@@ -17,6 +17,8 @@ use React\Socket\SocketServer;
 use Slince\Process\Process;
 use Viso\Cluster\Exception\LogicException;
 use Viso\Cluster\Exception\RuntimeException;
+use Viso\Cluster\Worker\Worker;
+use Viso\Cluster\Worker\WorkerPool;
 
 final class Cluster extends EventEmitter
 {

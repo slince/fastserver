@@ -11,9 +11,10 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Viso\Cluster;
+namespace Viso\Cluster\Worker;
 
 use Viso\Channel\CommandInterface;
+use Viso\Cluster\Cluster;
 use Viso\Cluster\Exception\InvalidArgumentException;
 
 abstract class WorkerPool implements \IteratorAggregate, \Countable
