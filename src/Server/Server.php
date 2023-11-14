@@ -95,17 +95,13 @@ final class Server extends EventEmitter implements ServerInterface
         $optionsResolver = new OptionsResolver();
         $this->configureOptions($optionsResolver);
         $this->options = $optionsResolver->resolve($options);
-        foreach ($this->options['plugins'] as $plugin) {
-            $this->configurePlugin($plugin, $options[$plugin->getId()] ?? []);
-        }
     }
 
-    private function configurePlugin(PluginInterface $plugin, array $options): void
+    private function configurePlugin(PluginInterface $plugin, array $options): array
     {
         $optionsResolver = new OptionsResolver();
         $plugin->configureOptions($optionsResolver);
-        $resolved = $optionsResolver->resolve($options);
-        $plugin->configure($resolved);
+        return $optionsResolver->resolve($options);
     }
 
     /**
@@ -175,21 +171,26 @@ final class Server extends EventEmitter implements ServerInterface
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException('The server is already running.');
         }
-        $this->boot();
-        // Register signal handlers after workers created.
+
+        $this->cluster = Cluster::create($this->createSetupWorker());
+        $this->activatePlugins();
+
+        if ($this->cluster->isPrimary) {
+            $this->setupPrimary();
+        }
+
         $this->status = self::STATUS_STARTED;
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
         $this->emit('start', [$this]);
         $this->cluster->run();
     }
 
-    private function boot(): void
+    private function activatePlugins(): void
     {
-        $this->cluster = Cluster::create($this->createSetupWorker());
-        $this->activatePlugins();
-
-        if ($this->cluster->isPrimary) {
-            $this->setupPrimary();
+        $this->logger->debug('Activate plugins.');
+        foreach ($this->options['plugins'] as $plugin) {
+            $options = $this->configurePlugin($plugin, $options[$plugin->getId()] ?? []);
+            $plugin->activate($this, $options);
         }
     }
 
@@ -235,7 +236,6 @@ final class Server extends EventEmitter implements ServerInterface
     {
         return function (Cluster $cluster) {
             $loop = Loop::get();
-
             $socket = $cluster->listen($this->options['address'], $this->options);
 
             // handle connection
@@ -262,14 +262,6 @@ final class Server extends EventEmitter implements ServerInterface
             $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $close);
             $loop->run();
         };
-    }
-
-    private function activatePlugins(): void
-    {
-        $this->logger->debug('Activate plugins.');
-        foreach ($this->options['plugins'] as $plugin) {
-            $plugin->activate($this);
-        }
     }
 
     /**
