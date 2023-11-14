@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Http\Exception;
+namespace Viso\Http\Exception;
 
 class InvalidHeaderException extends InvalidArgumentException
 {

@@ -10,11 +10,11 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace Waveman\Channel;
+namespace Viso\Channel;
 
 use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
-use Waveman\Server\Exception\RuntimeException;
+use Viso\Server\Exception\RuntimeException;
 
 final class UnixSocketChannel extends StreamChannel
 {

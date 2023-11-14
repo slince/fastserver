@@ -11,15 +11,15 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Cluster;
+namespace Viso\Cluster;
 
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
 use Symfony\Component\Process\PhpProcess;
 use Symfony\Component\Process\Process as SymfonyProcess;
-use Waveman\Channel\StreamChannel;
-use Waveman\Cluster\Command\CommandFactory;
-use Waveman\Cluster\Exception\RuntimeException;
+use Viso\Channel\StreamChannel;
+use Viso\Cluster\Command\CommandFactory;
+use Viso\Cluster\Exception\RuntimeException;
 
 final class ProcWorker extends Worker
 {

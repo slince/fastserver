@@ -1,6 +1,6 @@
 <?php
 
-namespace Waveman\Server;
+namespace Viso\Server;
 
 use Symfony\Component\OptionsResolver\OptionsResolver;
 

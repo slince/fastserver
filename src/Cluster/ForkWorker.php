@@ -11,13 +11,13 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Cluster;
+namespace Viso\Cluster;
 
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
-use Waveman\Channel\UnixSocketChannel;
-use Waveman\Cluster\Command\CommandFactory;
+use Viso\Channel\UnixSocketChannel;
+use Viso\Cluster\Command\CommandFactory;
 
 final class ForkWorker extends Worker
 {

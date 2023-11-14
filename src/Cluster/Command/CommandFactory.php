@@ -1,13 +1,13 @@
 <?php
 
-namespace Waveman\Cluster\Command;
+namespace Viso\Cluster\Command;
 
-use Waveman\Channel\CommandFactoryInterface;
-use Waveman\Channel\CommandInterface;
-use Waveman\Channel\Exception\InvalidArgumentException;
-use Waveman\Channel\Frame;
-use Waveman\Cluster\ConnectionDescriptor;
-use Waveman\Cluster\WorkerStatus;
+use Viso\Channel\CommandFactoryInterface;
+use Viso\Channel\CommandInterface;
+use Viso\Channel\Exception\InvalidArgumentException;
+use Viso\Channel\Frame;
+use Viso\Cluster\ConnectionDescriptor;
+use Viso\Cluster\WorkerStatus;
 
 final class CommandFactory implements CommandFactoryInterface
 {

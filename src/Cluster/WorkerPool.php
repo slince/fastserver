@@ -11,10 +11,10 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Cluster;
+namespace Viso\Cluster;
 
-use Waveman\Channel\CommandInterface;
-use Waveman\Cluster\Exception\InvalidArgumentException;
+use Viso\Channel\CommandInterface;
+use Viso\Cluster\Exception\InvalidArgumentException;
 
 abstract class WorkerPool implements \IteratorAggregate, \Countable
 {

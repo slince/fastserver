@@ -4,7 +4,7 @@ use GuzzleHttp\Psr7\Response;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Http\Message\ServerRequestInterface;
-use Waveman\Http\HttpServer;
+use Viso\Http\HttpServer;
 
 include __DIR__ . '/../vendor/autoload.php';
 

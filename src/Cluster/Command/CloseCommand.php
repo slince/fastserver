@@ -11,9 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Cluster\Command;
+namespace Viso\Cluster\Command;
 
-use Waveman\Channel\PayloadCommandInterface;
+use Viso\Channel\PayloadCommandInterface;
 
 final class CloseCommand implements PayloadCommandInterface
 {

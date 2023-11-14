@@ -1,11 +1,11 @@
 <?php
 
-namespace Waveman\Monitor;
+namespace Viso\Monitor;
 
 use React\Socket\SocketServer;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Waveman\Server\PluginInterface;
-use Waveman\Server\ServerInterface;
+use Viso\Server\PluginInterface;
+use Viso\Server\ServerInterface;
 
 final class ServerMonitor implements PluginInterface
 {

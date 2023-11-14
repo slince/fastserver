@@ -11,9 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Channel;
+namespace Viso\Channel;
 
-use Waveman\Server\Exception\MetaException;
+use Viso\Server\Exception\MetaException;
 
 final class Frame
 {

@@ -10,13 +10,13 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace Waveman\Cluster;
+namespace Viso\Cluster;
 
 use Evenement\EventEmitter;
 use React\Socket\SocketServer;
 use Slince\Process\Process;
-use Waveman\Cluster\Exception\LogicException;
-use Waveman\Cluster\Exception\RuntimeException;
+use Viso\Cluster\Exception\LogicException;
+use Viso\Cluster\Exception\RuntimeException;
 
 final class Cluster extends EventEmitter
 {

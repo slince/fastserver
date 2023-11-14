@@ -11,17 +11,17 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Http\Parser;
+namespace Viso\Http\Parser;
 
 use GuzzleHttp\Psr7\BufferStream;
 use GuzzleHttp\Psr7\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Socket\ConnectionInterface;
 use React\Stream\DuplexStreamInterface;
-use Waveman\Http\Exception\InvalidArgumentException;
-use Waveman\Http\Exception\InvalidHeaderException;
-use Waveman\Parser\ParserInterface;
-use Waveman\Server\StreamAwareInterface;
+use Viso\Http\Exception\InvalidArgumentException;
+use Viso\Http\Exception\InvalidHeaderException;
+use Viso\Parser\ParserInterface;
+use Viso\Server\StreamAwareInterface;
 
 class HttpParser implements ParserInterface, StreamAwareInterface
 {

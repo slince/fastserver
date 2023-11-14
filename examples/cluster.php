@@ -2,8 +2,8 @@
 
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
-use Waveman\Channel\CommandInterface;
-use Waveman\Cluster\Cluster;
+use Viso\Channel\CommandInterface;
+use Viso\Cluster\Cluster;
 
 include __DIR__ . '/../vendor/autoload.php';
 

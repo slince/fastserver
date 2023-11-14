@@ -11,9 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Http\Parser;
+namespace Viso\Http\Parser;
 
-use Waveman\Http\Exception\InvalidHeaderException;
+use Viso\Http\Exception\InvalidHeaderException;
 
 final class Rfc7230
 {

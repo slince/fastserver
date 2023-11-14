@@ -11,10 +11,10 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Cluster\Command;
+namespace Viso\Cluster\Command;
 
-use Waveman\Channel\PayloadCommandInterface;
-use Waveman\Cluster\WorkerStatus;
+use Viso\Channel\PayloadCommandInterface;
+use Viso\Cluster\WorkerStatus;
 
 final class WorkerStatusCommand extends WorkerCommand implements PayloadCommandInterface
 {

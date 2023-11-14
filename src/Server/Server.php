@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server;
+namespace Viso\Server;
 
 use Evenement\EventEmitter;
 use Psr\Log\LoggerInterface;
@@ -19,16 +19,16 @@ use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Waveman\Channel\CommandInterface;
-use Waveman\Cluster\Cluster;
-use Waveman\Cluster\Command\CloseCommand;
-use Waveman\Cluster\Command\ControlCommand;
-use Waveman\Cluster\Command\ReloadCommand;
-use Waveman\Cluster\ConnectionMetadata;
-use Waveman\Cluster\ConnectionPool;
-use Waveman\Cluster\Worker;
-use Waveman\Server\Exception\InvalidArgumentException;
-use Waveman\Server\Exception\RuntimeException;
+use Viso\Channel\CommandInterface;
+use Viso\Cluster\Cluster;
+use Viso\Cluster\Command\CloseCommand;
+use Viso\Cluster\Command\ControlCommand;
+use Viso\Cluster\Command\ReloadCommand;
+use Viso\Cluster\ConnectionMetadata;
+use Viso\Cluster\ConnectionPool;
+use Viso\Cluster\Worker;
+use Viso\Server\Exception\InvalidArgumentException;
+use Viso\Server\Exception\RuntimeException;
 
 final class Server extends EventEmitter implements ServerInterface
 {

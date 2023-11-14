@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Http;
+namespace Viso\Http;
 
 use Evenement\EventEmitter;
 use GuzzleHttp\Psr7\Response;
@@ -20,15 +20,15 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Waveman\Cluster\ConnectionPool;
-use Waveman\Http\Exception\InvalidHeaderException;
-use Waveman\Http\Parser\HttpEmitter;
-use Waveman\Http\Parser\HttpParser;
-use Waveman\Parser\ParserFactory;
-use Waveman\Parser\StreamingReader;
-use Waveman\Server\Exception\InvalidArgumentException;
-use Waveman\Server\Server;
-use Waveman\Server\ServerInterface;
+use Viso\Cluster\ConnectionPool;
+use Viso\Http\Exception\InvalidHeaderException;
+use Viso\Http\Parser\HttpEmitter;
+use Viso\Http\Parser\HttpParser;
+use Viso\Parser\ParserFactory;
+use Viso\Parser\StreamingReader;
+use Viso\Server\Exception\InvalidArgumentException;
+use Viso\Server\Server;
+use Viso\Server\ServerInterface;
 
 final class HttpServer extends EventEmitter implements ServerInterface
 {
