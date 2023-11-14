@@ -38,11 +38,11 @@ final class ProcWorker extends Worker
     }
 
     /**
-     * @return SymfonyProcess
+     * {@inheritdoc}
      */
-    public function getProcess(): SymfonyProcess
+    public function isRunning(): bool
     {
-        return $this->process;
+        return $this->process->isRunning();
     }
 
     /**
@@ -59,7 +59,7 @@ final class ProcWorker extends Worker
     public function doStart(): void
     {
         $entry = self::getEntryFile();
-        $this->process = new PhpProcess($entry, null, [Cluster::WAVE_MAN_PID => $this->getPid()], 0);
+        $this->process = new PhpProcess($entry, null, [Cluster::VISO_PID => $this->getPid()], 0);
         $stream = fopen('php://temporary', 'w+');
         $this->process->setInput($stream);
         $this->control = new StreamChannel(new WritableResourceStream($stream), CommandFactory::create());

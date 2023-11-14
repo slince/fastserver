@@ -22,8 +22,8 @@ use Viso\Cluster\Worker\WorkerPool;
 
 final class Cluster extends EventEmitter
 {
-    public const WAVE_MAN_PID = 'X_WAVE_MAN_PID';
-    public const WAVE_MAN_WORKER_ID = 'X_WAVE_MAN_WID';
+    public const VISO_PID = 'X_VISO_PID';
+    public const VISO_WORKER_ID = 'X_VISO_WID';
 
     public bool $isPrimary;
 
@@ -41,11 +41,11 @@ final class Cluster extends EventEmitter
 
     private function __construct(callable $callback = null)
     {
-        $this->isPrimary = getenv(self::WAVE_MAN_PID) === false;
+        $this->isPrimary = getenv(self::VISO_PID) === false;
         $this->workers = WorkerPool::createPool($this, $callback);
 
         if (!$this->isPrimary) {
-            $workerId = getenv(self::WAVE_MAN_WORKER_ID) ?? 0;
+            $workerId = getenv(self::VISO_WORKER_ID) ?? 0;
             $this->worker = $this->workers->create($workerId);
         }
     }

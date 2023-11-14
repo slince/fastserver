@@ -225,13 +225,13 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         do {
             /* @var ProcWorker|ForkWorker $worker */
             foreach ($this->workers as $worker) {
-                $process = $worker->getProcess();
-                if ($process->isTerminated()) {
+                if (!$worker->isRunning()) {
                     $worker->terminate();
                     $this->remove($worker);
                     yield $worker;
                 }
             }
+            echo 'wait pool...', PHP_EOL;
             usleep(1000);
         } while($blocking && $this->count() > 0);
     }

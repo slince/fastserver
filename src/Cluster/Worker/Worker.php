@@ -122,6 +122,12 @@ abstract class Worker extends EventEmitter
     }
 
     /**
+     * Checks whether the worker is running.
+     * @return bool
+     */
+    abstract public function isRunning(): bool;
+
+    /**
      * Run the worker.
      * 
      * @return void

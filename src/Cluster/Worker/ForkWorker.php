@@ -38,11 +38,11 @@ final class ForkWorker extends Worker
     }
 
     /**
-     * @return Process
+     * {@inheritdoc}
      */
-    public function getProcess(): Process
+    public function isRunning(): bool
     {
-        return $this->process;
+        return $this->process->isRunning();
     }
 
     /**
