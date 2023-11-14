@@ -39,7 +39,7 @@ final class Cluster extends EventEmitter
 
     private static bool $frozen = false;
 
-    private function __construct(callable $callback = null)
+    private function __construct(callable $callback)
     {
         $this->isPrimary = getenv(self::VISO_PID) === false;
         $this->workers = WorkerPool::createPool($this, $callback);
@@ -53,10 +53,10 @@ final class Cluster extends EventEmitter
     /**
      * Creates a cluster instance.
      *
-     * @param callable|null $callback
+     * @param callable $callback
      * @return Cluster
      */
-    public static function create(callable $callback = null): Cluster
+    public static function create(callable $callback): Cluster
     {
         if (self::$frozen) {
             throw new RuntimeException('Cluster can only be created once');
@@ -72,7 +72,7 @@ final class Cluster extends EventEmitter
     public static function get(): Cluster
     {
         if (null === self::$instance) {
-            self::$instance = new Cluster();
+            throw new RuntimeException('Please create cluster before get');
         }
         return self::$instance;
     }

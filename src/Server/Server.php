@@ -82,7 +82,7 @@ final class Server extends EventEmitter implements ServerInterface
     public function __construct(array $options, ?LoggerInterface $logger = null)
     {
         $this->configure($options);
-        $this->logger = $logger ?? new NullLogger();
+        $this->logger = new Logger($logger ?? new NullLogger());
         $this->connections = new ConnectionPool();
     }
 
@@ -186,8 +186,8 @@ final class Server extends EventEmitter implements ServerInterface
 
     private function boot(): void
     {
-        $this->activatePlugins();
         $this->cluster = Cluster::create($this->createCallable());
+        $this->activatePlugins();
 
         if ($this->cluster->isPrimary) {
             $this->setupPrimary();
@@ -199,7 +199,7 @@ final class Server extends EventEmitter implements ServerInterface
         $this->cluster->on('worker.close', function (Worker $worker){
             if ($this->status === self::STATUS_STARTED) {
                 $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
-                $this->cluster->fork();
+//                $this->cluster->fork();
             } else if ($this->status === self::STATUS_CLOSING) {
                 $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
             }
@@ -237,6 +237,7 @@ final class Server extends EventEmitter implements ServerInterface
     {
         return function (Cluster $cluster) {
             $loop = Loop::get();
+            
             $socket = $cluster->listen($this->options['address'], $this->options);
 
             // handle connection
