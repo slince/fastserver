@@ -31,7 +31,7 @@ use Viso\Server\Exception\RuntimeException;
 
 final class Server extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['start', 'close', 'error', 'command', 'connection', 'worker.start', 'worker.close'];
+    private const EVENT_NAMES = ['start', 'close', 'error', 'command', 'connection'];
 
     /**
      * process status,running

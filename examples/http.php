@@ -8,7 +8,7 @@ use Viso\Http\HttpServer;
 
 include __DIR__ . '/../vendor/autoload.php';
 
-$logger = new Logger("waveman", [
+$logger = new Logger("viso", [
     new StreamHandler(STDOUT)
 ]);
 
