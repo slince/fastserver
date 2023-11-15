@@ -13,6 +13,9 @@ declare(strict_types=1);
 
 namespace Viso\Server;
 
+use Psr\Log\LoggerInterface;
+use Viso\Cluster\ConnectionPool;
+
 interface ServerInterface
 {
     /**
@@ -34,4 +37,18 @@ interface ServerInterface
      * @return void
      */
     public function close(bool $graceful = true): void;
+
+    /**
+     * Returns the connection pool of the server.
+     *
+     * @return ConnectionPool
+     */
+    public function getConnections(): ConnectionPool;
+
+    /**
+     * Return the logger instance.
+     *
+     * @return LoggerInterface
+     */
+    public function getLogger(): LoggerInterface;
 }

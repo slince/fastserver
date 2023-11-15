@@ -14,6 +14,12 @@ interface PluginInterface
     public function getId(): string;
 
     /**
+     * Returns supported events of the plugin.
+     * @return array
+     */
+    public function getEvents(): array;
+
+    /**
      * Call when activate the plugin.
      *
      * @param ServerInterface $server

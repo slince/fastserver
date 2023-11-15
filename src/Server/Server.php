@@ -31,7 +31,7 @@ use Viso\Server\Exception\RuntimeException;
 
 final class Server extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['start', 'close', 'error', 'command', 'connection'];
+    private const EVENT_NAMES = ['start', 'close', 'error', 'command', 'connection', 'worker.start', 'worker.close'];
 
     /**
      * process status,running
@@ -78,11 +78,17 @@ final class Server extends EventEmitter implements ServerInterface
 
     private Cluster $cluster;
 
-    public function __construct(array $options, ?LoggerInterface $logger = null)
+    /**
+     * @var PluginInterface[]
+     */
+    private array $plugins;
+
+    public function __construct(array $options, array $plugins = [], ?LoggerInterface $logger = null)
     {
-        $this->configure($options);
+        $this->plugins = $plugins;
         $this->logger = new Logger($logger ?? new NullLogger());
         $this->connections = new ConnectionPool();
+        $this->configure($options);
     }
 
     /**
@@ -97,17 +103,8 @@ final class Server extends EventEmitter implements ServerInterface
         $this->options = $optionsResolver->resolve($options);
     }
 
-    private function configurePlugin(PluginInterface $plugin, array $options): array
-    {
-        $optionsResolver = new OptionsResolver();
-        $plugin->configureOptions($optionsResolver);
-        return $optionsResolver->resolve($options);
-    }
-
     /**
-     * Returns the connection pool of the server.
-     *
-     * @return ConnectionPool
+     * {@inheritdoc}
      */
     public function getConnections(): ConnectionPool
     {
@@ -115,9 +112,7 @@ final class Server extends EventEmitter implements ServerInterface
     }
 
     /**
-     * Return the logger instance.
-     *
-     * @return LoggerInterface
+     * {@inheritdoc}
      */
     public function getLogger(): LoggerInterface
     {
@@ -132,12 +127,15 @@ final class Server extends EventEmitter implements ServerInterface
     private function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefaults(['plugins' => []])
-            ->setAllowedTypes('plugins', [PluginInterface::class . '[]'])
             ->setRequired(['address', 'worker_num'])
             ->setInfo('worker_num', 'The worker num of the server')
             ->setIgnoreUndefined()
         ;
+        foreach ($this->plugins as $plugin) {
+            $resolver->setDefault($plugin->getId(), function(OptionsResolver $resolver) use ($plugin){
+                $plugin->configureOptions($resolver);
+            });
+        }
     }
 
     /**
@@ -145,10 +143,25 @@ final class Server extends EventEmitter implements ServerInterface
      */
     public function on($event, callable $listener): void
     {
-        if (!in_array($event, self::EVENT_NAMES)) {
+        if (!in_array($event, self::EVENT_NAMES) && !$this->isSupportedEventInPlugins($event)) {
             throw new InvalidArgumentException(sprintf('The event "%s" is not supported.', $event));
         }
         parent::on($event, $listener);
+    }
+
+    /**
+     * Checks whether the event is supported by plugins.
+     * @param string $event
+     * @return bool
+     */
+    private function isSupportedEventInPlugins(string $event): bool
+    {
+        foreach ($this->plugins as $plugin) {
+            if (in_array($event, $plugin->getEvents())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -188,9 +201,8 @@ final class Server extends EventEmitter implements ServerInterface
     private function activatePlugins(): void
     {
         $this->logger->debug('Activate plugins.');
-        foreach ($this->options['plugins'] as $plugin) {
-            $options = $this->configurePlugin($plugin, $options[$plugin->getId()] ?? []);
-            $plugin->activate($this, $options);
+        foreach ($this->plugins as $plugin) {
+            $plugin->activate($this, $this->options[$plugin->getId()]);
         }
     }
 
@@ -221,7 +233,11 @@ final class Server extends EventEmitter implements ServerInterface
 
         for ($i = 0; $i < $this->options['worker_num']; $i++) {
             $worker = $this->cluster->fork();
+            $worker->on('start', function() use($worker){
+                $this->emit('worker.start', [$worker]);
+            });
             $worker->on('close', function () use ($worker){
+                $this->emit('worker.close', [$worker]);
                 if ($this->status === self::STATUS_STARTED) {
                     $this->logger->warning(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
 //                $this->cluster->fork();
@@ -253,13 +269,19 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->emit('error', [$error]);
             });
 
-            $close = function () use ($loop){
+            $worker = $cluster->worker;
+            $worker->on('start', function() use($worker){
+                $this->emit('worker.start', [$worker]);
+            });
+            // on worker close.
+            $onClose = function () use ($worker, $loop){
+                $this->emit('worker.close', [$worker]);
                 $this->connections->close();
                 $loop->stop();
             };
             // when the worker received close command.
-            $cluster->worker->on('close', $close);
-            $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $close);
+            $worker->on('close', $onClose);
+            $worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $onClose);
             $loop->run();
         };
     }

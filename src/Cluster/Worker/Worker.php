@@ -181,6 +181,7 @@ abstract class Worker extends EventEmitter
         $this->requireReady();
         $this->doStart();
         $this->status = self::STATUS_STARTED;
+        $this->emit('start');
     }
 
     /**
