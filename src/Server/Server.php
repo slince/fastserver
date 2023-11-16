@@ -129,7 +129,6 @@ final class Server extends EventEmitter implements ServerInterface
         $resolver
             ->setRequired(['address', 'worker_num'])
             ->setInfo('worker_num', 'The worker num of the server')
-            ->setIgnoreUndefined()
         ;
         foreach ($this->plugins as $plugin) {
             $resolver->setDefault($plugin->getId(), function(OptionsResolver $resolver) use ($plugin){

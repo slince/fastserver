@@ -20,6 +20,7 @@ use Psr\Log\LoggerInterface;
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Viso\Cluster\Cluster;
 use Viso\Cluster\ConnectionPool;
 use Viso\Http\Exception\InvalidHeaderException;
 use Viso\Http\Parser\HttpEmitter;
@@ -90,9 +91,9 @@ final class HttpPlugin implements PluginInterface
     public function activate(ServerInterface $server, array $options): void
     {
         $this->server = $server;
+        $this->options = $options;
         $this->connections = $this->server->getConnections();
         $this->logger = $this->server->getLogger();
-        $this->options = $options;
         $this->boot();
     }
 
@@ -107,13 +108,11 @@ final class HttpPlugin implements PluginInterface
                 'keepalive_timeout' => 120,
                 'keepalive_requests' => 1000
             ])
-            ->setIgnoreUndefined()
         ;
     }
 
     private function boot(): void
     {
-
         $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
             $this->connections->getMetadata($connection)->incrRequest();
             $this->server->emit('request', [$request, $connection]);
@@ -141,7 +140,9 @@ final class HttpPlugin implements PluginInterface
         // Add a timer for connections.
         if ($this->options['keepalive']) {
             $this->server->on('worker.start', function (){
-                Loop::get()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+                if (!Cluster::get()->isPrimary) {
+                    Loop::get()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+                }
             });
         }
     }
