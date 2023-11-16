@@ -31,6 +31,8 @@ use Viso\Server\ServerInterface;
 
 final class HttpPlugin implements PluginInterface
 {
+    private const EVENT_NAMES = ['request'];
+
     /**
      * @var StreamingReader
      */
@@ -63,6 +65,7 @@ final class HttpPlugin implements PluginInterface
             throw new InvalidHeaderException(sprintf('The request handler must be a valid callback or instance of %s', RequestHandlerInterface::class));
         }
         $this->requestHandler = $requestHandler;
+        $this->streamReader = $this->createStreamReader();
     }
 
     /**
@@ -71,6 +74,14 @@ final class HttpPlugin implements PluginInterface
     public function getId(): string
     {
         return 'http';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getEvents(): array
+    {
+        return self::EVENT_NAMES;
     }
 
     /**
@@ -102,7 +113,6 @@ final class HttpPlugin implements PluginInterface
 
     private function boot(): void
     {
-        $this->streamReader = $this->createStreamReader();
 
         $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
             $this->connections->getMetadata($connection)->incrRequest();
