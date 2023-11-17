@@ -11,13 +11,13 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Http\Parser;
+namespace Viso\Http\Parser;
 
 use GuzzleHttp\Psr7\BufferStream;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Stream\WritableStreamInterface;
-use Waveman\Parser\WriterInterface;
+use Viso\Parser\WriterInterface;
 
 final class HttpEmitter implements WriterInterface
 {
@@ -92,7 +92,7 @@ final class HttpEmitter implements WriterInterface
 
         // assign default "X-Powered-By" header automatically
         if (!$response->hasHeader('Server')) {
-            $response = $response->withHeader('Server', 'Waveman/1');
+            $response = $response->withHeader('Server', 'Viso/1');
         } elseif ($response->getHeaderLine('Server') === ''){
             $response = $response->withoutHeader('Server');
         }

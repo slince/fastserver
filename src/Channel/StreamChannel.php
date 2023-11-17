@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Channel;
+namespace Viso\Channel;
 
 use React\Stream\ReadableStreamInterface;
 use React\Stream\WritableStreamInterface;

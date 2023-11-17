@@ -11,15 +11,16 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Cluster;
+namespace Viso\Cluster\Worker;
 
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
 use Symfony\Component\Process\PhpProcess;
 use Symfony\Component\Process\Process as SymfonyProcess;
-use Waveman\Channel\StreamChannel;
-use Waveman\Cluster\Command\CommandFactory;
-use Waveman\Cluster\Exception\RuntimeException;
+use Viso\Channel\StreamChannel;
+use Viso\Cluster\Cluster;
+use Viso\Cluster\Command\CommandFactory;
+use Viso\Cluster\Exception\RuntimeException;
 
 final class ProcWorker extends Worker
 {
@@ -37,11 +38,11 @@ final class ProcWorker extends Worker
     }
 
     /**
-     * @return SymfonyProcess
+     * {@inheritdoc}
      */
-    public function getProcess(): SymfonyProcess
+    public function isRunning(): bool
     {
-        return $this->process;
+        return $this->process->isRunning();
     }
 
     /**
@@ -58,7 +59,7 @@ final class ProcWorker extends Worker
     public function doStart(): void
     {
         $entry = self::getEntryFile();
-        $this->process = new PhpProcess($entry, null, [Cluster::WAVE_MAN_PID => $this->getPid()], 0);
+        $this->process = new PhpProcess($entry, null, [Cluster::VISO_PID => $this->getPid()], 0);
         $stream = fopen('php://temporary', 'w+');
         $this->process->setInput($stream);
         $this->control = new StreamChannel(new WritableResourceStream($stream), CommandFactory::create());

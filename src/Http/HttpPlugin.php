@@ -13,26 +13,26 @@ declare(strict_types=1);
 
 namespace Viso\Http;
 
-use Evenement\EventEmitter;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
+use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Viso\Cluster\Cluster;
 use Viso\Cluster\ConnectionPool;
 use Viso\Http\Exception\InvalidHeaderException;
 use Viso\Http\Parser\HttpEmitter;
 use Viso\Http\Parser\HttpParser;
 use Viso\Parser\ParserFactory;
 use Viso\Parser\StreamingReader;
-use Viso\Server\Exception\InvalidArgumentException;
-use Viso\Server\Server;
+use Viso\Server\PluginInterface;
 use Viso\Server\ServerInterface;
 
-final class HttpServer extends EventEmitter implements ServerInterface
+final class HttpPlugin implements PluginInterface
 {
-    private const EVENT_NAMES = ['connection', 'request', 'error'];
+    private const EVENT_NAMES = ['request'];
 
     /**
      * @var StreamingReader
@@ -52,50 +52,12 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
     private array $options;
 
-    public function __construct(array $options, ?LoggerInterface $logger = null)
-    {
-        $this->server = new Server($options, $logger);
-        $this->connections = $this->server->getConnections();
-        $this->logger = $this->server->getLogger();
-        $this->configure($options);
-        $this->boot();
-    }
-
-    /**
-     * Configure options resolver for the server.
-     *
-     * @param OptionsResolver $resolver
-     */
-    private function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver
-            ->setDefaults([
-                'keepalive' => true,
-                'keepalive_timeout' => 120,
-                'keepalive_requests' => 1000
-            ])
-            ->setIgnoreUndefined()
-        ;
-    }
-
-    /**
-     * Configure the server.
-     *
-     * @param array $options
-     */
-    private function configure(array $options): void
-    {
-        $optionsResolver = new OptionsResolver();
-        $this->configureOptions($optionsResolver);
-        $this->options = $optionsResolver->resolve($options);
-    }
-
     /**
      * Sets a request handler for the http server.
      *
      * @param callable|RequestHandlerInterface $requestHandler
      */
-    public function handle(callable|RequestHandlerInterface $requestHandler): void
+    public function __construct(callable|RequestHandlerInterface $requestHandler)
     {
         if (is_callable($requestHandler)) {
             $requestHandler = new RequestHandler($requestHandler);
@@ -104,15 +66,56 @@ final class HttpServer extends EventEmitter implements ServerInterface
             throw new InvalidHeaderException(sprintf('The request handler must be a valid callback or instance of %s', RequestHandlerInterface::class));
         }
         $this->requestHandler = $requestHandler;
+        $this->streamReader = $this->createStreamReader();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getId(): string
+    {
+        return 'http';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getEvents(): array
+    {
+        return self::EVENT_NAMES;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function activate(ServerInterface $server, array $options): void
+    {
+        $this->server = $server;
+        $this->options = $options;
+        $this->connections = $this->server->getConnections();
+        $this->logger = $this->server->getLogger();
+        $this->boot();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver): void
+    {
+        $resolver
+            ->setDefaults([
+                'keepalive' => true,
+                'keepalive_timeout' => 120,
+                'keepalive_requests' => 1000
+            ])
+        ;
     }
 
     private function boot(): void
     {
-        $this->streamReader = $this->createStreamReader();
-
         $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
             $this->connections->getMetadata($connection)->incrRequest();
-            $this->emit('message', [$request, $connection]);
+            $this->server->emit('request', [$request, $connection]);
             $response = $this->requestHandler->handle($request);
             $keepalive = $this->options['keepalive'] && 0 !== strcasecmp($request->getHeaderLine('connection'), 'close');
             if ($keepalive) {
@@ -131,18 +134,15 @@ final class HttpServer extends EventEmitter implements ServerInterface
         });
 
         $this->server->on('connection', function(ConnectionInterface $connection){
-            $this->emit('connection', [$connection]);
             $this->streamReader->listen($connection);
-        });
-
-        $this->server->on('error', function (\Exception $error) {
-            $this->emit('error', [$error]);
         });
 
         // Add a timer for connections.
         if ($this->options['keepalive']) {
             $this->server->on('worker.start', function (){
-                $this->server->getLoop()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+                if (!Cluster::get()->isPrimary) {
+                    Loop::get()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+                }
             });
         }
     }
@@ -170,32 +170,5 @@ final class HttpServer extends EventEmitter implements ServerInterface
                 $connection->end();
             }
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function on($event, callable $listener): void
-    {
-        if (!in_array($event, self::EVENT_NAMES)) {
-            throw new InvalidArgumentException(sprintf('The event "%s" is not supported.', $event));
-        }
-        parent::on($event, $listener);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function serve(): void
-    {
-        $this->server->serve();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function close(bool $graceful = true): void
-    {
-        $this->server->close($graceful);
     }
 }

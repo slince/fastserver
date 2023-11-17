@@ -11,17 +11,19 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Cluster;
+namespace Viso\Cluster\Worker;
 
 use Evenement\EventEmitter;
-use Waveman\Channel\ChannelInterface;
-use Waveman\Channel\CommandInterface;
-use Waveman\Cluster\Command\CloseCommand;
-use Waveman\Cluster\Command\ControlCommand;
-use Waveman\Cluster\Command\HeartbeatCommand;
-use Waveman\Cluster\Command\MessageCommand;
-use Waveman\Cluster\Command\WorkerPingCommand;
-use Waveman\Cluster\Exception\RuntimeException;
+use Viso\Channel\ChannelInterface;
+use Viso\Channel\CommandInterface;
+use Viso\Cluster\Cluster;
+use Viso\Cluster\Command\CloseCommand;
+use Viso\Cluster\Command\ControlCommand;
+use Viso\Cluster\Command\HeartbeatCommand;
+use Viso\Cluster\Command\MessageCommand;
+use Viso\Cluster\Command\WorkerPingCommand;
+use Viso\Cluster\Exception\RuntimeException;
+use Viso\Cluster\SignalUtils;
 
 abstract class Worker extends EventEmitter
 {
@@ -120,6 +122,12 @@ abstract class Worker extends EventEmitter
     }
 
     /**
+     * Checks whether the worker is running.
+     * @return bool
+     */
+    abstract public function isRunning(): bool;
+
+    /**
      * Run the worker.
      * 
      * @return void
@@ -173,6 +181,7 @@ abstract class Worker extends EventEmitter
         $this->requireReady();
         $this->doStart();
         $this->status = self::STATUS_STARTED;
+        $this->emit('start');
     }
 
     /**

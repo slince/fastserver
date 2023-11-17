@@ -11,13 +11,16 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Cluster;
+namespace Viso\Cluster\Worker;
 
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
+use React\Stream\DuplexResourceStream;
 use Slince\Process\Process;
-use Waveman\Channel\UnixSocketChannel;
-use Waveman\Cluster\Command\CommandFactory;
+use Viso\Channel\StreamChannel;
+use Viso\Cluster\Command\CommandFactory;
+use Viso\Cluster\SignalUtils;
+use Viso\Server\Exception\RuntimeException;
 
 final class ForkWorker extends Worker
 {
@@ -37,11 +40,11 @@ final class ForkWorker extends Worker
     }
 
     /**
-     * @return Process
+     * {@inheritdoc}
      */
-    public function getProcess(): Process
+    public function isRunning(): bool
     {
-        return $this->process;
+        return $this->process->isRunning();
     }
 
     /**
@@ -65,11 +68,11 @@ final class ForkWorker extends Worker
      */
     protected function doStart(): void
     {
-        $this->sockets = UnixSocketChannel::createSocketPair();
+        $this->sockets = self::createSocketPair();
         $this->process = new Process($this->createCallable());
         $this->process->start();
         // for master process
-        $this->createChannel(Loop::get());
+        $this->createChannel();
         $this->control->listen([$this, 'handleCommand']);
     }
 
@@ -87,7 +90,29 @@ final class ForkWorker extends Worker
     private function createChannel(LoopInterface $loop): void
     {
         // try to create signal channel.
-        $this->control = new UnixSocketChannel($this->sockets, $loop, !$this->cluster->isPrimary, CommandFactory::create());
+        $this->control = new StreamChannel(self::createStream($this->sockets, $this->cluster->isPrimary), CommandFactory::create());
         $this->control->listen([$this, 'handleCommand']);
+    }
+
+    private static function createStream(array $sockets, bool $primary): DuplexResourceStream
+    {
+        if ($primary) {
+            fclose($sockets[0]);
+            $stream = $sockets[1];
+        } else {
+            fclose($sockets[1]);
+            $stream = $sockets[0];
+        }
+        return new DuplexResourceStream($stream, $loop);
+    }
+
+
+    private static function createSocketPair(): array
+    {
+        $sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        if ($sockets === false) {
+            throw new RuntimeException('Cannot create socket pairs.');
+        }
+        return $sockets;
     }
 }

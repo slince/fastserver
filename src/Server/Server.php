@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server;
+namespace Viso\Server;
 
 use Evenement\EventEmitter;
 use Psr\Log\LoggerInterface;
@@ -19,16 +19,15 @@ use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Waveman\Channel\CommandInterface;
-use Waveman\Cluster\Cluster;
-use Waveman\Cluster\Command\CloseCommand;
-use Waveman\Cluster\Command\ControlCommand;
-use Waveman\Cluster\Command\ReloadCommand;
-use Waveman\Cluster\ConnectionMetadata;
-use Waveman\Cluster\ConnectionPool;
-use Waveman\Cluster\Worker;
-use Waveman\Server\Exception\InvalidArgumentException;
-use Waveman\Server\Exception\RuntimeException;
+use Viso\Channel\CommandInterface;
+use Viso\Cluster\Cluster;
+use Viso\Cluster\Command\CloseCommand;
+use Viso\Cluster\Command\ControlCommand;
+use Viso\Cluster\Command\ReloadCommand;
+use Viso\Cluster\ConnectionMetadata;
+use Viso\Cluster\ConnectionPool;
+use Viso\Server\Exception\InvalidArgumentException;
+use Viso\Server\Exception\RuntimeException;
 
 final class Server extends EventEmitter implements ServerInterface
 {
@@ -79,11 +78,17 @@ final class Server extends EventEmitter implements ServerInterface
 
     private Cluster $cluster;
 
-    public function __construct(array $options, ?LoggerInterface $logger = null)
+    /**
+     * @var PluginInterface[]
+     */
+    private array $plugins;
+
+    public function __construct(array $options, array $plugins = [], ?LoggerInterface $logger = null)
     {
-        $this->configure($options);
-        $this->logger = $logger ?? new NullLogger();
+        $this->plugins = $plugins;
+        $this->logger = new Logger($logger ?? new NullLogger());
         $this->connections = new ConnectionPool();
+        $this->configure($options);
     }
 
     /**
@@ -96,23 +101,10 @@ final class Server extends EventEmitter implements ServerInterface
         $optionsResolver = new OptionsResolver();
         $this->configureOptions($optionsResolver);
         $this->options = $optionsResolver->resolve($options);
-        foreach ($this->options['plugins'] as $plugin) {
-            $this->configurePlugin($plugin, $options[$plugin->getId()] ?? []);
-        }
-    }
-
-    private function configurePlugin(PluginInterface $plugin, array $options): void
-    {
-        $optionsResolver = new OptionsResolver();
-        $plugin->configureOptions($optionsResolver);
-        $resolved = $optionsResolver->resolve($options);
-        $plugin->configure($resolved);
     }
 
     /**
-     * Returns the connection pool of the server.
-     *
-     * @return ConnectionPool
+     * {@inheritdoc}
      */
     public function getConnections(): ConnectionPool
     {
@@ -120,9 +112,7 @@ final class Server extends EventEmitter implements ServerInterface
     }
 
     /**
-     * Return the logger instance.
-     *
-     * @return LoggerInterface
+     * {@inheritdoc}
      */
     public function getLogger(): LoggerInterface
     {
@@ -137,12 +127,14 @@ final class Server extends EventEmitter implements ServerInterface
     private function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefaults(['plugins' => []])
-            ->setAllowedTypes('plugins', [PluginInterface::class . '[]'])
             ->setRequired(['address', 'worker_num'])
             ->setInfo('worker_num', 'The worker num of the server')
-            ->setIgnoreUndefined()
         ;
+        foreach ($this->plugins as $plugin) {
+            $resolver->setDefault($plugin->getId(), function(OptionsResolver $resolver) use ($plugin){
+                $plugin->configureOptions($resolver);
+            });
+        }
     }
 
     /**
@@ -150,10 +142,25 @@ final class Server extends EventEmitter implements ServerInterface
      */
     public function on($event, callable $listener): void
     {
-        if (!in_array($event, self::EVENT_NAMES)) {
+        if (!in_array($event, self::EVENT_NAMES) && !$this->isSupportedEventInPlugins($event)) {
             throw new InvalidArgumentException(sprintf('The event "%s" is not supported.', $event));
         }
         parent::on($event, $listener);
+    }
+
+    /**
+     * Checks whether the event is supported by plugins.
+     * @param string $event
+     * @return bool
+     */
+    private function isSupportedEventInPlugins(string $event): bool
+    {
+        foreach ($this->plugins as $plugin) {
+            if (in_array($event, $plugin->getEvents())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -176,35 +183,30 @@ final class Server extends EventEmitter implements ServerInterface
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException('The server is already running.');
         }
-        $this->boot();
-        // Register signal handlers after workers created.
+
+        $this->cluster = Cluster::create($this->createSetupWorker());
+        $this->activatePlugins();
+
+        if ($this->cluster->isPrimary) {
+            $this->setupPrimary();
+        }
+
         $this->status = self::STATUS_STARTED;
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
         $this->emit('start', [$this]);
         $this->cluster->run();
     }
 
-    private function boot(): void
+    private function activatePlugins(): void
     {
-        $this->activatePlugins();
-        $this->cluster = Cluster::create($this->createCallable());
-
-        if ($this->cluster->isPrimary) {
-            $this->setupPrimary();
+        $this->logger->debug('Activate plugins.');
+        foreach ($this->plugins as $plugin) {
+            $plugin->activate($this, $this->options[$plugin->getId()]);
         }
     }
 
     private function setupPrimary(): void
     {
-        $this->cluster->on('worker.close', function (Worker $worker){
-            if ($this->status === self::STATUS_STARTED) {
-                $this->logger->debug(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
-                $this->cluster->fork();
-            } else if ($this->status === self::STATUS_CLOSING) {
-                $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
-            }
-        });
-
         $this->cluster->on('close', function (){
             $this->status = self::STATUS_TERMINATED;
             $this->logger->info('All workers have been closed and exit the server');
@@ -229,11 +231,23 @@ final class Server extends EventEmitter implements ServerInterface
         });
 
         for ($i = 0; $i < $this->options['worker_num']; $i++) {
-            $this->cluster->fork();
+            $worker = $this->cluster->fork();
+            $worker->on('start', function() use($worker){
+                $this->emit('worker.start', [$worker]);
+            });
+            $worker->on('close', function () use ($worker){
+                $this->emit('worker.close', [$worker]);
+                if ($this->status === self::STATUS_STARTED) {
+                    $this->logger->warning(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
+//                $this->cluster->fork();
+                } else if ($this->status === self::STATUS_CLOSING) {
+                    $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
+                }
+            });
         }
     }
 
-    private function createCallable(): \Closure
+    private function createSetupWorker(): \Closure
     {
         return function (Cluster $cluster) {
             $loop = Loop::get();
@@ -254,23 +268,21 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->emit('error', [$error]);
             });
 
-            $close = function () use ($loop){
+            $worker = $cluster->worker;
+            $worker->on('start', function() use($worker){
+                $this->emit('worker.start', [$worker]);
+            });
+            // on worker close.
+            $onClose = function () use ($worker, $loop){
+                $this->emit('worker.close', [$worker]);
                 $this->connections->close();
                 $loop->stop();
             };
             // when the worker received close command.
-            $cluster->worker->on('close', $close);
-            $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $close);
+            $worker->on('close', $onClose);
+            $worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $onClose);
             $loop->run();
         };
-    }
-
-    private function activatePlugins(): void
-    {
-        $this->logger->debug('Activate plugins.');
-        foreach ($this->options['plugins'] as $plugin) {
-            $plugin->activate($this);
-        }
     }
 
     /**

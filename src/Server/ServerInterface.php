@@ -11,7 +11,10 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Server;
+namespace Viso\Server;
+
+use Psr\Log\LoggerInterface;
+use Viso\Cluster\ConnectionPool;
 
 interface ServerInterface
 {
@@ -34,4 +37,18 @@ interface ServerInterface
      * @return void
      */
     public function close(bool $graceful = true): void;
+
+    /**
+     * Returns the connection pool of the server.
+     *
+     * @return ConnectionPool
+     */
+    public function getConnections(): ConnectionPool;
+
+    /**
+     * Return the logger instance.
+     *
+     * @return LoggerInterface
+     */
+    public function getLogger(): LoggerInterface;
 }

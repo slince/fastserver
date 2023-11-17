@@ -2,7 +2,7 @@
     "name": "waveman/http",
     "autoload": {
         "psr-4": {
-            "Waveman\\Http\\": "./"
+            "Viso\\Http\\": "./"
         }
     },
     "require": {

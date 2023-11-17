@@ -2,7 +2,7 @@
     "name": "waveman/server",
     "autoload": {
         "psr-4": {
-            "Waveman\\Server\\": "./"
+            "Viso\\Server\\": "./"
         }
     },
     "require": {

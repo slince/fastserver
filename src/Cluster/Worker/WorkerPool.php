@@ -11,10 +11,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Cluster;
+namespace Viso\Cluster\Worker;
 
-use Waveman\Channel\CommandInterface;
-use Waveman\Cluster\Exception\InvalidArgumentException;
+use Viso\Channel\CommandInterface;
+use Viso\Cluster\Cluster;
+use Viso\Cluster\Exception\InvalidArgumentException;
 
 abstract class WorkerPool implements \IteratorAggregate, \Countable
 {
@@ -224,8 +225,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         do {
             /* @var ProcWorker|ForkWorker $worker */
             foreach ($this->workers as $worker) {
-                $process = $worker->getProcess();
-                if ($process->isTerminated()) {
+                if (!$worker->isRunning()) {
                     $worker->terminate();
                     $this->remove($worker);
                     yield $worker;

@@ -11,11 +11,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Waveman\Parser;
+namespace Viso\Parser;
 
 use Evenement\EventEmitter;
 use React\Stream\DuplexStreamInterface as Stream;
-use Waveman\Server\Exception\InvalidArgumentException;
+use Viso\Server\Exception\InvalidArgumentException;
 
 final class StreamingReader extends EventEmitter
 {

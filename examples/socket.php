@@ -3,7 +3,7 @@
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use React\Socket\ConnectionInterface;
-use Waveman\Server\Server;
+use Viso\Server\Server;
 
 include __DIR__ . '/../vendor/autoload.php';
 

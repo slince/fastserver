@@ -10,18 +10,20 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace Waveman\Cluster;
+namespace Viso\Cluster;
 
 use Evenement\EventEmitter;
 use React\Socket\SocketServer;
 use Slince\Process\Process;
-use Waveman\Cluster\Exception\LogicException;
-use Waveman\Cluster\Exception\RuntimeException;
+use Viso\Cluster\Exception\LogicException;
+use Viso\Cluster\Exception\RuntimeException;
+use Viso\Cluster\Worker\Worker;
+use Viso\Cluster\Worker\WorkerPool;
 
 final class Cluster extends EventEmitter
 {
-    public const WAVE_MAN_PID = 'X_WAVE_MAN_PID';
-    public const WAVE_MAN_WORKER_ID = 'X_WAVE_MAN_WID';
+    public const VISO_PID = 'X_VISO_PID';
+    public const VISO_WORKER_ID = 'X_VISO_WID';
 
     public bool $isPrimary;
 
@@ -37,13 +39,13 @@ final class Cluster extends EventEmitter
 
     private static bool $frozen = false;
 
-    private function __construct(callable $callback = null)
+    private function __construct(callable $callback)
     {
-        $this->isPrimary = getenv(self::WAVE_MAN_PID) === false;
+        $this->isPrimary = getenv(self::VISO_PID) === false;
         $this->workers = WorkerPool::createPool($this, $callback);
 
         if (!$this->isPrimary) {
-            $workerId = getenv(self::WAVE_MAN_WORKER_ID) ?? 0;
+            $workerId = getenv(self::VISO_WORKER_ID) ?? 0;
             $this->worker = $this->workers->create($workerId);
         }
     }
@@ -51,10 +53,10 @@ final class Cluster extends EventEmitter
     /**
      * Creates a cluster instance.
      *
-     * @param callable|null $callback
+     * @param callable $callback
      * @return Cluster
      */
-    public static function create(callable $callback = null): Cluster
+    public static function create(callable $callback): Cluster
     {
         if (self::$frozen) {
             throw new RuntimeException('Cluster can only be created once');
@@ -70,19 +72,9 @@ final class Cluster extends EventEmitter
     public static function get(): Cluster
     {
         if (null === self::$instance) {
-            self::$instance = new Cluster();
+            throw new RuntimeException('Please create cluster before get');
         }
         return self::$instance;
-    }
-
-    /**
-     * Checks whether support signal.
-     *
-     * @return bool
-     */
-    public static function supportSignal(): bool
-    {
-        return Process::isSupportPosixSignal();
     }
 
     /**
@@ -128,7 +120,7 @@ final class Cluster extends EventEmitter
     public function run(): void
     {
         if ($this->isPrimary) {
-            if (Cluster::supportSignal()) {
+            if (SignalUtils::supportSignal()) {
                 $this->onSignals(\SIGCHLD, function (){
                     $this->wait(false);
                 });
@@ -149,10 +141,8 @@ final class Cluster extends EventEmitter
     {
         $this->requireInMainProcess(__METHOD__);
         $closed = $this->workers->wait($blocking);
-        foreach ($closed as $worker) {
-            $this->emit('worker.close', [$worker]);
-        }
-        if ($this->workers->isEmpty()) {
+        $hasWorkerExited = iterator_count($closed) > 0;
+        if ($hasWorkerExited && $this->workers->isEmpty()) {
             $this->emit('close');
         }
     }

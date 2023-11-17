@@ -633,16 +633,16 @@
         },
         {
             "name": "react/event-loop",
-            "version": "v1.4.0",
+            "version": "v1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/event-loop.git",
-                "reference": "6e7e587714fff7a83dcc7025aee42ab3b265ae05"
+                "reference": "bbe0bd8c51ffc05ee43f1729087ed3bdf7d53354"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/event-loop/zipball/6e7e587714fff7a83dcc7025aee42ab3b265ae05",
-                "reference": "6e7e587714fff7a83dcc7025aee42ab3b265ae05",
+                "url": "https://api.github.com/repos/reactphp/event-loop/zipball/bbe0bd8c51ffc05ee43f1729087ed3bdf7d53354",
+                "reference": "bbe0bd8c51ffc05ee43f1729087ed3bdf7d53354",
                 "shasum": ""
             },
             "require": {
@@ -693,7 +693,7 @@
             ],
             "support": {
                 "issues": "https://github.com/reactphp/event-loop/issues",
-                "source": "https://github.com/reactphp/event-loop/tree/v1.4.0"
+                "source": "https://github.com/reactphp/event-loop/tree/v1.5.0"
             },
             "funding": [
                 {
@@ -701,7 +701,7 @@
                     "type": "open_collective"
                 }
             ],
-            "time": "2023-05-05T10:11:24+00:00"
+            "time": "2023-11-13T13:48:05+00:00"
         },
         {
             "name": "react/http",
@@ -1093,7 +1093,7 @@
             "dist": {
                 "type": "path",
                 "url": "../process",
-                "reference": "a941562a79bb727ebab11d3fb60892a35dbbc52a"
+                "reference": "94b5ecf9704dd7b5e26565757f1d83fed02d6788"
             },
             "require": {
                 "php": ">=8.1"
@@ -1229,16 +1229,16 @@
         },
         {
             "name": "spiral/roadrunner",
-            "version": "v2023.3.1",
+            "version": "v2023.3.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/roadrunner-server/roadrunner.git",
-                "reference": "99cbb8923e07c285d8540d68c72f4a04dfa09d32"
+                "reference": "2f2aeb95ed35600bd43d400f0d3c5414f79d78b2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/roadrunner-server/roadrunner/zipball/99cbb8923e07c285d8540d68c72f4a04dfa09d32",
-                "reference": "99cbb8923e07c285d8540d68c72f4a04dfa09d32",
+                "url": "https://api.github.com/repos/roadrunner-server/roadrunner/zipball/2f2aeb95ed35600bd43d400f0d3c5414f79d78b2",
+                "reference": "2f2aeb95ed35600bd43d400f0d3c5414f79d78b2",
                 "shasum": ""
             },
             "type": "metapackage",
@@ -1267,7 +1267,7 @@
                 "docs": "https://roadrunner.dev/docs",
                 "forum": "https://forum.roadrunner.dev/",
                 "issues": "https://github.com/roadrunner-server/roadrunner/issues",
-                "source": "https://github.com/roadrunner-server/roadrunner/tree/v2023.3.1"
+                "source": "https://github.com/roadrunner-server/roadrunner/tree/v2023.3.4"
             },
             "funding": [
                 {
@@ -1275,7 +1275,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-10-12T13:43:50+00:00"
+            "time": "2023-11-09T16:13:48+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
@@ -1476,16 +1476,16 @@
     "packages-dev": [
         {
             "name": "monolog/monolog",
-            "version": "3.4.0",
+            "version": "3.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Seldaek/monolog.git",
-                "reference": "e2392369686d420ca32df3803de28b5d6f76867d"
+                "reference": "c915e2634718dbc8a4a15c61b0e62e7a44e14448"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/e2392369686d420ca32df3803de28b5d6f76867d",
-                "reference": "e2392369686d420ca32df3803de28b5d6f76867d",
+                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/c915e2634718dbc8a4a15c61b0e62e7a44e14448",
+                "reference": "c915e2634718dbc8a4a15c61b0e62e7a44e14448",
                 "shasum": ""
             },
             "require": {
@@ -1561,7 +1561,7 @@
             ],
             "support": {
                 "issues": "https://github.com/Seldaek/monolog/issues",
-                "source": "https://github.com/Seldaek/monolog/tree/3.4.0"
+                "source": "https://github.com/Seldaek/monolog/tree/3.5.0"
             },
             "funding": [
                 {
@@ -1573,7 +1573,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-06-21T08:46:11+00:00"
+            "time": "2023-10-27T15:32:31+00:00"
         }
     ],
     "aliases": [],
