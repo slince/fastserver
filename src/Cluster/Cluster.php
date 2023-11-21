@@ -13,6 +13,9 @@ declare(strict_types=1);
 namespace Viso\Cluster;
 
 use Evenement\EventEmitter;
+use React\EventLoop\Loop;
+use React\EventLoop\LoopInterface;
+use React\EventLoop\StreamSelectLoop;
 use React\Socket\SocketServer;
 use Slince\Process\Process;
 use Viso\Cluster\Exception\LogicException;
@@ -27,9 +30,11 @@ final class Cluster extends EventEmitter
 
     public bool $isPrimary;
 
+    public WorkerPool $workers;
+
     public ?Worker $worker = null;
 
-    public WorkerPool $workers;
+    public LoopInterface $loop;
 
     private int $id = 0;
 
@@ -47,6 +52,9 @@ final class Cluster extends EventEmitter
         if (!$this->isPrimary) {
             $workerId = getenv(self::VISO_WORKER_ID) ?? 0;
             $this->worker = $this->workers->create($workerId);
+            $this->loop = Loop::get();
+        } else {
+            $this->loop = new StreamSelectLoop();
         }
     }
 

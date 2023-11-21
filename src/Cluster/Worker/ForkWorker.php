@@ -81,20 +81,25 @@ final class ForkWorker extends Worker
         return function(){
             $this->cluster->isPrimary = false;
             $this->cluster->worker = $this;
+            $this->cluster->loop = Loop::get();
             SignalUtils::registerSignals($this->cluster->getSignals(), \SIG_IGN);
-            $this->createChannel(Loop::get());
+            $this->createChannel();
             $this->run();
         };
     }
 
-    private function createChannel(LoopInterface $loop): void
+    private function createChannel(): void
     {
         // try to create signal channel.
-        $this->control = new StreamChannel(self::createStream($this->sockets, $this->cluster->isPrimary), CommandFactory::create());
+        $stream = self::createStream($this->sockets,
+            $this->cluster->isPrimary,
+            $this->cluster->loop
+        );
+        $this->control = new StreamChannel($stream, CommandFactory::create());
         $this->control->listen([$this, 'handleCommand']);
     }
 
-    private static function createStream(array $sockets, bool $primary): DuplexResourceStream
+    private static function createStream(array $sockets, bool $primary, LoopInterface $loop): DuplexResourceStream
     {
         if ($primary) {
             fclose($sockets[0]);
