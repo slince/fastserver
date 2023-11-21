@@ -79,13 +79,15 @@ final class Frame
         $flags = $message->getFlags();
         if (($flags & self::PAYLOAD_JSON) === self::PAYLOAD_JSON) {
             $payload = json_encode($message->getPayload());
+        } else if (($flags & self::PAYLOAD_RAW) === self::PAYLOAD_RAW) {
+            $payload = $message->getPayload();
         } else {
             $payload = '';
         }
         $size = strlen($payload);
         $body = pack('CCJ', $message->getType(), $flags, $size);
 
-        if (!($flags & Frame::PAYLOAD_NONE)) {
+        if (($flags & self::PAYLOAD_NONE) !== self::PAYLOAD_NONE) {
             $body .= $payload;
         }
         return $body;
@@ -99,8 +101,8 @@ final class Frame
      */
     public static function parseHeader(string $header): array
     {
-        $result = unpack("CtypeCflags/Psize", $header);
-        if (!is_array($result)) {
+        $result = unpack('Ctype/Cflags/Jsize', $header);
+        if (false === $result) {
             throw new MetaException("invalid message header");
         }
         return $result;
@@ -117,6 +119,9 @@ final class Frame
     {
         if (($flags & self::PAYLOAD_JSON) === self::PAYLOAD_JSON) {
             return json_decode($body, true);
+        }
+        if (($flags & self::PAYLOAD_NONE) === self::PAYLOAD_NONE) {
+            return "";
         }
         return $body;
     }
