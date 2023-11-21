@@ -13,15 +13,13 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Command;
 
-use Viso\Channel\CommandInterface;
-
-class HeartbeatCommand implements CommandInterface
+final class PingCommand extends WorkerCommand
 {
     /**
      * {@inheritdoc}
      */
     public function getCommandId(): string
     {
-        return 'HEARTBEAT';
+        return 'PING';
     }
 }

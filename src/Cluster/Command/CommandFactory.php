@@ -16,11 +16,11 @@ final class CommandFactory implements CommandFactoryInterface
         CloseCommand::class,
         WorkerCloseCommand::class,
         ControlCommand::class,
-        HeartbeatCommand::class,
+        PongCommand::class,
         MessageCommand::class,
         ReloadCommand::class,
         WorkerConnectionsCommand::class,
-        WorkerPingCommand::class,
+        PingCommand::class,
         WorkerStatusCommand::class
     ];
 
@@ -37,7 +37,7 @@ final class CommandFactory implements CommandFactoryInterface
              CloseCommand::class => ['graceful' => $command->isGraceful()],
              ControlCommand::class => (string)$command->getFlags(),
              MessageCommand::class => $command->getMessage(),
-             WorkerPingCommand::class => (string)$command->getWorkerId(),
+             PingCommand::class => (string)$command->getWorkerId(),
              WorkerStatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getWorkerStatus()],
              WorkerConnectionsCommand::class => ['worker_id' => $command->getWorkerId(), 'connections' => $command->getConnections()],
             default => null
@@ -60,7 +60,7 @@ final class CommandFactory implements CommandFactoryInterface
             CloseCommand::class => new CloseCommand($frame->getPayload()['graceful']),
             ControlCommand::class => new ControlCommand(intval($frame->getPayload())),
             MessageCommand::class => new MessageCommand($frame->getPayload()),
-            WorkerPingCommand::class => new WorkerPingCommand(intval($frame->getPayload())),
+            PingCommand::class => new PingCommand(intval($frame->getPayload())),
             WorkerStatusCommand::class => new WorkerStatusCommand($payload['worker_id'], new WorkerStatus(...$payload['status'])),
             WorkerConnectionsCommand::class => new WorkerConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(...$item), $payload['connections'])),
             default => new $class()

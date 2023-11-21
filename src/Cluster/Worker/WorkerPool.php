@@ -109,19 +109,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         }
         $this->remove($worker);
     }
-
-    /**
-     * Updates the worker updated time by its pid.
-     *
-     * @param int $pid
-     * @return void
-     */
-    public function heartbeat(int $pid): void
-    {
-        $worker = $this->ensure($pid);
-        $worker->heartbeat();
-    }
-
+    
     /**
      * Restarts worker pools.
      *
@@ -202,7 +190,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     public function send(CommandInterface $command): void
     {
         foreach ($this->workers as $worker) {
-            $worker->send($command);
+            $worker->sendCommand($command);
         }
     }
 

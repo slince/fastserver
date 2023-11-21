@@ -13,13 +13,15 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Command;
 
-final class WorkerPingCommand extends WorkerCommand
+use Viso\Channel\CommandInterface;
+
+class PongCommand implements CommandInterface
 {
     /**
      * {@inheritdoc}
      */
     public function getCommandId(): string
     {
-        return 'PING';
+        return 'PONG';
     }
 }

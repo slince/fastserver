@@ -19,6 +19,7 @@ use React\EventLoop\StreamSelectLoop;
 use React\Socket\SocketServer;
 use Viso\Cluster\Exception\LogicException;
 use Viso\Cluster\Exception\RuntimeException;
+use Viso\Cluster\Worker\ForkWorkerPool;
 use Viso\Cluster\Worker\Worker;
 use Viso\Cluster\Worker\WorkerPool;
 
@@ -53,7 +54,7 @@ final class Cluster extends EventEmitter
             $this->worker = $this->workers->create($workerId);
             $this->loop = Loop::get();
         } else {
-            $this->loop = new StreamSelectLoop();
+            $this->loop = $this->workers instanceof ForkWorkerPool ? new StreamSelectLoop() : Loop::get();
         }
     }
 
