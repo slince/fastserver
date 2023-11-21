@@ -187,7 +187,7 @@ final class Server extends EventEmitter implements ServerInterface
         $this->cluster = Cluster::create($this->createSetupWorker());
         $this->activatePlugins();
 
-        if ($this->cluster->isPrimary) {
+        if ($this->cluster->primary) {
             $this->setupPrimary();
         }
 

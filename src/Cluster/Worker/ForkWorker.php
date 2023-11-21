@@ -79,7 +79,7 @@ final class ForkWorker extends Worker
     private function createCallable(): \Closure
     {
         return function(){
-            $this->cluster->isPrimary = false;
+            $this->cluster->primary = false;
             $this->cluster->worker = $this;
             $this->cluster->loop = Loop::get();
             SignalUtils::registerSignals($this->cluster->getSignals(), \SIG_IGN);
@@ -92,7 +92,7 @@ final class ForkWorker extends Worker
     {
         // try to create signal channel.
         $stream = self::createStream($this->sockets,
-            $this->cluster->isPrimary,
+            $this->cluster->primary,
             $this->cluster->loop
         );
         $this->control = new StreamChannel($stream, CommandFactory::create());

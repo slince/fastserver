@@ -44,7 +44,7 @@ $cluster = Cluster::create(function(Cluster $cluster){
     Loop::get()->run();
 });
 
-if ($cluster->isPrimary) {
+if ($cluster->primary) {
     $worker = $cluster->fork();
     $worker->on('message', function (string $message){
         echo 'received message from worker: ', $message, PHP_EOL;

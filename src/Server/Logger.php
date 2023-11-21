@@ -29,11 +29,11 @@ final class Logger implements LoggerInterface
     private function buildContext(): array
     {
         $cluster = Cluster::get();
-        return $cluster->isPrimary ? [
-            'primary' => $cluster->isPrimary,
+        return $cluster->primary ? [
+            'primary' => $cluster->primary,
             'pid' => Process::current()->pid()
         ] : [
-            'primary' => $cluster->isPrimary,
+            'primary' => $cluster->primary,
             'worker_id' => $cluster->worker?->getId(),
             'worker_pid' => $cluster->worker?->getPid(),
         ];
