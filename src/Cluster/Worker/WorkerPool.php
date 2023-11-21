@@ -109,7 +109,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         }
         $this->remove($worker);
     }
-    
+
     /**
      * Restarts worker pools.
      *
@@ -209,13 +209,13 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function wait(): \Traversable
     {
-        /* @var ProcWorker|ForkWorker $worker */
         foreach ($this->workers as $worker) {
-            if (!$worker->isRunning()) {
-                $worker->terminate();
-                $this->remove($worker);
-                yield $worker;
+            if ($worker->isRunning()) {
+                continue;
             }
+            $worker->terminate();
+            $this->remove($worker);
+            yield $worker;
         }
     }
 

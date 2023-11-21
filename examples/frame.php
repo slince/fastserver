@@ -8,9 +8,14 @@ use Viso\Channel\FrameParser;
 $parser = new FrameParser();
 
 $frame = new Frame(1, 4, ['id' => 'hello']);
-
 $message = Frame::pack($frame);
 
+$parser->push($message);
+
+var_dump($parser->evaluate());
+
+$frame = new Frame(1, 4, ['id' => 'hello2']);
+$message = Frame::pack($frame);
 $parser->push($message);
 
 var_dump($parser->evaluate());
