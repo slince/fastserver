@@ -16,22 +16,22 @@ namespace Viso\Cluster\Command;
 use Viso\Channel\PayloadCommandInterface;
 use Viso\Cluster\WorkerStatus;
 
-final class WorkerStatusCommand extends WorkerCommand implements PayloadCommandInterface
+final class StatusCommand extends WorkerCommand implements PayloadCommandInterface
 {
-    private WorkerStatus $workerStatus;
+    private WorkerStatus $status;
 
-    public function __construct(int $workerId, WorkerStatus $workerStatus)
+    public function __construct(int $workerId, WorkerStatus $status)
     {
         parent::__construct($workerId);
-        $this->workerStatus = $workerStatus;
+        $this->status = $status;
     }
 
     /**
      * @return WorkerStatus
      */
-    public function getWorkerStatus(): WorkerStatus
+    public function getStatus(): WorkerStatus
     {
-        return $this->workerStatus;
+        return $this->status;
     }
 
     /**
@@ -39,7 +39,7 @@ final class WorkerStatusCommand extends WorkerCommand implements PayloadCommandI
      */
     public function getCommandId(): string
     {
-        return 'WORKER_STATUS';
+        return 'STATUS';
     }
 
     /**
@@ -47,6 +47,6 @@ final class WorkerStatusCommand extends WorkerCommand implements PayloadCommandI
      */
     public function getCommandKey(): string
     {
-        return $this->getCommandId() . json_encode($this->workerStatus);
+        return $this->getCommandId() . json_encode($this->status);
     }
 }

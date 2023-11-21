@@ -19,9 +19,9 @@ final class CommandFactory implements CommandFactoryInterface
         PongCommand::class,
         MessageCommand::class,
         ReloadCommand::class,
-        WorkerConnectionsCommand::class,
+        ConnectionsCommand::class,
         PingCommand::class,
-        WorkerStatusCommand::class
+        StatusCommand::class
     ];
 
     /**
@@ -38,8 +38,8 @@ final class CommandFactory implements CommandFactoryInterface
              ControlCommand::class => (string)$command->getFlags(),
              MessageCommand::class => $command->getMessage(),
              PingCommand::class => (string)$command->getWorkerId(),
-             WorkerStatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getWorkerStatus()],
-             WorkerConnectionsCommand::class => ['worker_id' => $command->getWorkerId(), 'connections' => $command->getConnections()],
+             StatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getStatus()],
+             ConnectionsCommand::class => ['worker_id' => $command->getWorkerId(), 'connections' => $command->getConnections()],
             default => null
         };
         $flags = $payload ? (is_string($payload) ? Frame::PAYLOAD_RAW: Frame::PAYLOAD_JSON) : Frame::PAYLOAD_NONE;
@@ -51,7 +51,7 @@ final class CommandFactory implements CommandFactoryInterface
      */
     public function createCommand(Frame $frame): CommandInterface
     {
-        if (isset($this->commands[$frame->getType()])) {
+        if (!isset($this->commands[$frame->getType()])) {
             throw new InvalidArgumentException(sprintf('The command type %d is not supported', $frame->getType()));
         }
         $class = $this->commands[$frame->getType()];
@@ -61,8 +61,8 @@ final class CommandFactory implements CommandFactoryInterface
             ControlCommand::class => new ControlCommand(intval($frame->getPayload())),
             MessageCommand::class => new MessageCommand($frame->getPayload()),
             PingCommand::class => new PingCommand(intval($frame->getPayload())),
-            WorkerStatusCommand::class => new WorkerStatusCommand($payload['worker_id'], new WorkerStatus(...$payload['status'])),
-            WorkerConnectionsCommand::class => new WorkerConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(...$item), $payload['connections'])),
+            StatusCommand::class => new StatusCommand($payload['worker_id'], new WorkerStatus(...$payload['status'])),
+            ConnectionsCommand::class => new ConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(...$item), $payload['connections'])),
             default => new $class()
         };
     }

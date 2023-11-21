@@ -136,7 +136,8 @@ abstract class Worker extends EventEmitter
         $this->cluster->requireInChildProcess(__METHOD__);
         $this->requireReady();
         $this->doRun();
-        $this->cluster->loop->addPeriodicTimer(10, function(){
+        $this->cluster->loop->addPeriodicTimer(3, function(){
+            echo 'send ping command', PHP_EOL;
             $this->sendCommand(new PingCommand($this->getId()));
         });
         if (null !== $this->callback) {
@@ -304,10 +305,10 @@ abstract class Worker extends EventEmitter
                 $this->updatedAt = new \DateTime();
                 $this->emit('ping');
                 break;
-            case 'WORKER_STATUS':
-                $this->emit('status', [$command->getWorkerStatus()]);
+            case 'STATUS':
+                $this->emit('status', [$command->getStatus()]);
                 break;
-            case 'WORKER_CONNECTIONS':
+            case 'CONNECTIONS':
                 $this->emit('connections', [$command->getConnections()]);
                 break;
             default:
