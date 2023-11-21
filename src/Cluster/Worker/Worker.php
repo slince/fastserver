@@ -144,6 +144,7 @@ abstract class Worker extends EventEmitter
         }
         $this->status = self::STATUS_STARTED;
         $this->emit('start');
+        $this->cluster->loop->run();
     }
 
     /**
