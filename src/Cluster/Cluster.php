@@ -17,7 +17,6 @@ use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\StreamSelectLoop;
 use React\Socket\SocketServer;
-use Slince\Process\Process;
 use Viso\Cluster\Exception\LogicException;
 use Viso\Cluster\Exception\RuntimeException;
 use Viso\Cluster\Worker\Worker;
@@ -96,7 +95,7 @@ final class Cluster extends EventEmitter
     {
         $this->requireInMainProcess(__METHOD__);
         $this->signals = array_unique(array_merge($this->signals, (array)$signals));
-        Process::current()->signal($signals, $handler);
+        SignalUtils::registerSignals($signals, $handler, $this->loop);
     }
 
     /**
@@ -128,12 +127,15 @@ final class Cluster extends EventEmitter
     public function run(): void
     {
         if ($this->primary) {
+            $this->loop->addPeriodicTimer(1, function(){
+                $this->wait();
+            });
             if (SignalUtils::supportSignal()) {
                 $this->onSignals(\SIGCHLD, function (){
-                    $this->wait(false);
+                    $this->wait();
                 });
             }
-            $this->wait();
+            $this->loop->run();
         } else {
             $this->worker->run();
         }
@@ -142,16 +144,16 @@ final class Cluster extends EventEmitter
     /**
      * Wait the workers exited.
      *
-     * @param bool $blocking
      * @return void
      */
-    public function wait(bool $blocking = true): void
+    public function wait(): void
     {
         $this->requireInMainProcess(__METHOD__);
-        $closed = $this->workers->wait($blocking);
+        $closed = $this->workers->wait();
         $hasWorkerExited = iterator_count($closed) > 0;
         if ($hasWorkerExited && $this->workers->isEmpty()) {
             $this->emit('close');
+            $this->loop->stop();
         }
     }
 

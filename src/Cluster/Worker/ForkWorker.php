@@ -73,7 +73,6 @@ final class ForkWorker extends Worker
         $this->process->start();
         // for master process
         $this->createChannel();
-        $this->control->listen([$this, 'handleCommand']);
     }
 
     private function createCallable(): \Closure
@@ -110,8 +109,7 @@ final class ForkWorker extends Worker
         }
         return new DuplexResourceStream($stream, $loop);
     }
-
-
+    
     private static function createSocketPair(): array
     {
         $sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
