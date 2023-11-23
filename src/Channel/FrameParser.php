@@ -45,10 +45,8 @@ final class FrameParser implements ParserInterface
     /**
      * {@inheritdoc}
      */
-    public function evaluate(): array
+    public function evaluate(): iterable
     {
-        $frames = [];
-
         if (null === $this->meta && $this->length >= Frame::HEADER_SIZE) {
             $header = substr($this->buffer, 0, Frame::HEADER_SIZE);
             $this->meta = Frame::parseHeader($header);
@@ -64,14 +62,12 @@ final class FrameParser implements ParserInterface
             $this->length -= strlen($body);
             $this->meta = null;
 
-            $frames[] = $frame;
+            yield $frame;
 
             // maybe buffer contains 2+ frame.
             if ($this->length >= Frame::HEADER_SIZE && ($rest = $this->evaluate())) {
-                $frames = array_merge($frames, $rest);
+                yield $rest;
             }
         }
-
-        return $frames;
     }
 }

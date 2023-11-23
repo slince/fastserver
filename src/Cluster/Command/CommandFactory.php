@@ -2,9 +2,9 @@
 
 namespace Viso\Cluster\Command;
 
-use Viso\Channel\Exception\InvalidArgumentException;
 use Viso\Channel\Frame;
 use Viso\Cluster\ConnectionDescriptor;
+use Viso\Cluster\Exception\InvalidArgumentException;
 use Viso\Cluster\WorkerStatus;
 
 final class CommandFactory implements CommandFactoryInterface

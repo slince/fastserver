@@ -13,23 +13,19 @@ declare(strict_types=1);
 
 namespace Viso\Channel;
 
-use React\Stream\ReadableStreamInterface;
-use React\Stream\WritableStreamInterface;
+use React\Stream\DuplexStreamInterface;
 use Viso\Parser\ParserInterface;
 
 class StreamChannel implements ChannelInterface
 {
-    /**
-     * @var WritableStreamInterface|ReadableStreamInterface
-     */
-    protected WritableStreamInterface|ReadableStreamInterface $stream;
+    protected DuplexStreamInterface $stream;
 
     protected ParserInterface $parser;
 
     /**
-     * @param WritableStreamInterface|ReadableStreamInterface $stream
+     * @param DuplexStreamInterface $stream
      */
-    public function __construct(WritableStreamInterface|ReadableStreamInterface $stream)
+    public function __construct(DuplexStreamInterface $stream)
     {
         $this->stream = $stream;
         $this->parser = new FrameParser();
@@ -49,7 +45,7 @@ class StreamChannel implements ChannelInterface
      */
     public function listen(callable $callback): void
     {
-        $this->stream->once('data', function(string $chunk) use ($callback){
+        $this->stream->on('data', function(string $chunk) use ($callback){
             $this->parser->push($chunk);
             foreach ($this->parser->evaluate() as $frame) {
                 $callback($frame);
