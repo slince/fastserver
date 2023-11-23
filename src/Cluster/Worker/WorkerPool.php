@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Worker;
 
-use Viso\Channel\CommandInterface;
 use Viso\Cluster\Cluster;
+use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Exception\InvalidArgumentException;
 
 abstract class WorkerPool implements \IteratorAggregate, \Countable

@@ -12,8 +12,6 @@ declare(strict_types=1);
  */
 namespace Viso\Cluster\Command;
 
-use Viso\Channel\CommandInterface;
-
 class ReloadCommand implements CommandInterface
 {
     public function getCommandId(): string

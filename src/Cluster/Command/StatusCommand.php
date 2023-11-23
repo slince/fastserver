@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Command;
 
-use Viso\Channel\PayloadCommandInterface;
 use Viso\Cluster\WorkerStatus;
 
 final class StatusCommand extends WorkerCommand implements PayloadCommandInterface

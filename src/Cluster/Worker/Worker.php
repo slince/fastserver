@@ -15,9 +15,11 @@ namespace Viso\Cluster\Worker;
 
 use Evenement\EventEmitter;
 use Viso\Channel\ChannelInterface;
-use Viso\Channel\CommandInterface;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
+use Viso\Cluster\Command\CommandFactory;
+use Viso\Cluster\Command\CommandFactoryInterface;
+use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Command\ControlCommand;
 use Viso\Cluster\Command\MessageCommand;
 use Viso\Cluster\Command\PingCommand;
@@ -78,6 +80,13 @@ abstract class Worker extends EventEmitter
      */
     protected ChannelInterface $control;
 
+    protected CommandFactoryInterface $commandFactory;
+
+    /**
+     * The cluster of the worker.
+     *
+     * @var Cluster
+     */
     protected Cluster $cluster;
 
     private $callback;
@@ -88,6 +97,7 @@ abstract class Worker extends EventEmitter
         $this->cluster = $cluster;
         $this->callback = $callback;
         $this->createdAt = $this->updatedAt = new \DateTime();
+        $this->commandFactory = CommandFactory::create();
     }
 
     /**
@@ -277,7 +287,8 @@ abstract class Worker extends EventEmitter
      */
     public function sendCommand(CommandInterface $command): void
     {
-        $this->control->send($command);
+        $frame = $this->commandFactory->createFrame($command);
+        $this->control->send($frame);
     }
 
     /**

@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Command;
 
-use Viso\Channel\PayloadCommandInterface;
-
 final class ControlCommand implements PayloadCommandInterface
 {
     public const CONNECTIONS = 1;

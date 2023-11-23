@@ -10,15 +10,14 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+namespace Viso\Cluster\Command;
 
-namespace Viso\Channel;
-
-interface CommandInterface
+interface PayloadCommandInterface extends CommandInterface
 {
     /**
-     * Gets the command id.
+     * Return the command key.
      *
      * @return string
      */
-    public function getCommandId(): string;
+    public function getCommandKey(): string;
 }

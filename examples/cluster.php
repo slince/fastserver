@@ -1,8 +1,8 @@
 <?php
 
 use React\Socket\ConnectionInterface;
-use Viso\Channel\CommandInterface;
 use Viso\Cluster\Cluster;
+use Viso\Cluster\Command\CommandInterface;
 
 include __DIR__ . '/../vendor/autoload.php';
 

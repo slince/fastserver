@@ -12,8 +12,6 @@ declare(strict_types=1);
  */
 namespace Viso\Cluster\Command;
 
-use Viso\Channel\PayloadCommandInterface;
-
 final class MessageCommand implements PayloadCommandInterface
 {
     private string $message;

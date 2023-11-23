@@ -2,8 +2,6 @@
 
 namespace Viso\Cluster\Command;
 
-use Viso\Channel\CommandFactoryInterface;
-use Viso\Channel\CommandInterface;
 use Viso\Channel\Exception\InvalidArgumentException;
 use Viso\Channel\Frame;
 use Viso\Cluster\ConnectionDescriptor;

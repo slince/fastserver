@@ -18,9 +18,9 @@ interface ChannelInterface
     /**
      * Writes a request for the given command over the connection.
      *
-     * @param CommandInterface $command Command instance.
+     * @param Frame $frame
      */
-    public function send(CommandInterface $command): void;
+    public function send(Frame $frame): void;
 
     /**
      * Add a listener to listen command.
@@ -28,12 +28,4 @@ interface ChannelInterface
      * @param callable $callback
      */
     public function listen(callable $callback): void;
-
-    /**
-     * Checks whether channel support the command.
-     *
-     * @param CommandInterface $command
-     * @return bool
-     */
-    public function supports(CommandInterface $command): bool;
 }

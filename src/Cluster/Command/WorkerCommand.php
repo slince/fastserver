@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Command;
 
-use Viso\Channel\CommandInterface;
-
 abstract class WorkerCommand implements CommandInterface
 {
     private int $workerId;

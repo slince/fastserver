@@ -19,7 +19,6 @@ use Symfony\Component\Process\PhpProcess;
 use Symfony\Component\Process\Process as SymfonyProcess;
 use Viso\Channel\StreamChannel;
 use Viso\Cluster\Cluster;
-use Viso\Cluster\Command\CommandFactory;
 use Viso\Cluster\Exception\RuntimeException;
 
 final class ProcWorker extends Worker
@@ -50,7 +49,7 @@ final class ProcWorker extends Worker
      */
     protected function doRun(): void
     {
-        $this->control = new StreamChannel(new ReadableResourceStream(STDIN), CommandFactory::create());
+        $this->control = new StreamChannel(new ReadableResourceStream(STDIN));
     }
 
     /**
@@ -62,7 +61,7 @@ final class ProcWorker extends Worker
         $this->process = new PhpProcess($entry, null, [Cluster::VISO_PID => $this->getPid()], 0);
         $stream = fopen('php://temporary', 'w+');
         $this->process->setInput($stream);
-        $this->control = new StreamChannel(new WritableResourceStream($stream), CommandFactory::create());
+        $this->control = new StreamChannel(new WritableResourceStream($stream));
         $this->process->start();
     }
 

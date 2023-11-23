@@ -15,6 +15,7 @@ namespace Viso\Channel;
 
 use React\Stream\ReadableStreamInterface;
 use React\Stream\WritableStreamInterface;
+use Viso\Parser\ParserInterface;
 
 class StreamChannel implements ChannelInterface
 {
@@ -23,25 +24,23 @@ class StreamChannel implements ChannelInterface
      */
     protected WritableStreamInterface|ReadableStreamInterface $stream;
 
-    protected CommandFactoryInterface $commandFactory;
+    protected ParserInterface $parser;
 
     /**
      * @param WritableStreamInterface|ReadableStreamInterface $stream
-     * @param CommandFactoryInterface $commandFactory
      */
-    public function __construct(WritableStreamInterface|ReadableStreamInterface $stream, CommandFactoryInterface $commandFactory)
+    public function __construct(WritableStreamInterface|ReadableStreamInterface $stream)
     {
         $this->stream = $stream;
-        $this->commandFactory = $commandFactory;
+        $this->parser = new FrameParser();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function send(CommandInterface $command): void
+    public function send(Frame $frame): void
     {
-        $message = $this->commandFactory->createFrame($command);
-        $message = Frame::pack($message);
+        $message = Frame::pack($frame);
         $this->stream->write($message);
     }
 
@@ -50,21 +49,11 @@ class StreamChannel implements ChannelInterface
      */
     public function listen(callable $callback): void
     {
-        $parser = new FrameParser();
-        $this->stream->once('data', function(string $chunk) use ($parser, $callback){
-            $parser->push($chunk);
-            foreach ($parser->evaluate() as $frame) {
-                $command = $this->commandFactory->createCommand($frame);
-                $callback($command);
+        $this->stream->once('data', function(string $chunk) use ($callback){
+            $this->parser->push($chunk);
+            foreach ($this->parser->evaluate() as $frame) {
+                $callback($frame);
             }
         });
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function supports(CommandInterface $command): bool
-    {
-        return $this->commandFactory->supportCommand($command);
     }
 }
