@@ -26,4 +26,9 @@ final class Relay
         $frame = $this->commandFactory->createFrame($command);
         $this->channel->send($frame);
     }
+
+    public function request(CommandInterface $command): void
+    {
+
+    }
 }

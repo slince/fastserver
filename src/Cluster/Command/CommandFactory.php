@@ -41,7 +41,7 @@ final class CommandFactory implements CommandFactoryInterface
             default => null
         };
         $flags = $payload ? (is_string($payload) ? Frame::PAYLOAD_RAW: Frame::PAYLOAD_JSON) : Frame::PAYLOAD_NONE;
-        return new Frame($index,$flags, $payload);
+        return new Frame($index, $flags, $payload);
     }
 
     /**
