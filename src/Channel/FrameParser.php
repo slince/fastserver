@@ -31,7 +31,7 @@ final class FrameParser implements ParserInterface
     /**
      * @var array|null
      */
-    protected ?array $meta = [];
+    protected ?array $meta = null;
 
     /**
      * {@inheritdoc}

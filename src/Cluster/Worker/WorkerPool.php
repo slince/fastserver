@@ -111,18 +111,6 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     }
 
     /**
-     * Updates the worker updated time by its pid.
-     *
-     * @param int $pid
-     * @return void
-     */
-    public function heartbeat(int $pid): void
-    {
-        $worker = $this->ensure($pid);
-        $worker->heartbeat();
-    }
-
-    /**
      * Restarts worker pools.
      *
      * @return void
@@ -202,7 +190,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     public function send(CommandInterface $command): void
     {
         foreach ($this->workers as $worker) {
-            $worker->send($command);
+            $worker->sendCommand($command);
         }
     }
 
@@ -217,22 +205,18 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     /**
      * Wait a worker close.
      *
-     * @param bool $blocking
      * @return \Traversable<Worker>
      */
-    public function wait(bool $blocking = true): \Traversable
+    public function wait(): \Traversable
     {
-        do {
-            /* @var ProcWorker|ForkWorker $worker */
-            foreach ($this->workers as $worker) {
-                if (!$worker->isRunning()) {
-                    $worker->terminate();
-                    $this->remove($worker);
-                    yield $worker;
-                }
+        foreach ($this->workers as $worker) {
+            if ($worker->isRunning()) {
+                continue;
             }
-            usleep(1000);
-        } while($blocking && $this->count() > 0);
+            $worker->terminate();
+            $this->remove($worker);
+            yield $worker;
+        }
     }
 
     /**

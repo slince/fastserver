@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Viso\Cluster;
 
 use React\EventLoop\Loop;
+use React\EventLoop\LoopInterface;
 use Slince\Process\Process;
 
 final class SignalUtils
@@ -32,15 +33,17 @@ final class SignalUtils
      *
      * @param int|array $signals
      * @param callable|int $handler
+     * @param LoopInterface|null $loop
      * @return void
      */
-    public static function registerSignals(int|array $signals, callable|int $handler): void
+    public static function registerSignals(int|array $signals, callable|int $handler, ?LoopInterface $loop = null): void
     {
         if (is_int($handler)) {
             Process::current()->signal($signals, $handler);
         } else {
+            $loop = $loop ?: Loop::get();
             foreach ((array)$signals as $signal) {
-                Loop::get()->addSignal($signal, $handler);
+                $loop->addSignal($signal, $handler);
             }
         }
     }

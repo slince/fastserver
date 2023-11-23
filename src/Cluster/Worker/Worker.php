@@ -19,9 +19,8 @@ use Viso\Channel\CommandInterface;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
 use Viso\Cluster\Command\ControlCommand;
-use Viso\Cluster\Command\HeartbeatCommand;
 use Viso\Cluster\Command\MessageCommand;
-use Viso\Cluster\Command\WorkerPingCommand;
+use Viso\Cluster\Command\PingCommand;
 use Viso\Cluster\Exception\RuntimeException;
 use Viso\Cluster\SignalUtils;
 
@@ -137,11 +136,16 @@ abstract class Worker extends EventEmitter
         $this->cluster->requireInChildProcess(__METHOD__);
         $this->requireReady();
         $this->doRun();
+        $this->cluster->loop->addPeriodicTimer(3, function(){
+            echo 'send ping command', PHP_EOL;
+            $this->sendCommand(new PingCommand($this->getId()));
+        });
         if (null !== $this->callback) {
             call_user_func($this->callback, $this->cluster);
         }
         $this->status = self::STATUS_STARTED;
         $this->emit('start');
+        $this->cluster->loop->run();
     }
 
     /**
@@ -149,17 +153,6 @@ abstract class Worker extends EventEmitter
      */
     protected function doRun(): void
     {
-    }
-
-    /**
-     * Heartbeat.
-     *
-     * @return void
-     */
-    public function heartbeat(): void
-    {
-        $this->cluster->requireInMainProcess(__METHOD__);
-        $this->updatedAt = new \DateTime();
     }
 
     /**
@@ -197,7 +190,7 @@ abstract class Worker extends EventEmitter
         $this->cluster->requireInMainProcess(__METHOD__);
         $this->requireStarted();
         if ($graceful) {
-            $this->send(new CloseCommand($graceful));
+            $this->sendCommand(new CloseCommand($graceful));
             $this->status = self::STATUS_CLOSING;
         } else {
             $this->doClose();
@@ -242,18 +235,6 @@ abstract class Worker extends EventEmitter
     }
 
     /**
-     * Checks the worker is alive.
-     *
-     * @return void
-     */
-    public function alive(): void
-    {
-        $this->cluster->requireInMainProcess(__METHOD__);
-        $this->requireStarted();
-        $this->send(new HeartbeatCommand());
-    }
-
-    /**
      * Check the worker status. send command to the worker.
      *
      * @return void
@@ -262,7 +243,7 @@ abstract class Worker extends EventEmitter
     {
         $this->cluster->requireInMainProcess(__METHOD__);
         $this->requireStarted();
-        $this->send(new ControlCommand(ControlCommand::STATUS));
+        $this->sendCommand(new ControlCommand(ControlCommand::STATUS));
     }
 
     /**
@@ -274,18 +255,7 @@ abstract class Worker extends EventEmitter
     {
         $this->cluster->requireInMainProcess(__METHOD__);
         $this->requireStarted();
-        $this->send(new ControlCommand(ControlCommand::CONNECTIONS));
-    }
-
-    /**
-     * Send command to the worker.
-     *
-     * @param CommandInterface $command
-     * @return void
-     */
-    public function send(CommandInterface $command): void
-    {
-        $this->control->send($command);
+        $this->sendCommand(new ControlCommand(ControlCommand::CONNECTIONS));
     }
 
     /**
@@ -296,7 +266,18 @@ abstract class Worker extends EventEmitter
      */
     public function sendMessage(string $message): void
     {
-        $this->send(new MessageCommand($message));
+        $this->sendCommand(new MessageCommand($message));
+    }
+
+    /**
+     * Send command to the worker.
+     *
+     * @param CommandInterface $command
+     * @return void
+     */
+    public function sendCommand(CommandInterface $command): void
+    {
+        $this->control->send($command);
     }
 
     /**
@@ -312,20 +293,22 @@ abstract class Worker extends EventEmitter
             case 'CLOSE':
                 $this->terminate();
                 break;
-            case 'HEARTBEAT':
-                $this->send(new WorkerPingCommand($this->getPid()));
+            case 'PONG':
+                $this->updatedAt = new \DateTime();
+                $this->emit('pong');
                 break;
             case 'MESSAGE':
                 $this->emit('message', [$command->getMessage()]);
                 break;
             // for main process.
-            case 'WORKER_PING':
-                $this->heartbeat();
+            case 'PING':
+                $this->updatedAt = new \DateTime();
+                $this->emit('ping');
                 break;
-            case 'WORKER_STATUS':
-                $this->emit('status', [$command->getWorkerStatus()]);
+            case 'STATUS':
+                $this->emit('status', [$command->getStatus()]);
                 break;
-            case 'WORKER_CONNECTIONS':
+            case 'CONNECTIONS':
                 $this->emit('connections', [$command->getConnections()]);
                 break;
             default:

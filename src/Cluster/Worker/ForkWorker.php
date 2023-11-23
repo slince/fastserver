@@ -73,28 +73,32 @@ final class ForkWorker extends Worker
         $this->process->start();
         // for master process
         $this->createChannel();
-        $this->control->listen([$this, 'handleCommand']);
     }
 
     private function createCallable(): \Closure
     {
         return function(){
-            $this->cluster->isPrimary = false;
+            $this->cluster->primary = false;
             $this->cluster->worker = $this;
+            $this->cluster->loop = Loop::get();
             SignalUtils::registerSignals($this->cluster->getSignals(), \SIG_IGN);
-            $this->createChannel(Loop::get());
+            $this->createChannel();
             $this->run();
         };
     }
 
-    private function createChannel(LoopInterface $loop): void
+    private function createChannel(): void
     {
         // try to create signal channel.
-        $this->control = new StreamChannel(self::createStream($this->sockets, $this->cluster->isPrimary), CommandFactory::create());
+        $stream = self::createStream($this->sockets,
+            $this->cluster->primary,
+            $this->cluster->loop
+        );
+        $this->control = new StreamChannel($stream, CommandFactory::create());
         $this->control->listen([$this, 'handleCommand']);
     }
 
-    private static function createStream(array $sockets, bool $primary): DuplexResourceStream
+    private static function createStream(array $sockets, bool $primary, LoopInterface $loop): DuplexResourceStream
     {
         if ($primary) {
             fclose($sockets[0]);
@@ -105,8 +109,7 @@ final class ForkWorker extends Worker
         }
         return new DuplexResourceStream($stream, $loop);
     }
-
-
+    
     private static function createSocketPair(): array
     {
         $sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);

@@ -1,6 +1,5 @@
 <?php
 
-use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use Viso\Channel\CommandInterface;
 use Viso\Cluster\Cluster;
@@ -22,6 +21,10 @@ $cluster = Cluster::create(function(Cluster $cluster){
         echo 'received signal:', $signal;
     });
 
+    $cluster->worker->on('pong', function(){
+        echo 'received pong from cluster';
+    });
+
     $socket = $cluster->listen('tcp://127.0.0.1:2345');
 
     $socket->on('connection', function (ConnectionInterface $connection) {
@@ -40,16 +43,17 @@ $cluster = Cluster::create(function(Cluster $cluster){
     $socket->on('error', function (Exception $e) {
         echo 'Error: ' . $e->getMessage() . PHP_EOL;
     });
-
-    Loop::get()->run();
 });
 
-if ($cluster->isPrimary) {
+if ($cluster->primary) {
     $worker = $cluster->fork();
     $worker->on('message', function (string $message){
         echo 'received message from worker: ', $message, PHP_EOL;
     });
-    $cluster->on('worker.close', function () use($cluster){
+    $worker->on('ping', function() use($worker){
+        echo sprintf('the worker %d is alive', $worker->getId());
+    });
+    $worker->on('close', function () use($cluster){
         $cluster->fork();
     });
 }

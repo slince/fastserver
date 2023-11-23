@@ -140,7 +140,7 @@ final class HttpPlugin implements PluginInterface
         // Add a timer for connections.
         if ($this->options['keepalive']) {
             $this->server->on('worker.start', function (){
-                if (!Cluster::get()->isPrimary) {
+                if (!Cluster::get()->primary) {
                     Loop::get()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
                 }
             });

@@ -14,7 +14,7 @@ namespace Viso\Cluster\Command;
 
 use Viso\Cluster\ConnectionDescriptor;
 
-final class WorkerConnectionsCommand extends WorkerCommand
+final class ConnectionsCommand extends WorkerCommand
 {
     /**
      * @var array<ConnectionDescriptor>
@@ -37,6 +37,6 @@ final class WorkerConnectionsCommand extends WorkerCommand
 
     public function getCommandId(): string
     {
-        return 'WORKER_CONNECTIONS';
+        return 'CONNECTIONS';
     }
 }

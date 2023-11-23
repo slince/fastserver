@@ -13,10 +13,13 @@ declare(strict_types=1);
 namespace Viso\Cluster;
 
 use Evenement\EventEmitter;
+use React\EventLoop\Loop;
+use React\EventLoop\LoopInterface;
+use React\EventLoop\StreamSelectLoop;
 use React\Socket\SocketServer;
-use Slince\Process\Process;
 use Viso\Cluster\Exception\LogicException;
 use Viso\Cluster\Exception\RuntimeException;
+use Viso\Cluster\Worker\ForkWorkerPool;
 use Viso\Cluster\Worker\Worker;
 use Viso\Cluster\Worker\WorkerPool;
 
@@ -25,11 +28,13 @@ final class Cluster extends EventEmitter
     public const VISO_PID = 'X_VISO_PID';
     public const VISO_WORKER_ID = 'X_VISO_WID';
 
-    public bool $isPrimary;
+    public bool $primary;
+
+    public WorkerPool $workers;
 
     public ?Worker $worker = null;
 
-    public WorkerPool $workers;
+    public LoopInterface $loop;
 
     private int $id = 0;
 
@@ -41,12 +46,15 @@ final class Cluster extends EventEmitter
 
     private function __construct(callable $callback)
     {
-        $this->isPrimary = getenv(self::VISO_PID) === false;
+        $this->primary = getenv(self::VISO_PID) === false;
         $this->workers = WorkerPool::createPool($this, $callback);
 
-        if (!$this->isPrimary) {
+        if (!$this->primary) {
             $workerId = getenv(self::VISO_WORKER_ID) ?? 0;
             $this->worker = $this->workers->create($workerId);
+            $this->loop = Loop::get();
+        } else {
+            $this->loop = $this->workers instanceof ForkWorkerPool ? new StreamSelectLoop() : Loop::get();
         }
     }
 
@@ -88,7 +96,7 @@ final class Cluster extends EventEmitter
     {
         $this->requireInMainProcess(__METHOD__);
         $this->signals = array_unique(array_merge($this->signals, (array)$signals));
-        Process::current()->signal($signals, $handler);
+        SignalUtils::registerSignals($signals, $handler, $this->loop);
     }
 
     /**
@@ -119,13 +127,16 @@ final class Cluster extends EventEmitter
      */
     public function run(): void
     {
-        if ($this->isPrimary) {
+        if ($this->primary) {
+            $this->loop->addPeriodicTimer(1, function(){
+                $this->wait();
+            });
             if (SignalUtils::supportSignal()) {
                 $this->onSignals(\SIGCHLD, function (){
-                    $this->wait(false);
+                    $this->wait();
                 });
             }
-            $this->wait();
+            $this->loop->run();
         } else {
             $this->worker->run();
         }
@@ -134,16 +145,16 @@ final class Cluster extends EventEmitter
     /**
      * Wait the workers exited.
      *
-     * @param bool $blocking
      * @return void
      */
-    public function wait(bool $blocking = true): void
+    public function wait(): void
     {
         $this->requireInMainProcess(__METHOD__);
-        $closed = $this->workers->wait($blocking);
+        $closed = $this->workers->wait();
         $hasWorkerExited = iterator_count($closed) > 0;
         if ($hasWorkerExited && $this->workers->isEmpty()) {
             $this->emit('close');
+            $this->loop->stop();
         }
     }
 
@@ -163,14 +174,14 @@ final class Cluster extends EventEmitter
 
     public function requireInChildProcess(string $method): void
     {
-        if ($this->isPrimary) {
+        if ($this->primary) {
             throw new LogicException(sprintf('The method %s can only be executed in child process.', $method));
         }
     }
 
     public function requireInMainProcess(string $method): void
     {
-        if (!$this->isPrimary) {
+        if (!$this->primary) {
             throw new LogicException(sprintf('The method %s can only be executed in main process.', $method));
         }
     }
