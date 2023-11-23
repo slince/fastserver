@@ -24,14 +24,6 @@ interface CommandFactoryInterface
     public function createFrame(CommandInterface $command): Frame;
 
     /**
-     * Checks whether support the command.
-     *
-     * @param CommandInterface $command
-     * @return bool
-     */
-    public function supportCommand(CommandInterface $command): bool;
-
-    /**
      * Creates the command from frame.
      *
      * @param Frame $frame
