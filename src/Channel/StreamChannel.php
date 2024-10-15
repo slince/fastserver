@@ -13,10 +13,12 @@ declare(strict_types=1);
 
 namespace Viso\Channel;
 
+use Evenement\EventEmitter;
 use React\Stream\DuplexStreamInterface;
+use React\Stream\Util;
 use Viso\Parser\ParserInterface;
 
-class StreamChannel implements ChannelInterface
+class StreamChannel extends EventEmitter implements ChannelInterface
 {
     protected DuplexStreamInterface $stream;
 
@@ -29,6 +31,13 @@ class StreamChannel implements ChannelInterface
     {
         $this->stream = $stream;
         $this->parser = new FrameParser();
+        $this->stream->on('data', function(string $chunk){
+            $this->parser->push($chunk);
+            foreach ($this->parser->evaluate() as $frame) {
+                $this->emit('message', [$frame]);
+            }
+        });
+        Util::forwardEvents($this->stream, $this, ['error', 'close']);
     }
 
     /**
@@ -38,18 +47,5 @@ class StreamChannel implements ChannelInterface
     {
         $message = Frame::pack($frame);
         $this->stream->write($message);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function listen(callable $callback): void
-    {
-        $this->stream->on('data', function(string $chunk) use ($callback){
-            $this->parser->push($chunk);
-            foreach ($this->parser->evaluate() as $frame) {
-                $callback($frame);
-            }
-        });
     }
 }

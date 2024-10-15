@@ -147,8 +147,10 @@ abstract class Worker extends EventEmitter
         $this->requireReady();
         $this->doRun();
         $this->cluster->loop->addPeriodicTimer(3, function(){
-            echo 'send ping command', PHP_EOL;
             $this->sendCommand(new PingCommand($this->getId()));
+            if ($this->getActiveSeconds() > 10) {
+                $this->stop();
+            }
         });
         if (null !== $this->callback) {
             call_user_func($this->callback, $this->cluster);
@@ -163,16 +165,6 @@ abstract class Worker extends EventEmitter
      */
     protected function doRun(): void
     {
-    }
-
-    /**
-     * Mark the worker terminated.
-     * @return void
-     */
-    public function terminate(): void
-    {
-        $this->status = self::STATUS_TERMINATED;
-        $this->emit('close');
     }
 
     /**
@@ -193,7 +185,7 @@ abstract class Worker extends EventEmitter
     abstract protected function doStart(): void;
 
     /**
-     * Close the worker.
+     * Close the worker in main process.
      */
     public function close(bool $graceful = false): void
     {
@@ -212,6 +204,27 @@ abstract class Worker extends EventEmitter
      * Actual execution close method.
      */
     abstract protected function doClose(): void;
+
+    /**
+     * Close the worker in child process.
+     * @return void
+     */
+    public function stop(): void
+    {
+        $this->cluster->requireInChildProcess(__METHOD__);
+        $this->terminate();
+        $this->cluster->loop->stop();
+    }
+
+    /**
+     * Mark the worker terminated.
+     * @return void
+     */
+    public function terminate(): void
+    {
+        $this->status = self::STATUS_TERMINATED;
+        $this->emit('close');
+    }
 
     /**
      * Send a signal to the worker process.
@@ -302,7 +315,7 @@ abstract class Worker extends EventEmitter
             case 'NOP':
                 break;
             case 'CLOSE':
-                $this->terminate();
+                $this->stop();
                 break;
             case 'PONG':
                 $this->updatedAt = new \DateTime();
@@ -344,7 +357,6 @@ abstract class Worker extends EventEmitter
      */
     public function getUpdatedAt(): \DateTimeInterface
     {
-        $this->cluster->requireInMainProcess(__METHOD__);
         return $this->updatedAt;
     }
 
@@ -356,6 +368,16 @@ abstract class Worker extends EventEmitter
     public function getAliveSeconds(): int
     {
         return time() - $this->createdAt->getTimestamp();
+    }
+
+    /**
+     * Active seconds.
+     *
+     * @return int
+     */
+    public function getActiveSeconds(): int
+    {
+        return time() - $this->updatedAt->getTimestamp();
     }
 
     private function requireStarted(): void

@@ -95,9 +95,12 @@ final class ForkWorker extends Worker
             $this->cluster->loop
         );
         $this->control = new StreamChannel($stream);
-        $this->control->listen(function (Frame $frame){
+        $this->control->on('message', function (Frame $frame){
             $command = $this->commandFactory->createCommand($frame);
             $this->handleCommand($command);
+        });
+        $this->control->on('error', function (){
+            $this->stop();
         });
     }
 
