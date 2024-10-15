@@ -23,6 +23,7 @@ use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Command\ControlCommand;
 use Viso\Cluster\Command\MessageCommand;
 use Viso\Cluster\Command\PingCommand;
+use Viso\Cluster\Command\WorkerCommand;
 use Viso\Cluster\Exception\RuntimeException;
 use Viso\Cluster\SignalUtils;
 
@@ -309,6 +310,11 @@ abstract class Worker extends EventEmitter
      */
     public function handleCommand(CommandInterface $command): void
     {
+        if ($command instanceof WorkerCommand) {
+            $this->cluster->requireInMainProcess(__METHOD__);
+        } else {
+            $this->cluster->requireInChildProcess(__METHOD__);
+        }
         // dispatch command event.
         switch ($command->getCommandId()) {
             // for child process.
