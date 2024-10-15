@@ -14,15 +14,15 @@ $cluster = Cluster::create(function(Cluster $cluster){
 
     $cluster->worker->on('close', function (){
         // close the worker.
-        echo 'close the worker';
+        echo 'close the worker', PHP_EOL;
     });
 
     $cluster->worker->onSignals([\SIGTERM], function(int $signal){
-        echo 'received signal:', $signal;
+        echo 'received signal:', $signal, PHP_EOL;
     });
 
     $cluster->worker->on('pong', function(){
-        echo 'received pong from cluster';
+        echo 'received pong from cluster', PHP_EOL;
     });
 
     $socket = $cluster->listen('tcp://127.0.0.1:2345');
@@ -51,9 +51,10 @@ if ($cluster->primary) {
         echo 'received message from worker: ', $message, PHP_EOL;
     });
     $worker->on('ping', function() use($worker){
-        echo sprintf('the worker %d is alive', $worker->getId());
+        echo sprintf('the worker %d is alive', $worker->getId()), PHP_EOL;
     });
     $worker->on('close', function () use($cluster){
+        echo 'fork new worker', PHP_EOL;
         $cluster->fork();
     });
 }
