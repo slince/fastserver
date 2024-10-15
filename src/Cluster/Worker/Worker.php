@@ -23,6 +23,7 @@ use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Command\ControlCommand;
 use Viso\Cluster\Command\MessageCommand;
 use Viso\Cluster\Command\PingCommand;
+use Viso\Cluster\Command\PongCommand;
 use Viso\Cluster\Command\WorkerCommand;
 use Viso\Cluster\Exception\RuntimeException;
 use Viso\Cluster\SignalUtils;
@@ -333,6 +334,7 @@ abstract class Worker extends EventEmitter
             // for main process.
             case 'PING':
                 $this->updatedAt = new \DateTime();
+                $this->sendCommand(new PongCommand());
                 $this->emit('ping');
                 break;
             case 'STATUS':
