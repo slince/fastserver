@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Viso\Cluster\Worker;
 
 use Evenement\EventEmitter;
+use Psr\Log\LoggerInterface;
 use Viso\Channel\ChannelInterface;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
@@ -91,12 +92,15 @@ abstract class Worker extends EventEmitter
      */
     protected Cluster $cluster;
 
+    protected LoggerInterface $logger;
+
     private $callback;
 
-    public function __construct(int $id, Cluster $cluster, callable $callback = null)
+    public function __construct(int $id, Cluster $cluster, LoggerInterface $logger, callable $callback = null)
     {
         $this->id = $id;
         $this->cluster = $cluster;
+        $this->logger = $logger;
         $this->callback = $callback;
         $this->createdAt = $this->updatedAt = new \DateTime();
         $this->commandFactory = CommandFactory::create();
@@ -159,6 +163,7 @@ abstract class Worker extends EventEmitter
         }
         $this->status = self::STATUS_STARTED;
         $this->emit('start');
+        $this->logger->debug('The worker is running');
         $this->cluster->loop->run();
     }
 

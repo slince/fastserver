@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Worker;
 
+use Psr\Log\LoggerInterface;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Exception\InvalidArgumentException;
@@ -26,9 +27,12 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
 
     protected Cluster $cluster;
 
-    public function __construct(Cluster $cluster)
+    protected LoggerInterface $logger;
+
+    public function __construct(Cluster $cluster, LoggerInterface $logger)
     {
         $this->cluster = $cluster;
+        $this->logger = $logger;
     }
 
     /**
@@ -222,17 +226,34 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     /**
      * Creates a worker pool.
      * @param Cluster $cluster
+     * @param LoggerInterface $logger
      * @param callable|null $callback
      * @return WorkerPool
      */
-    public static function createPool(Cluster $cluster, callable $callback = null): WorkerPool
+    public static function createPool(Cluster $cluster, LoggerInterface $logger, callable $callback = null): WorkerPool
     {
-        if (function_exists('pcntl_fork')) {
-            return new ForkWorkerPool($cluster, $callback);
+        $type = static::guessType();
+        if ($type === Type::FORK) {
+            return new ForkWorkerPool($cluster, $logger, $callback);
         }
-        if (function_exists('proc_open')) {
-            return new ProcWorkerPool($cluster);
+        if ($type === Type::PROC) {
+            return new ProcWorkerPool($cluster, $logger);
         }
         throw new InvalidArgumentException('Cannot create worker pool.');
+    }
+
+    /**
+     * Try guess the supported worker type.
+     * @return Type
+     */
+    public static function guessType(): Type
+    {
+        if (function_exists('pcntl_fork')) {
+            return Type::FORK;
+        }
+        if (function_exists('proc_open')) {
+            return Type::PROC;
+        }
+        throw new InvalidArgumentException('Does not support any worker type');
     }
 }

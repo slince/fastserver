@@ -13,6 +13,8 @@ declare(strict_types=1);
 namespace Viso\Cluster;
 
 use Evenement\EventEmitter;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\StreamSelectLoop;
@@ -36,6 +38,8 @@ final class Cluster extends EventEmitter
 
     public LoopInterface $loop;
 
+    private LoggerInterface $logger;
+
     private int $id = 0;
 
     private array $signals = [];
@@ -44,11 +48,11 @@ final class Cluster extends EventEmitter
 
     private static bool $frozen = false;
 
-    private function __construct(callable $callback)
+    private function __construct(callable $callback, ?LoggerInterface $logger = null)
     {
+        $this->logger = new Logger($logger ?? new NullLogger());
         $this->primary = getenv(self::VISO_PID) === false;
-        $this->workers = WorkerPool::createPool($this, $callback);
-
+        $this->workers = WorkerPool::createPool($this, $this->logger, $callback);
         if (!$this->primary) {
             $workerId = getenv(self::VISO_WORKER_ID) ?? 0;
             $this->worker = $this->workers->create($workerId);
@@ -62,15 +66,16 @@ final class Cluster extends EventEmitter
      * Creates a cluster instance.
      *
      * @param callable $callback
+     * @param LoggerInterface|null $logger
      * @return Cluster
      */
-    public static function create(callable $callback): Cluster
+    public static function create(callable $callback, ?LoggerInterface $logger = null): Cluster
     {
         if (self::$frozen) {
             throw new RuntimeException('Cluster can only be created once');
         }
         self::$frozen = true;
-        return self::$instance = new Cluster($callback);
+        return self::$instance = new Cluster($callback, $logger);
     }
 
     /**
@@ -136,6 +141,7 @@ final class Cluster extends EventEmitter
                     $this->wait();
                 });
             }
+            $this->logger->debug('The cluster is running');
             $this->loop->run();
         } else {
             $this->worker->run();
@@ -154,6 +160,7 @@ final class Cluster extends EventEmitter
         $hasWorkerExited = iterator_count($closed) > 0;
         if ($hasWorkerExited && $this->workers->isEmpty()) {
             $this->emit('close');
+            $this->logger->debug('The cluster is closed');
             $this->loop->stop();
         }
     }

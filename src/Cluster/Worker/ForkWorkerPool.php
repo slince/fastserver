@@ -12,15 +12,16 @@ declare(strict_types=1);
  */
 namespace Viso\Cluster\Worker;
 
+use Psr\Log\LoggerInterface;
 use Viso\Cluster\Cluster;
 
 final class ForkWorkerPool extends WorkerPool
 {
     private $callback;
 
-    public function __construct(Cluster $cluster, callable $callback)
+    public function __construct(Cluster $cluster, LoggerInterface $logger, callable $callback)
     {
-        parent::__construct($cluster);
+        parent::__construct($cluster, $logger);
         $this->callback = $callback;
     }
 
@@ -29,6 +30,6 @@ final class ForkWorkerPool extends WorkerPool
      */
     public function create(int $id): Worker
     {
-        return new ForkWorker($id, $this->cluster, $this->callback);
+        return new ForkWorker($id, $this->cluster, $this->logger, $this->callback);
     }
 }

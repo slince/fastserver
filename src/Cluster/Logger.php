@@ -1,11 +1,20 @@
 <?php
 
-namespace Viso\Server;
+declare(strict_types=1);
+
+/*
+ * This file is part of the waveman/waveman package.
+ *
+ * (c) Slince <taosikai@yeah.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Viso\Cluster;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerTrait;
-use Slince\Process\Process;
-use Viso\Cluster\Cluster;
 
 final class Logger implements LoggerInterface
 {
@@ -31,7 +40,7 @@ final class Logger implements LoggerInterface
         $cluster = Cluster::get();
         return $cluster->primary ? [
             'primary' => $cluster->primary,
-            'pid' => Process::current()->pid()
+            'pid' => getmypid()
         ] : [
             'primary' => $cluster->primary,
             'worker_id' => $cluster->worker?->getId(),
