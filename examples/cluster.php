@@ -2,6 +2,7 @@
 
 use React\Socket\ConnectionInterface;
 use Viso\Cluster\Cluster;
+use Viso\Cluster\ClusterAggregator;
 use Viso\Cluster\Command\CommandInterface;
 
 include __DIR__ . '/../vendor/autoload.php';
@@ -59,4 +60,4 @@ if ($cluster->primary) {
     });
 }
 
-$cluster->run();
+ClusterAggregator::aggregate($cluster)->run();
