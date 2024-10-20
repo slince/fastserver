@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Command;
 
-final class ControlCommand implements PayloadCommandInterface
+final class ControlCommand implements CommandInterface
 {
     public const CONNECTIONS = 1;
     public const STATUS = 2;
@@ -41,13 +41,5 @@ final class ControlCommand implements PayloadCommandInterface
     public function getCommandId(): string
     {
         return 'CONTROL';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getCommandKey(): string
-    {
-        return $this->getCommandId() . $this->flags;
     }
 }

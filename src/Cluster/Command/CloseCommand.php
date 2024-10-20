@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Command;
 
-final class CloseCommand implements PayloadCommandInterface
+final class CloseCommand implements CommandInterface
 {
     /**
      * Close gracefully
@@ -40,13 +40,5 @@ final class CloseCommand implements PayloadCommandInterface
     public function getCommandId(): string
     {
         return 'CLOSE';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getCommandKey(): string
-    {
-        return $this->getCommandId() . '_' . $this->isGraceful();
     }
 }

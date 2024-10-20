@@ -12,7 +12,6 @@ final class CommandFactory implements CommandFactoryInterface
     private array $commands = [
         NopCommand::class,
         CloseCommand::class,
-        WorkerCloseCommand::class,
         ControlCommand::class,
         PongCommand::class,
         MessageCommand::class,

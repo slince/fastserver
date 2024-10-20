@@ -12,7 +12,7 @@ declare(strict_types=1);
  */
 namespace Viso\Cluster\Command;
 
-final class MessageCommand implements PayloadCommandInterface
+final class MessageCommand implements CommandInterface
 {
     private string $message;
 
@@ -36,13 +36,5 @@ final class MessageCommand implements PayloadCommandInterface
     public function getCommandId(): string
     {
         return 'MESSAGE';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getCommandKey(): string
-    {
-        return $this->getCommandId() . $this->message;
     }
 }

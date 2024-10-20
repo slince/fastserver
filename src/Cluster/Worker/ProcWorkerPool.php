@@ -12,8 +12,29 @@ declare(strict_types=1);
  */
 namespace Viso\Cluster\Worker;
 
+use React\Socket\ConnectionInterface;
+use React\Socket\SocketServer;
+
 final class ProcWorkerPool extends WorkerPool
 {
+
+    private int $listenPort = 6001;
+
+    private array $context;
+
+
+    private function createChannelServer(): void
+    {
+        $address = sprintf('tcp://127.0.0.1:%d', $this->listenPort);
+        $server = new SocketServer($address, ['tcp' => $address], $this->cluster->loop);
+
+        $server->on('connection', function (ConnectionInterface $connection){
+
+
+        });
+    }
+
+
     /**
      * {@inheritdoc}
      */

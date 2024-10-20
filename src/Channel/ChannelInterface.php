@@ -25,8 +25,7 @@ interface ChannelInterface
     /**
      * Add a listener to listen command.
      *
-     * @param $event
      * @param callable $listener
      */
-    public function on($event, callable $listener);
+    public function listen(callable $listener);
 }

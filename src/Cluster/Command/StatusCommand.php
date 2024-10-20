@@ -15,7 +15,7 @@ namespace Viso\Cluster\Command;
 
 use Viso\Cluster\WorkerStatus;
 
-final class StatusCommand extends WorkerCommand implements PayloadCommandInterface
+final class StatusCommand extends WorkerCommand
 {
     private WorkerStatus $status;
 
@@ -39,13 +39,5 @@ final class StatusCommand extends WorkerCommand implements PayloadCommandInterfa
     public function getCommandId(): string
     {
         return 'STATUS';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getCommandKey(): string
-    {
-        return $this->getCommandId() . json_encode($this->status);
     }
 }
