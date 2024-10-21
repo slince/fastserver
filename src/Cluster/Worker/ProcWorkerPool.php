@@ -23,7 +23,7 @@ use Viso\Cluster\Command\CommandFactory;
 final class ProcWorkerPool extends WorkerPool
 {
     public const DEFAULT_LISTEN_PORT = 6001;
-    
+
     private int $listenPort;
 
     public function __construct(Cluster $cluster, LoggerInterface $logger, callable $callback, int $listenPort)
@@ -32,6 +32,11 @@ final class ProcWorkerPool extends WorkerPool
         $this->listenPort = $listenPort;
     }
 
+    /**
+     * Create channel server.
+     *
+     * @return void
+     */
     private function createChannelServer(): void
     {
         $address = sprintf('tcp://127.0.0.1:%d', $this->listenPort);
@@ -54,7 +59,7 @@ final class ProcWorkerPool extends WorkerPool
                     $this->logger->warning('Unrecognized command');
                     $connection->close();
                 }
-            });
+            }, true);
         });
     }
 

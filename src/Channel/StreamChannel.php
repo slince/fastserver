@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Viso\Channel;
 
 use React\Stream\DuplexStreamInterface;
+use Viso\Cluster\Exception\RuntimeException;
 use Viso\Parser\ParserInterface;
 
 class StreamChannel implements ChannelInterface
@@ -21,6 +22,8 @@ class StreamChannel implements ChannelInterface
     protected DuplexStreamInterface $stream;
 
     protected ParserInterface $parser;
+
+    private bool $listened = false;
 
     /**
      * @param DuplexStreamInterface $stream
@@ -43,8 +46,12 @@ class StreamChannel implements ChannelInterface
     /**
      * {@inheritdoc}
      */
-    public function listen(callable $listener): void
+    public function listen(callable $listener, bool $once = false): void
     {
+        if ($this->listened) {
+            throw new RuntimeException('The channel is listened by other listeners');
+        }
+        $this->listened = true;
         $this->stream->on('data', function(string $chunk) use($listener){
             $this->parser->push($chunk);
             foreach ($this->parser->evaluate() as $frame){

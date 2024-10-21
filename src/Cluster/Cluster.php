@@ -61,6 +61,7 @@ final class Cluster extends EventEmitter
         $this->options = $options;
         $this->workers = WorkerPool::createPool($this, $this->logger, $callback, $this->options);
         if (!$this->primary) {
+            // run in proc child process.
             $workerId = getenv(self::VISO_WORKER_ID) ?? 0;
             $this->worker = $this->workers->create($workerId);
             $this->loop = Loop::get();
@@ -152,6 +153,7 @@ final class Cluster extends EventEmitter
             $this->logger->debug('The cluster is running');
             $this->workers->run();
         } else {
+            // run in proc child process.
             $this->worker->run();
         }
     }

@@ -49,12 +49,28 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
     }
 
     /**
+     * Gets the worker by its id.
+     *
+     * @param int $id
+     * @return Worker|null
+     */
+    public function get(int $id): ?Worker
+    {
+        foreach ($this->workers as $worker) {
+            if ($id === $worker->getId()) {
+                return $worker;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Gets the worker by its process id.
      *
      * @param int $pid
      * @return Worker|null
      */
-    public function get(int $pid): ?Worker
+    public function getByPid(int $pid): ?Worker
     {
         foreach ($this->workers as $worker) {
             if ($pid === $worker->getPid()) {
@@ -85,7 +101,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     public function removeByPid(int $pid): void
     {
-        $worker = $this->get($pid);
+        $worker = $this->getByPid($pid);
         if (null === $worker) {
             return;
         }
@@ -94,7 +110,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
 
     protected function ensure(int $pid): Worker
     {
-        $worker = $this->get($pid);
+        $worker = $this->getByPid($pid);
         if (null === $worker) {
             throw new InvalidArgumentException(sprintf('Cannot find worker with pid %d', $pid));
         }
