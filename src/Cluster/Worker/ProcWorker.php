@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use Symfony\Component\Process\PhpProcess;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Process as SymfonyProcess;
 use Viso\Channel\ChannelInterface;
 use Viso\Channel\StreamChannel;
@@ -95,6 +96,10 @@ final class ProcWorker extends Worker
         $entry = self::getEntryFile();
         $this->process = new PhpProcess($entry, null, [Cluster::VISO_PID => getmypid()], 0);
         $this->process->start();
+        $this->process->wait();
+        if ($this->process->getStatus() === Process::STATUS_TERMINATED) {
+            throw new RuntimeException(sprintf('Cannot start the worker: %s', $this->process->getOutput()));
+        }
     }
 
     /**
