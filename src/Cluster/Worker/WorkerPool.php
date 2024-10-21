@@ -278,6 +278,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     public static function guessType(): Type
     {
+        return Type::PROC;
         if (function_exists('pcntl_fork')) {
             return Type::FORK;
         }

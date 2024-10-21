@@ -7,6 +7,8 @@ use Viso\Cluster\Command\CommandInterface;
 
 include __DIR__ . '/../vendor/autoload.php';
 
+$logger = include __DIR__ . '/logger.php';
+
 $cluster = Cluster::create(function(Cluster $cluster){
 
     $cluster->worker->on('command', function(CommandInterface $command){
@@ -44,7 +46,7 @@ $cluster = Cluster::create(function(Cluster $cluster){
     $socket->on('error', function (Exception $e) {
         echo 'Error: ' . $e->getMessage() . PHP_EOL;
     });
-});
+}, $logger);
 
 if ($cluster->primary) {
     $worker = $cluster->fork();
