@@ -77,6 +77,6 @@ final class ProcWorkerPool extends WorkerPool
      */
     public function create(int $id): Worker
     {
-        return new ProcWorker($id, $this->cluster, $this->logger, $this->callback, );
+        return new ProcWorker($id, $this->cluster, $this->logger, $this->callback, $this->listenPort);
     }
 }
