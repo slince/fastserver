@@ -10,15 +10,16 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace Viso\Cluster\Worker;
 
-final class ForkWorkerPool extends WorkerPool
+namespace Viso\Cluster\Command;
+
+final class RegisterCommand extends WorkerCommand
 {
     /**
      * {@inheritdoc}
      */
-    public function create(int $id): Worker
+    public function getCommandId(): string
     {
-        return new ForkWorker($id, $this->cluster, $this->logger, $this->callback);
+        return 'REGISTER';
     }
 }

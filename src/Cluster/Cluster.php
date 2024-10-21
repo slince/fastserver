@@ -142,7 +142,7 @@ final class Cluster extends EventEmitter
                 });
             }
             $this->logger->debug('The cluster is running');
-            $this->loop->run();
+            $this->workers->run();
         } else {
             $this->worker->run();
         }

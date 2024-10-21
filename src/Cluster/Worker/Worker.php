@@ -96,7 +96,7 @@ abstract class Worker extends EventEmitter
 
     private $callback;
 
-    public function __construct(int $id, Cluster $cluster, LoggerInterface $logger, callable $callback = null)
+    public function __construct(int $id, Cluster $cluster, LoggerInterface $logger, callable $callback)
     {
         $this->id = $id;
         $this->cluster = $cluster;
@@ -151,27 +151,30 @@ abstract class Worker extends EventEmitter
     {
         $this->cluster->requireInChildProcess(__METHOD__);
         $this->requireReady();
-        $this->doRun();
-        $this->cluster->loop->addPeriodicTimer(3, function(){
-            $this->sendCommand(new PingCommand($this->getId()));
-            if ($this->getActiveSeconds() > 10) {
-                $this->stop();
-            }
-        });
-        if (null !== $this->callback) {
+
+        $this->doRun(function () {
             call_user_func($this->callback, $this->cluster);
-        }
-        $this->status = self::STATUS_STARTED;
-        $this->emit('start');
-        $this->logger->debug('The worker is running');
-        $this->cluster->loop->run();
+            $this->cluster->loop->addPeriodicTimer(3, function(){
+                $this->sendCommand(new PingCommand($this->getId()));
+                if ($this->getActiveSeconds() > 10) {
+                    $this->logger->debug('The worker has been inactive for over 10 seconds, stop it.');
+                    $this->stop();
+                }
+            });
+            $this->status = self::STATUS_STARTED;
+            $this->emit('start');
+            $this->logger->debug('The worker is running');
+            $this->cluster->loop->run();
+        });
     }
 
     /**
      * Custom method when the worker is run.
+     * @param callable $fulfilled
      */
-    protected function doRun(): void
+    protected function doRun(callable $fulfilled): void
     {
+        call_user_func($fulfilled);
     }
 
     /**

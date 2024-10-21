@@ -29,10 +29,13 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
 
     protected LoggerInterface $logger;
 
-    public function __construct(Cluster $cluster, LoggerInterface $logger)
+    protected $callback;
+
+    public function __construct(Cluster $cluster, LoggerInterface $logger, callable $callback)
     {
         $this->cluster = $cluster;
         $this->logger = $logger;
+        $this->callback = $callback;
     }
 
     /**
@@ -221,6 +224,16 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
             $this->remove($worker);
             yield $worker;
         }
+    }
+
+    /**
+     * Run the workers.
+     *
+     * @return void
+     */
+    public function run(): void
+    {
+        $this->cluster->loop->run();
     }
 
     /**

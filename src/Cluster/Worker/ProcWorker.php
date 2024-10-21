@@ -13,20 +13,31 @@ declare(strict_types=1);
 
 namespace Viso\Cluster\Worker;
 
-use React\Stream\ReadableResourceStream;
-use React\Stream\WritableResourceStream;
+use Psr\Log\LoggerInterface;
+use React\Socket\ConnectionInterface;
+use React\Socket\Connector;
 use Symfony\Component\Process\PhpProcess;
 use Symfony\Component\Process\Process as SymfonyProcess;
+use Viso\Channel\ChannelInterface;
 use Viso\Channel\StreamChannel;
 use Viso\Cluster\Cluster;
+use Viso\Cluster\Command\RegisterCommand;
 use Viso\Cluster\Exception\RuntimeException;
 
 final class ProcWorker extends Worker
 {
+    private int $listenPort;
+
     /**
      * @var SymfonyProcess
      */
     private SymfonyProcess $process;
+
+    public function __construct(int $id, Cluster $cluster, LoggerInterface $logger, callable $callback, int $listenPort)
+    {
+        parent::__construct($id, $cluster, $logger, $callback);
+        $this->listenPort = $listenPort;
+    }
 
     /**
      * {@inheritdoc}
@@ -45,11 +56,35 @@ final class ProcWorker extends Worker
     }
 
     /**
+     * Set channel instance for the worker.
+     * @internal
+     * @param ChannelInterface $channel
+     * @return void
+     */
+    public function setChannel(ChannelInterface $channel): void
+    {
+        $this->control = $channel;
+    }
+
+    /**
      * {@inheritdoc}
      */
-    protected function doRun(): void
+    protected function doRun(callable $fulfilled): void
     {
-        $this->control = new StreamChannel(new ReadableResourceStream(STDIN));
+        $address = sprintf('127.0.0.1:%d', $this->listenPort);
+        $connector = new Connector();
+        $connector->connect($address)
+            ->then(function(ConnectionInterface $connection) use($fulfilled) {
+                $connection->on('error', function(){
+                    $this->logger->debug('The channel is disconnect');
+                    $this->stop();
+                });
+                $this->control = new StreamChannel($connection);
+                $this->sendCommand(new RegisterCommand($this->getPid()));
+                call_user_func($fulfilled);
+            }, function(\Exception $exception) use($address){
+                throw new RuntimeException(sprintf('Cannot connect to channel server %s, error: %s', $address, $exception->getMessage()), $exception->getCode(), $exception);
+            });
     }
 
     /**
@@ -58,10 +93,7 @@ final class ProcWorker extends Worker
     public function doStart(): void
     {
         $entry = self::getEntryFile();
-        $this->process = new PhpProcess($entry, null, [Cluster::VISO_PID => $this->getPid()], 0);
-        $stream = fopen('php://temporary', 'w+');
-        $this->process->setInput($stream);
-        $this->control = new StreamChannel(new WritableResourceStream($stream));
+        $this->process = new PhpProcess($entry, null, [Cluster::VISO_PID => getmypid()], 0);
         $this->process->start();
     }
 
