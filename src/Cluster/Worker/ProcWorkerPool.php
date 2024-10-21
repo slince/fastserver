@@ -22,11 +22,14 @@ use Viso\Cluster\Command\CommandFactory;
 
 final class ProcWorkerPool extends WorkerPool
 {
-    private int $listenPort = 6001;
+    public const DEFAULT_LISTEN_PORT = 6001;
+    
+    private int $listenPort;
 
-    public function __construct(Cluster $cluster, LoggerInterface $logger, callable $callback)
+    public function __construct(Cluster $cluster, LoggerInterface $logger, callable $callback, int $listenPort)
     {
         parent::__construct($cluster, $logger, $callback);
+        $this->listenPort = $listenPort;
     }
 
     private function createChannelServer(): void

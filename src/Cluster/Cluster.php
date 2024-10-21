@@ -44,15 +44,22 @@ final class Cluster extends EventEmitter
 
     private array $signals = [];
 
+    /**
+     *  Configure options
+     * @var array
+     */
+    private array $options;
+
     private static ?Cluster $instance = null;
 
     private static bool $frozen = false;
 
-    private function __construct(callable $callback, ?LoggerInterface $logger = null)
+    private function __construct(callable $callback, ?LoggerInterface $logger = null, array $options = [])
     {
         $this->logger = new Logger($logger ?? new NullLogger());
         $this->primary = getenv(self::VISO_PID) === false;
-        $this->workers = WorkerPool::createPool($this, $this->logger, $callback);
+        $this->options = $options;
+        $this->workers = WorkerPool::createPool($this, $this->logger, $callback, $this->options);
         if (!$this->primary) {
             $workerId = getenv(self::VISO_WORKER_ID) ?? 0;
             $this->worker = $this->workers->create($workerId);
@@ -67,15 +74,16 @@ final class Cluster extends EventEmitter
      *
      * @param callable $callback
      * @param LoggerInterface|null $logger
+     * @param array $options
      * @return Cluster
      */
-    public static function create(callable $callback, ?LoggerInterface $logger = null): Cluster
+    public static function create(callable $callback, ?LoggerInterface $logger = null, array $options = []): Cluster
     {
         if (self::$frozen) {
             throw new RuntimeException('Cluster can only be created once');
         }
         self::$frozen = true;
-        return self::$instance = new Cluster($callback, $logger);
+        return self::$instance = new Cluster($callback, $logger, $options);
     }
 
     /**

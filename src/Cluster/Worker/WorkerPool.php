@@ -240,17 +240,18 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      * Creates a worker pool.
      * @param Cluster $cluster
      * @param LoggerInterface $logger
-     * @param callable|null $callback
+     * @param callable $callback
+     * @param array $options
      * @return WorkerPool
      */
-    public static function createPool(Cluster $cluster, LoggerInterface $logger, callable $callback = null): WorkerPool
+    public static function createPool(Cluster $cluster, LoggerInterface $logger, callable $callback, array $options = []): WorkerPool
     {
         $type = static::guessType();
         if ($type === Type::FORK) {
             return new ForkWorkerPool($cluster, $logger, $callback);
         }
         if ($type === Type::PROC) {
-            return new ProcWorkerPool($cluster, $logger);
+            return new ProcWorkerPool($cluster, $logger, $callback, $options['listenPort'] ?? ProcWorkerPool::DEFAULT_LISTEN_PORT);
         }
         throw new InvalidArgumentException('Cannot create worker pool.');
     }
