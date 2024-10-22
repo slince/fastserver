@@ -18,7 +18,8 @@ final class CommandFactory implements CommandFactoryInterface
         ReloadCommand::class,
         ConnectionsCommand::class,
         PingCommand::class,
-        StatusCommand::class
+        StatusCommand::class,
+        RegisterCommand::class,
     ];
 
     /**

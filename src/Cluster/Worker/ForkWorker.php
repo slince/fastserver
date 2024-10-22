@@ -36,6 +36,7 @@ final class ForkWorker extends Worker
      */
     public function getPid(): int
     {
+        $this->cluster->requireInMainProcess(__METHOD__);
         return $this->process->getPid();
     }
 
@@ -44,6 +45,7 @@ final class ForkWorker extends Worker
      */
     public function isRunning(): bool
     {
+        $this->cluster->requireInMainProcess(__METHOD__);
         return $this->process->isRunning();
     }
 

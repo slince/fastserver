@@ -121,10 +121,7 @@ abstract class Worker extends EventEmitter
      *
      * @return int
      */
-    public function getPid(): int
-    {
-        return getmypid();
-    }
+    abstract public function getPid(): int;
 
     /**
      * Return the worker status.

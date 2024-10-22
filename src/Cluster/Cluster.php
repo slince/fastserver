@@ -60,13 +60,13 @@ final class Cluster extends EventEmitter
         $this->primary = getenv(self::VISO_PID) === false;
         $this->options = $options;
         $this->workers = WorkerPool::createPool($this, $this->logger, $callback, $this->options);
-        if (!$this->primary) {
+        if ($this->primary) {
+            $this->loop = $this->workers instanceof ForkWorkerPool ? new StreamSelectLoop() : Loop::get();
+        } else {
             // run in proc child process.
             $workerId = getenv(self::VISO_WORKER_ID) ?? 0;
             $this->worker = $this->workers->create($workerId);
             $this->loop = Loop::get();
-        } else {
-            $this->loop = $this->workers instanceof ForkWorkerPool ? new StreamSelectLoop() : Loop::get();
         }
     }
 

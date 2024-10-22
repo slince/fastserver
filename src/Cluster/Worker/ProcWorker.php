@@ -16,7 +16,7 @@ namespace Viso\Cluster\Worker;
 use Psr\Log\LoggerInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
-use Symfony\Component\Process\PhpProcess;
+use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Process as SymfonyProcess;
 use Viso\Channel\ChannelInterface;
@@ -45,6 +45,7 @@ final class ProcWorker extends Worker
      */
     public function getPid(): int
     {
+        $this->cluster->requireInMainProcess(__METHOD__);
         return $this->process->getPid();
     }
 
@@ -53,6 +54,7 @@ final class ProcWorker extends Worker
      */
     public function isRunning(): bool
     {
+        $this->cluster->requireInMainProcess(__METHOD__);
         return $this->process->isRunning();
     }
 
@@ -62,7 +64,7 @@ final class ProcWorker extends Worker
      * @param ChannelInterface $channel
      * @return void
      */
-    public function setChannel(ChannelInterface $channel): void
+    public function attachChannel(ChannelInterface $channel): void
     {
         $this->control = $channel;
     }
@@ -94,12 +96,14 @@ final class ProcWorker extends Worker
     public function doStart(): void
     {
         $entry = self::getEntryFile();
-        $this->process = new PhpProcess($entry, null, [Cluster::VISO_PID => getmypid()], 0);
+        $phpExecutableFinder = new PhpExecutableFinder();
+        $phpExecutablePath = $phpExecutableFinder->find();
+        $env = [
+            Cluster::VISO_PID => getmypid(),
+            Cluster::VISO_WORKER_ID => $this->getId()
+        ];
+        $this->process = new Process([$phpExecutablePath, $entry], null, $env, null, 0);
         $this->process->start();
-        $this->process->wait();
-        if ($this->process->getStatus() === Process::STATUS_TERMINATED) {
-            throw new RuntimeException(sprintf('Cannot start the worker: %s', $this->process->getOutput()));
-        }
     }
 
     /**
