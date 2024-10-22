@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Viso\Cluster\Worker;
 
 use Psr\Log\LoggerInterface;
+use React\Promise\PromiseInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use Symfony\Component\Process\PhpExecutableFinder;
@@ -72,19 +73,18 @@ final class ProcWorker extends Worker
     /**
      * {@inheritdoc}
      */
-    protected function doRun(callable $fulfilled): void
+    protected function doRun(): PromiseInterface
     {
         $address = sprintf('127.0.0.1:%d', $this->listenPort);
         $connector = new Connector();
-        $connector->connect($address)
-            ->then(function(ConnectionInterface $connection) use($fulfilled) {
+        return $connector->connect($address)
+            ->then(function(ConnectionInterface $connection) {
                 $connection->on('error', function(){
                     $this->logger->debug('The channel is disconnect');
                     $this->stop();
                 });
                 $this->control = new StreamChannel($connection);
-                $this->sendCommand(new RegisterCommand($this->getPid()));
-                call_user_func($fulfilled);
+                $this->sendCommand(new RegisterCommand($this->getId()));
             }, function(\Exception $exception) use($address){
                 throw new RuntimeException(sprintf('Cannot connect to channel server %s, error: %s', $address, $exception->getMessage()), $exception->getCode(), $exception);
             });

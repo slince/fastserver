@@ -15,6 +15,7 @@ namespace Viso\Cluster\Worker;
 
 use Evenement\EventEmitter;
 use Psr\Log\LoggerInterface;
+use React\Promise\PromiseInterface;
 use Viso\Channel\ChannelInterface;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
@@ -28,6 +29,7 @@ use Viso\Cluster\Command\PongCommand;
 use Viso\Cluster\Command\WorkerCommand;
 use Viso\Cluster\Exception\RuntimeException;
 use Viso\Cluster\SignalUtils;
+use function React\Promise\resolve;
 
 abstract class Worker extends EventEmitter
 {
@@ -38,7 +40,7 @@ abstract class Worker extends EventEmitter
     const STATUS_READY = 'ready';
 
     /**
-     * process status,running
+     * process status,started
      * @var string
      */
     const STATUS_STARTED = 'started';
@@ -149,7 +151,7 @@ abstract class Worker extends EventEmitter
         $this->cluster->requireInChildProcess(__METHOD__);
         $this->requireReady();
 
-        $this->doRun(function () {
+        $this->doRun()->then(function () {
             call_user_func($this->callback, $this->cluster);
             $this->cluster->loop->addPeriodicTimer(3, function(){
                 $this->sendCommand(new PingCommand($this->getId()));
@@ -161,17 +163,20 @@ abstract class Worker extends EventEmitter
             $this->status = self::STATUS_STARTED;
             $this->emit('start');
             $this->logger->debug('The worker is running');
-            $this->cluster->loop->run();
+        }, function (\Throwable $e) {
+            $this->logger->error(sprintf('Cannot start the worker: %s', $e->getMessage()));
+            $this->cluster->loop->stop();
         });
+        $this->cluster->loop->run();
     }
 
     /**
      * Custom method when the worker is run.
-     * @param callable $fulfilled
+     * @return PromiseInterface
      */
-    protected function doRun(callable $fulfilled): void
+    protected function doRun(): PromiseInterface
     {
-        call_user_func($fulfilled);
+        return resolve(null);
     }
 
     /**
