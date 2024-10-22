@@ -64,8 +64,11 @@ final class Cluster extends EventEmitter
             $this->loop = $this->workers instanceof ForkWorkerPool ? new StreamSelectLoop() : Loop::get();
         } else {
             // run in proc child process.
-            $workerId = getenv(self::VISO_WORKER_ID) ?? 0;
-            $this->worker = $this->workers->create($workerId);
+            $workerId = getenv(self::VISO_WORKER_ID);
+            if (false === $workerId) {
+                throw new RuntimeException('Cannot find worker id from the env');
+            }
+            $this->worker = $this->workers->create(intval($workerId));
             $this->loop = Loop::get();
         }
     }
