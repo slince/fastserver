@@ -102,8 +102,8 @@ final class ForkWorker extends Worker
                 $this->stop();
             }
         });
-        
-        $this->control = new StreamChannel($stream);
+
+        $this->channel = new StreamChannel($stream);
         $this->listenChannel();
     }
 

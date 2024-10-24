@@ -67,7 +67,7 @@ final class ProcWorker extends Worker
      */
     public function attachChannel(ChannelInterface $channel): void
     {
-        $this->control = $channel;
+        $this->channel = $channel;
         $this->listenChannel();
     }
 
@@ -84,7 +84,7 @@ final class ProcWorker extends Worker
                     $this->logger->debug('The channel is disconnect');
                     $this->stop();
                 });
-                $this->control = new StreamChannel($connection);
+                $this->channel = new StreamChannel($connection);
                 $this->sendCommand(new RegisterCommand($this->getId()));
                 $this->listenChannel();
             }, function(\Exception $exception) use($address){

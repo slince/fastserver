@@ -84,7 +84,7 @@ abstract class Worker extends EventEmitter
     /**
      * @var ChannelInterface
      */
-    protected ChannelInterface $control;
+    protected ChannelInterface $channel;
 
     protected CommandFactoryInterface $commandFactory;
 
@@ -314,7 +314,7 @@ abstract class Worker extends EventEmitter
     public function sendCommand(CommandInterface $command): void
     {
         $frame = $this->commandFactory->createFrame($command);
-        $this->control->send($frame);
+        $this->channel->send($frame);
     }
 
     /**
@@ -365,7 +365,7 @@ abstract class Worker extends EventEmitter
      */
     protected function listenChannel(): void
     {
-        $this->control->listen(function (Frame $frame){
+        $this->channel->listen(function (Frame $frame){
             $command = $this->commandFactory->createCommand($frame);
             $this->handleCommand($command);
         }, true);
