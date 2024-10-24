@@ -35,7 +35,7 @@ final class CommandFactory implements CommandFactoryInterface
              CloseCommand::class => ['graceful' => $command->isGraceful()],
              ControlCommand::class => (string)$command->getFlags(),
              MessageCommand::class => $command->getMessage(),
-             PingCommand::class => (string)$command->getWorkerId(),
+             PingCommand::class, RegisterCommand::class => (string)$command->getWorkerId(),
              StatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getStatus()],
              ConnectionsCommand::class => ['worker_id' => $command->getWorkerId(), 'connections' => $command->getConnections()],
             default => null
@@ -55,12 +55,13 @@ final class CommandFactory implements CommandFactoryInterface
         $class = $this->commands[$frame->getType()];
         $payload = $frame->getPayload();
         return match($class){
-            CloseCommand::class => new CloseCommand($frame->getPayload()['graceful']),
-            ControlCommand::class => new ControlCommand(intval($frame->getPayload())),
-            MessageCommand::class => new MessageCommand($frame->getPayload()),
-            PingCommand::class => new PingCommand(intval($frame->getPayload())),
+            CloseCommand::class => new CloseCommand($payload['graceful']),
+            ControlCommand::class => new ControlCommand(intval($payload)),
+            MessageCommand::class => new MessageCommand($payload),
+            PingCommand::class => new PingCommand(intval($payload)),
             StatusCommand::class => new StatusCommand($payload['worker_id'], new WorkerStatus(...$payload['status'])),
             ConnectionsCommand::class => new ConnectionsCommand($payload['worker_id'], array_map(fn($item)=> new ConnectionDescriptor(...$item), $payload['connections'])),
+            RegisterCommand::class => new RegisterCommand(intval($payload)),
             default => new $class()
         };
     }

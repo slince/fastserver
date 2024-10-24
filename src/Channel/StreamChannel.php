@@ -23,7 +23,7 @@ class StreamChannel implements ChannelInterface
 
     protected ParserInterface $parser;
 
-    private bool $listened = false;
+    private ?\Closure $listener = null;
 
     /**
      * @param DuplexStreamInterface $stream
@@ -46,17 +46,20 @@ class StreamChannel implements ChannelInterface
     /**
      * {@inheritdoc}
      */
-    public function listen(callable $listener, bool $once = false): void
+    public function listen(callable $listener, bool $override = false): void
     {
-        if ($this->listened) {
+        if (null !== $this->listener && !$override) {
             throw new RuntimeException('The channel is listened by other listeners');
         }
-        $this->listened = true;
-        $this->stream->on('data', function(string $chunk) use($listener){
+        if (null !== $this->listener) {
+            $this->stream->removeListener('data', $this->listener);
+        }
+        $this->listener = function(string $chunk) use($listener){
             $this->parser->push($chunk);
             foreach ($this->parser->evaluate() as $frame){
                 call_user_func($listener, $frame);
             }
-        });
+        };
+        $this->stream->on('data', $this->listener);
     }
 }

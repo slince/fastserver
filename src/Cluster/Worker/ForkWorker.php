@@ -17,7 +17,6 @@ use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
 use Slince\Process\Process;
-use Viso\Channel\Frame;
 use Viso\Channel\StreamChannel;
 use Viso\Cluster\SignalUtils;
 use Viso\Server\Exception\RuntimeException;
@@ -103,12 +102,9 @@ final class ForkWorker extends Worker
                 $this->stop();
             }
         });
-
+        
         $this->control = new StreamChannel($stream);
-        $this->control->listen(function (Frame $frame){
-            $command = $this->commandFactory->createCommand($frame);
-            $this->handleCommand($command);
-        });
+        $this->listenChannel();
     }
 
     private static function createStream(array $sockets, bool $primary, LoopInterface $loop): DuplexResourceStream

@@ -26,6 +26,7 @@ interface ChannelInterface
      * Add a listener to listen command.
      *
      * @param callable $listener
+     * @param bool $override
      */
-    public function listen(callable $listener);
+    public function listen(callable $listener, bool $override = false);
 }

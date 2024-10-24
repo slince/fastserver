@@ -68,6 +68,7 @@ final class ProcWorker extends Worker
     public function attachChannel(ChannelInterface $channel): void
     {
         $this->control = $channel;
+        $this->listenChannel();
     }
 
     /**
@@ -85,6 +86,7 @@ final class ProcWorker extends Worker
                 });
                 $this->control = new StreamChannel($connection);
                 $this->sendCommand(new RegisterCommand($this->getId()));
+                $this->listenChannel();
             }, function(\Exception $exception) use($address){
                 throw new RuntimeException(sprintf('Cannot connect to channel server %s, error: %s', $address, $exception->getMessage()), $exception->getCode(), $exception);
             });

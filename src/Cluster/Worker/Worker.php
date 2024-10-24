@@ -17,6 +17,7 @@ use Evenement\EventEmitter;
 use Psr\Log\LoggerInterface;
 use React\Promise\PromiseInterface;
 use Viso\Channel\ChannelInterface;
+use Viso\Channel\Frame;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
 use Viso\Cluster\Command\CommandFactory;
@@ -357,6 +358,19 @@ abstract class Worker extends EventEmitter
                 $this->emit('command', [$command]);
         }
     }
+
+    /**
+     * Listen command from the channel.
+     * @return void
+     */
+    protected function listenChannel(): void
+    {
+        $this->control->listen(function (Frame $frame){
+            $command = $this->commandFactory->createCommand($frame);
+            $this->handleCommand($command);
+        }, true);
+    }
+
 
     /**
      * Gets create time.

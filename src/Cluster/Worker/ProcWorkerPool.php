@@ -59,7 +59,7 @@ final class ProcWorkerPool extends WorkerPool
                     $this->logger->warning('Unrecognized command');
                     $connection->close();
                 }
-            }, true);
+            });
         });
     }
 
