@@ -145,7 +145,7 @@ final class Cluster extends EventEmitter
     public function run(): void
     {
         if ($this->primary) {
-            $this->loop->addPeriodicTimer(1, function(){
+            $this->loop->addPeriodicTimer(3, function(){
                 $this->wait();
             });
             if (SignalUtils::supportSignal()) {
