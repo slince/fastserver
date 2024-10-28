@@ -143,6 +143,15 @@ abstract class Worker extends EventEmitter
     abstract public function isRunning(): bool;
 
     /**
+     * Returns the last output of the worker.
+     * @return string
+     */
+    public function getOutput(): string
+    {
+        return '';
+    }
+
+    /**
      * Run the worker.
      * 
      * @return void

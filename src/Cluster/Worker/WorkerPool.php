@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Exception\InvalidArgumentException;
+use Viso\Cluster\Exception\RuntimeException;
 
 abstract class WorkerPool implements \IteratorAggregate, \Countable
 {
@@ -236,7 +237,13 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
             if ($worker->isRunning()) {
                 continue;
             }
-            $worker->terminate();
+            // if the worker is started, mark the worker terminate.
+            if (Worker::STATUS_STARTED === $worker->getStatus()) {
+                $worker->terminate();
+                $this->cluster->emit('worker.close', [$worker]);
+            } elseif (Worker::STATUS_READY === $worker->getStatus()) {
+                throw new RuntimeException(sprintf('Cannot start the worker %d, error: %s', $worker->getId(), $worker->getOutput()));
+            }
             $this->remove($worker);
             yield $worker;
         }

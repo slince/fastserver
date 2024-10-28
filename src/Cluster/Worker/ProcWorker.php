@@ -60,6 +60,14 @@ final class ProcWorker extends Worker
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function getOutput(): string
+    {
+        return $this->process->getOutput();
+    }
+
+    /**
      * Set channel instance for the worker.
      * @internal
      * @param ChannelInterface $channel
