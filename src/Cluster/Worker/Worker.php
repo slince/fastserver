@@ -188,8 +188,6 @@ abstract class Worker extends EventEmitter
         $this->cluster->requireInMainProcess(__METHOD__);
         $this->requireReady();
         $this->doStart();
-        $this->status = self::STATUS_STARTED;
-        $this->emit('start');
     }
 
     /**
@@ -232,11 +230,24 @@ abstract class Worker extends EventEmitter
     /**
      * Mark the worker terminated.
      * @return void
+     * @internal
      */
     public function terminate(): void
     {
         $this->status = self::STATUS_TERMINATED;
         $this->emit('close');
+    }
+
+    /**
+     * Mark the worker start ok.
+     *
+     * @return void
+     * @internal
+     */
+    public function register(): void
+    {
+        $this->status = self::STATUS_STARTED;
+        $this->emit('start');
     }
 
     /**
@@ -353,6 +364,9 @@ abstract class Worker extends EventEmitter
                 break;
             case 'CONNECTIONS':
                 $this->emit('connections', [$command->getConnections()]);
+                break;
+            case 'REGISTER':
+                $this->register();
                 break;
             default:
                 $this->emit('command', [$command]);

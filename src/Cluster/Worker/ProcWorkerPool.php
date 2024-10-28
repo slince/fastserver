@@ -56,7 +56,7 @@ final class ProcWorkerPool extends WorkerPool
                     }
                     $worker->attachChannel($channel);
                 } else {
-                    $this->logger->warning('Unrecognized command');
+                    $this->logger->warning(sprintf('Unrecognized command: %s', $command->getCommandId()));
                     $connection->close();
                 }
             });

@@ -69,6 +69,7 @@ final class ProcWorker extends Worker
     {
         $this->channel = $channel;
         $this->listenChannel();
+        $this->register();
     }
 
     /**
