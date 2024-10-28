@@ -91,6 +91,15 @@ final class Cluster extends EventEmitter
     }
 
     /**
+     * Return the logger instance.
+     * @return LoggerInterface
+     */
+    public function logger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+
+    /**
      * Returns the cluster instance.
      * @return Cluster
      */
