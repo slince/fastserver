@@ -6,6 +6,7 @@ use Monolog\Logger;
 
 include __DIR__ . '/../vendor/autoload.php';
 
-$handler = new StreamHandler(STDOUT, Level::Debug);
+$stdout = new StreamHandler(STDOUT, Level::Debug);
+$file = new StreamHandler(__DIR__ . '/log_' . getmypid() . '.log', Level::Debug);
 
-return new Logger('cluster', [$handler]);
+return new Logger('cluster', [$stdout, $file]);

@@ -10,6 +10,8 @@ $logger = include __DIR__ . '/logger.php';
 
 $cluster = Cluster::create(function(Cluster $cluster){
 
+    throw new \Viso\Server\Exception\RuntimeException("bad runtime");
+
     $cluster->worker->on('command', function(CommandInterface $command){
         echo 'received command:', $command->getCommandId(), PHP_EOL;
     });
