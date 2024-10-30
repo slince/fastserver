@@ -56,7 +56,7 @@ final class Cluster extends EventEmitter
 
     private function __construct(callable $callback, ?LoggerInterface $logger = null, array $options = [])
     {
-        $this->logger = new Logger($logger ?? new NullLogger());
+        $this->logger = new Logger($this,$logger ?? new NullLogger());
         $this->primary = getenv(self::VISO_PID) === false;
         $this->options = $options;
         $this->workers = WorkerPool::createPool($this, $this->logger, $callback, $this->options);

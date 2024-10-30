@@ -20,10 +20,12 @@ final class Logger implements LoggerInterface
 {
     use LoggerTrait;
 
+    private Cluster $cluster;
     private LoggerInterface $decorated;
 
-    public function __construct(LoggerInterface $decorated)
+    public function __construct(Cluster $cluster, LoggerInterface $decorated)
     {
+        $this->cluster = $cluster;
         $this->decorated = $decorated;
     }
 
@@ -37,14 +39,13 @@ final class Logger implements LoggerInterface
 
     private function buildContext(): array
     {
-        $cluster = Cluster::get();
-        return $cluster->primary ? [
-            'primary' => $cluster->primary,
+        return $this->cluster->primary ? [
+            'primary' => $this->cluster->primary,
             'pid' => getmypid()
         ] : [
-            'primary' => $cluster->primary,
-            'worker_id' => $cluster->worker?->getId(),
-            'worker_pid' => $cluster->worker?->getPid(),
+            'primary' => $this->cluster->primary,
+            'worker_id' => $this->cluster->worker?->getId(),
+            'worker_pid' => getmypid()
         ];
     }
 }
