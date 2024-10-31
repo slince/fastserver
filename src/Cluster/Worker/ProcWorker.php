@@ -23,7 +23,6 @@ use Symfony\Component\Process\Process as SymfonyProcess;
 use Viso\Channel\ChannelInterface;
 use Viso\Channel\StreamChannel;
 use Viso\Cluster\Cluster;
-use Viso\Cluster\Command\RegisterCommand;
 use Viso\Cluster\Exception\RuntimeException;
 
 final class ProcWorker extends Worker
@@ -94,7 +93,6 @@ final class ProcWorker extends Worker
                     $this->stop();
                 });
                 $this->channel = new StreamChannel($connection);
-                $this->sendCommand(new RegisterCommand($this->getId()));
                 $this->listenChannel();
             }, function(\Exception $exception) use($address){
                 throw new RuntimeException(sprintf('Cannot connect to channel server %s, error: %s', $address, $exception->getMessage()), $exception->getCode(), $exception);

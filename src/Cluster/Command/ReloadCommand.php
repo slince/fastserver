@@ -18,9 +18,4 @@ class ReloadCommand implements CommandInterface
     {
         return 'RELOAD';
     }
-
-    public function getCommandKey(): string
-    {
-        return $this->getCommandId();
-    }
 }

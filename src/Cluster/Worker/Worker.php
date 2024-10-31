@@ -27,6 +27,7 @@ use Viso\Cluster\Command\ControlCommand;
 use Viso\Cluster\Command\MessageCommand;
 use Viso\Cluster\Command\PingCommand;
 use Viso\Cluster\Command\PongCommand;
+use Viso\Cluster\Command\RegisterCommand;
 use Viso\Cluster\Command\WorkerCommand;
 use Viso\Cluster\Exception\RuntimeException;
 use Viso\Cluster\SignalUtils;
@@ -170,6 +171,7 @@ abstract class Worker extends EventEmitter
                     $this->stop();
                 }
             });
+            $this->sendCommand(new RegisterCommand($this->getId()));
             $this->status = self::STATUS_STARTED;
             $this->emit('start');
             $this->logger->debug('The worker is running');
