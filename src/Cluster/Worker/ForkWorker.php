@@ -96,6 +96,7 @@ final class ForkWorker extends Worker
             $this->cluster->loop
         );
         $stream->on('error', function (){
+            $this->logger->warning(sprintf('The channel for %d is disconnect, close it.', $this->getId()));
             if ($this->cluster->primary) {
                 $this->close();
             } else {

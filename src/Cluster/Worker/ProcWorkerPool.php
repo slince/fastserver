@@ -46,6 +46,7 @@ final class ProcWorkerPool extends WorkerPool
         $server->on('connection', function (ConnectionInterface $connection){
             $channel = new StreamChannel($connection);
             $commandFactory = CommandFactory::create();
+
             $channel->listen(function(Frame $frame) use($commandFactory, $channel, $connection){
                 $command = $commandFactory->createCommand($frame);
                 if ('REGISTER' === $command->getCommandId()) {

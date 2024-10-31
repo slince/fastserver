@@ -89,7 +89,7 @@ final class ProcWorker extends Worker
         return $connector->connect($address)
             ->then(function(ConnectionInterface $connection) {
                 $connection->on('error', function(){
-                    $this->logger->debug('The channel is disconnect');
+                    $this->logger->warning('The channel is disconnect, close the worker.');
                     $this->stop();
                 });
                 $this->channel = new StreamChannel($connection);
