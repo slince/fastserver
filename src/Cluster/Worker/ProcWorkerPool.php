@@ -56,6 +56,10 @@ final class ProcWorkerPool extends WorkerPool
                         $this->logger->warning(sprintf("Cannot find worker %d", $command->getWorkerId()));
                     }
                     $worker->attachChannel($channel);
+                    $connection->on('error', function () use($worker){
+                        $this->logger->warning(sprintf('The channel for %d is disconnect, close it.', $worker->getId()));
+                        $worker->close();
+                    });
                 } else {
                     $this->logger->warning(sprintf('Unrecognized command: %s', $command->getCommandId()));
                     $connection->close();
