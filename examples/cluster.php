@@ -3,6 +3,7 @@
 use React\Socket\ConnectionInterface;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CommandInterface;
+use Viso\Cluster\Worker\Worker;
 
 include __DIR__ . '/../vendor/autoload.php';
 
@@ -58,8 +59,12 @@ if ($cluster->primary) {
         $cluster->logger()->info(sprintf('the worker %d is alive', $worker->getId()));
     });
     $worker->on('close', function () use($cluster){
-        $cluster->logger()->info('fork new worker');
-        $cluster->fork();
+//        $cluster->logger()->info('fork new worker');
+//        $cluster->fork();
+    });
+    $cluster->on('work.close', function(Worker $worker) use($cluster){
+        $cluster->logger()->warning(sprintf('the worker %d is closed', $worker->getId()));
+        echo $worker->getOutput();
     });
 }
 
