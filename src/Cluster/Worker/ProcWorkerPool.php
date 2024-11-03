@@ -19,6 +19,7 @@ use Viso\Channel\Frame;
 use Viso\Channel\StreamChannel;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CommandFactory;
+use Viso\Cluster\Command\CommandFactoryInterface;
 
 final class ProcWorkerPool extends WorkerPool
 {
@@ -26,9 +27,9 @@ final class ProcWorkerPool extends WorkerPool
 
     private int $listenPort;
 
-    public function __construct(Cluster $cluster, LoggerInterface $logger, callable $callback, int $listenPort)
+    public function __construct(Cluster $cluster, LoggerInterface $logger, CommandFactoryInterface $commandFactory, callable $callback, int $listenPort)
     {
-        parent::__construct($cluster, $logger, $callback);
+        parent::__construct($cluster, $logger, $commandFactory, $callback);
         $this->listenPort = $listenPort;
     }
 
@@ -82,6 +83,6 @@ final class ProcWorkerPool extends WorkerPool
      */
     public function create(int $id): Worker
     {
-        return new ProcWorker($id, $this->cluster, $this->logger, $this->callback, $this->listenPort);
+        return new ProcWorker($id, $this->cluster, $this->logger, $this->commandFactory, $this->callback, $this->listenPort);
     }
 }

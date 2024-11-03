@@ -20,7 +20,6 @@ use Viso\Channel\ChannelInterface;
 use Viso\Channel\Frame;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
-use Viso\Cluster\Command\CommandFactory;
 use Viso\Cluster\Command\CommandFactoryInterface;
 use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Command\ControlCommand;
@@ -100,14 +99,14 @@ abstract class Worker extends EventEmitter
 
     private $callback;
 
-    public function __construct(int $id, Cluster $cluster, LoggerInterface $logger, callable $callback)
+    public function __construct(int $id, Cluster $cluster, LoggerInterface $logger, CommandFactoryInterface $commandFactory, callable $callback)
     {
         $this->id = $id;
         $this->cluster = $cluster;
         $this->logger = $logger;
+        $this->commandFactory = $commandFactory;
         $this->callback = $callback;
         $this->createdAt = $this->updatedAt = new \DateTime();
-        $this->commandFactory = CommandFactory::create();
     }
 
     /**
@@ -302,18 +301,6 @@ abstract class Worker extends EventEmitter
         $this->cluster->requireInMainProcess(__METHOD__);
         $this->requireStarted();
         $this->sendCommand(new ControlCommand(ControlCommand::STATUS));
-    }
-
-    /**
-     * Check the worker connections. send command to the worker.
-     *
-     * @return void
-     */
-    public function connections(): void
-    {
-        $this->cluster->requireInMainProcess(__METHOD__);
-        $this->requireStarted();
-        $this->sendCommand(new ControlCommand(ControlCommand::CONNECTIONS));
     }
 
     /**

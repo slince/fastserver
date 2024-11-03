@@ -19,6 +19,8 @@ use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\StreamSelectLoop;
 use React\Socket\SocketServer;
+use Viso\Cluster\Command\CommandFactory;
+use Viso\Cluster\Command\CommandFactoryInterface;
 use Viso\Cluster\Exception\LogicException;
 use Viso\Cluster\Exception\RuntimeException;
 use Viso\Cluster\Worker\ForkWorkerPool;
@@ -40,6 +42,8 @@ final class Cluster extends EventEmitter
 
     private LoggerInterface $logger;
 
+    private CommandFactoryInterface $commandFactory;
+
     private int $id = 0;
 
     private array $signals = [];
@@ -54,12 +58,13 @@ final class Cluster extends EventEmitter
 
     private static bool $frozen = false;
 
-    private function __construct(callable $callback, ?LoggerInterface $logger = null, array $options = [])
+    private function __construct(callable $callback, ?LoggerInterface $logger = null, ?CommandFactoryInterface $commandFactory = null, array $options = [])
     {
         $this->logger = new Logger($this,$logger ?? new NullLogger());
+        $this->commandFactory = $commandFactory ?? CommandFactory::create();
         $this->primary = getenv(self::VISO_PID) === false;
         $this->options = $options;
-        $this->workers = WorkerPool::createPool($this, $this->logger, $callback, $this->options);
+        $this->workers = WorkerPool::createPool($this, $this->logger, $this->commandFactory, $callback, $this->options);
         if ($this->primary) {
             $this->loop = $this->workers instanceof ForkWorkerPool ? new StreamSelectLoop() : Loop::get();
         } else {
@@ -81,13 +86,13 @@ final class Cluster extends EventEmitter
      * @param array $options
      * @return Cluster
      */
-    public static function create(callable $callback, ?LoggerInterface $logger = null, array $options = []): Cluster
+    public static function create(callable $callback, ?LoggerInterface $logger = null,  ?CommandFactoryInterface $commandFactory = null, array $options = []): Cluster
     {
         if (self::$frozen) {
             throw new RuntimeException('Cluster can only be created once');
         }
         self::$frozen = true;
-        return self::$instance = new Cluster($callback, $logger, $options);
+        return self::$instance = new Cluster($callback, $logger, $commandFactory, $options);
     }
 
     /**

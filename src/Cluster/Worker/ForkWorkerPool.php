@@ -19,6 +19,6 @@ final class ForkWorkerPool extends WorkerPool
      */
     public function create(int $id): Worker
     {
-        return new ForkWorker($id, $this->cluster, $this->logger, $this->callback);
+        return new ForkWorker($id, $this->cluster, $this->logger, $this->commandFactory, $this->callback);
     }
 }

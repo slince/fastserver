@@ -15,6 +15,7 @@ namespace Viso\Cluster\Worker;
 
 use Psr\Log\LoggerInterface;
 use Viso\Cluster\Cluster;
+use Viso\Cluster\Command\CommandFactoryInterface;
 use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Exception\InvalidArgumentException;
 use Viso\Cluster\Exception\RuntimeException;
@@ -30,12 +31,15 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
 
     protected LoggerInterface $logger;
 
+    protected CommandFactoryInterface $commandFactory;
+
     protected $callback;
 
-    public function __construct(Cluster $cluster, LoggerInterface $logger, callable $callback)
+    public function __construct(Cluster $cluster, LoggerInterface $logger,CommandFactoryInterface $commandFactory,  callable $callback)
     {
         $this->cluster = $cluster;
         $this->logger = $logger;
+        $this->commandFactory = $commandFactory;
         $this->callback = $callback;
     }
 
@@ -267,14 +271,14 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      * @param array $options
      * @return WorkerPool
      */
-    public static function createPool(Cluster $cluster, LoggerInterface $logger, callable $callback, array $options = []): WorkerPool
+    public static function createPool(Cluster $cluster, LoggerInterface $logger, CommandFactoryInterface $commandFactory, callable $callback, array $options = []): WorkerPool
     {
         $type = static::guessType();
         if ($type === Type::FORK) {
-            return new ForkWorkerPool($cluster, $logger, $callback);
+            return new ForkWorkerPool($cluster, $logger, $commandFactory, $callback);
         }
         if ($type === Type::PROC) {
-            return new ProcWorkerPool($cluster, $logger, $callback, $options['listenPort'] ?? ProcWorkerPool::DEFAULT_LISTEN_PORT);
+            return new ProcWorkerPool($cluster, $logger, $commandFactory, $callback, $options['listenPort'] ?? ProcWorkerPool::DEFAULT_LISTEN_PORT);
         }
         throw new InvalidArgumentException('Cannot create worker pool.');
     }

@@ -23,6 +23,7 @@ use Symfony\Component\Process\Process as SymfonyProcess;
 use Viso\Channel\ChannelInterface;
 use Viso\Channel\StreamChannel;
 use Viso\Cluster\Cluster;
+use Viso\Cluster\Command\CommandFactoryInterface;
 use Viso\Cluster\Exception\RuntimeException;
 
 final class ProcWorker extends Worker
@@ -34,9 +35,9 @@ final class ProcWorker extends Worker
      */
     private SymfonyProcess $process;
 
-    public function __construct(int $id, Cluster $cluster, LoggerInterface $logger, callable $callback, int $listenPort)
+    public function __construct(int $id, Cluster $cluster, LoggerInterface $logger, CommandFactoryInterface $commandFactory, callable $callback, int $listenPort)
     {
-        parent::__construct($id, $cluster, $logger, $callback);
+        parent::__construct($id, $cluster, $logger, $commandFactory, $callback);
         $this->listenPort = $listenPort;
     }
 
