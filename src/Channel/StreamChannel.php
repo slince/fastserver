@@ -21,6 +21,7 @@ class StreamChannel implements ChannelInterface
 {
     protected DuplexStreamInterface $stream;
 
+    protected FrameEncoder $encoder;
     protected ParserInterface $parser;
 
     private ?\Closure $listener = null;
@@ -31,6 +32,7 @@ class StreamChannel implements ChannelInterface
     public function __construct(DuplexStreamInterface $stream)
     {
         $this->stream = $stream;
+        $this->encoder = FrameEncoder::get();
         $this->parser = new FrameParser();
     }
 
@@ -39,7 +41,7 @@ class StreamChannel implements ChannelInterface
      */
     public function send(Frame $frame): void
     {
-        $message = Frame::pack($frame);
+        $message = $this->encoder->pack($frame);
         $this->stream->write($message);
     }
 

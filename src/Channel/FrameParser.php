@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Viso\Channel;
 
 use Viso\Parser\ParserInterface;
+use Viso\Server\Exception\MetaException;
 
 final class FrameParser implements ParserInterface
 {
@@ -49,14 +50,14 @@ final class FrameParser implements ParserInterface
     {
         if (null === $this->meta && $this->length >= Frame::HEADER_SIZE) {
             $header = substr($this->buffer, 0, Frame::HEADER_SIZE);
-            $this->meta = Frame::parseHeader($header);
+            $this->meta = self::parseHeader($header);
             $this->buffer = substr($this->buffer, Frame::HEADER_SIZE); // reset buffer
             $this->length -= strlen($header);
         }
 
         if (null !== $this->meta && $this->length >= $this->meta['size']) {
             $body = substr($this->buffer, 0, $this->meta['size']);
-            $payload = Frame::parsePayload($this->meta['flags'], $body);
+            $payload = self::parsePayload($this->meta['flags'], $body);
             $frame = new Frame($this->meta['type'], $this->meta['flags'], $payload);
             $this->buffer = substr($this->buffer, $this->meta['size']); // reset buffer
             $this->length -= strlen($body);
@@ -69,5 +70,39 @@ final class FrameParser implements ParserInterface
                 yield $rest;
             }
         }
+    }
+
+
+    /**
+     * Parse message header.
+     *
+     * @param string $header
+     * @return array
+     */
+    private static function parseHeader(string $header): array
+    {
+        $result = unpack('Ctype/Cflags/Jsize', $header);
+        if (false === $result) {
+            throw new MetaException("invalid message header");
+        }
+        return $result;
+    }
+
+    /**
+     * Parse message payload.
+     *
+     * @param int $flags
+     * @param string $body
+     * @return array|string
+     */
+    private static function parsePayload(int $flags, string $body): array|string
+    {
+        if (($flags & Frame::PAYLOAD_JSON) === Frame::PAYLOAD_JSON) {
+            return json_decode($body, true);
+        }
+        if (($flags & Frame::PAYLOAD_NONE) === Frame::PAYLOAD_NONE) {
+            return "";
+        }
+        return $body;
     }
 }
