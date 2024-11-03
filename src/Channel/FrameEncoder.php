@@ -14,7 +14,7 @@ namespace Viso\Channel;
 
 final class FrameEncoder
 {
-    private static FrameEncoder $instance;
+    private static ?FrameEncoder $instance = null;
 
     /**
      * Pack the given frame.
