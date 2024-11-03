@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Viso\Server;
 
 use Psr\Log\LoggerInterface;
-use Viso\Cluster\ConnectionPool;
 
 interface ServerInterface
 {

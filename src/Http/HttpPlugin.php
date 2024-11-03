@@ -21,12 +21,12 @@ use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
-use Viso\Cluster\ConnectionPool;
 use Viso\Http\Exception\InvalidHeaderException;
 use Viso\Http\Parser\HttpEmitter;
 use Viso\Http\Parser\HttpParser;
 use Viso\Parser\ParserFactory;
 use Viso\Parser\StreamingReader;
+use Viso\Server\ConnectionPool;
 use Viso\Server\PluginInterface;
 use Viso\Server\ServerInterface;
 
