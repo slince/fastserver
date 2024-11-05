@@ -193,6 +193,19 @@ final class Cluster extends EventEmitter
     }
 
     /**
+     * Close the cluster.
+     *
+     * @param bool $graceful
+     * @return void
+     */
+    public function close(bool $graceful): void
+    {
+        $this->requireInMainProcess(__METHOD__);
+        $this->workers->close($graceful);
+        $this->loop->stop();
+    }
+
+    /**
      * Create a socket server by given address.
      *
      * @param string $address

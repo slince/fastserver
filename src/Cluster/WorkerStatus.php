@@ -13,30 +13,26 @@ declare(strict_types=1);
 
 namespace Viso\Cluster;
 
+use Viso\Cluster\Worker\Worker;
+
 final class WorkerStatus implements \JsonSerializable
 {
     private int $id;
     private int $pid;
-    private string $listening;
     private int $memoryUsage;
-    private int $connections;
     private int $aliveSeconds;
 
     /**
      * @param int $id
      * @param int $pid
-     * @param string $listening
      * @param int $memoryUsage
-     * @param int $connections
      * @param int $aliveSeconds
      */
-    public function __construct(int $id, int $pid, string $listening, int $memoryUsage, int $connections, int $aliveSeconds)
+    public function __construct(int $id, int $pid, int $memoryUsage, int $aliveSeconds)
     {
         $this->id = $id;
         $this->pid = $pid;
-        $this->listening = $listening;
         $this->memoryUsage = $memoryUsage;
-        $this->connections = $connections;
         $this->aliveSeconds = $aliveSeconds;
     }
 
@@ -53,19 +49,9 @@ final class WorkerStatus implements \JsonSerializable
         return $this->pid;
     }
 
-    public function getListening(): string
-    {
-        return $this->listening;
-    }
-
     public function getMemoryUsage(): int
     {
         return $this->memoryUsage;
-    }
-
-    public function getConnections(): int
-    {
-        return $this->connections;
     }
 
     /**
@@ -84,10 +70,24 @@ final class WorkerStatus implements \JsonSerializable
         return [
             'id' => $this->id,
             'pid' => $this->pid,
-            'listening' => $this->listening,
             'memoryUsage' => $this->memoryUsage,
-            'connections' => $this->connections,
             'aliveSeconds' => $this->aliveSeconds
         ];
+    }
+
+    /**
+     * Create a worker status.
+     *
+     * @param Worker $worker
+     * @return WorkerStatus
+     */
+    public static function create(Worker $worker): WorkerStatus
+    {
+        return new WorkerStatus(
+            $worker->getId(),
+            getmypid(),
+            memory_get_usage(true),
+            $worker->getAliveSeconds()
+        );
     }
 }

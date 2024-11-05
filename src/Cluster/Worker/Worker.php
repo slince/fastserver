@@ -27,9 +27,11 @@ use Viso\Cluster\Command\MessageCommand;
 use Viso\Cluster\Command\PingCommand;
 use Viso\Cluster\Command\PongCommand;
 use Viso\Cluster\Command\RegisterCommand;
+use Viso\Cluster\Command\StatusCommand;
 use Viso\Cluster\Command\WorkerCommand;
 use Viso\Cluster\Exception\RuntimeException;
 use Viso\Cluster\SignalUtils;
+use Viso\Cluster\WorkerStatus;
 use function React\Promise\resolve;
 
 abstract class Worker extends EventEmitter
@@ -351,6 +353,9 @@ abstract class Worker extends EventEmitter
             case 'MESSAGE':
                 $this->emit('message', [$command->getMessage()]);
                 break;
+            case 'CONTROL':
+                $this->handleControl($command->getFlags());
+                break;
             // for main process.
             case 'PING':
                 $this->updatedAt = new \DateTime();
@@ -360,14 +365,20 @@ abstract class Worker extends EventEmitter
             case 'STATUS':
                 $this->emit('status', [$command->getStatus()]);
                 break;
-            case 'CONNECTIONS':
-                $this->emit('connections', [$command->getConnections()]);
-                break;
             case 'REGISTER':
                 $this->register();
                 break;
             default:
                 $this->emit('command', [$command]);
+        }
+    }
+
+    private function handleControl(int $flags): void
+    {
+        if ($flags === ControlCommand::STATUS) {
+            $this->sendCommand(new StatusCommand($this->getId(),  WorkerStatus::create($this)));
+        } else {
+            $this->emit('control', [$flags]);
         }
     }
 

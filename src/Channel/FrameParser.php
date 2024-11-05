@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace Viso\Channel;
 
+use Viso\Channel\Exception\MetaException;
 use Viso\Parser\ParserInterface;
-use Viso\Server\Exception\MetaException;
 
 final class FrameParser implements ParserInterface
 {

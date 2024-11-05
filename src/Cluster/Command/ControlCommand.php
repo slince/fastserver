@@ -16,7 +16,7 @@ namespace Viso\Cluster\Command;
 final class ControlCommand implements CommandInterface
 {
     public const STATUS = 1;
-
+    
     private int $flags;
 
     public function __construct(int $flags)
