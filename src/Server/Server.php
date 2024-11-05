@@ -23,14 +23,10 @@ use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
 use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Command\ControlCommand;
-use Viso\Cluster\Command\ReloadCommand;
-use Viso\Server\Exception\InvalidArgumentException;
 use Viso\Server\Exception\RuntimeException;
 
 final class Server extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['start', 'close', 'error', 'command', 'connection', 'worker.start', 'worker.close'];
-
     /**
      * process status,running
      * @var string
@@ -84,7 +80,7 @@ final class Server extends EventEmitter implements ServerInterface
     public function __construct(array $options, array $plugins = [], ?LoggerInterface $logger = null)
     {
         $this->plugins = $plugins;
-        $this->logger = new Logger($logger ?? new NullLogger());
+        $this->logger = $logger ?? new NullLogger();
         $this->connections = new ConnectionPool();
         $this->configure($options);
     }
@@ -138,38 +134,12 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function on($event, callable $listener): void
-    {
-        if (!in_array($event, self::EVENT_NAMES) && !$this->isSupportedEventInPlugins($event)) {
-            throw new InvalidArgumentException(sprintf('The event "%s" is not supported.', $event));
-        }
-        parent::on($event, $listener);
-    }
-
-    /**
-     * Checks whether the event is supported by plugins.
-     * @param string $event
-     * @return bool
-     */
-    private function isSupportedEventInPlugins(string $event): bool
-    {
-        foreach ($this->plugins as $plugin) {
-            if (in_array($event, $plugin->getEvents())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function close(bool $graceful = false): void
     {
         if ($this->status !== self::STATUS_STARTED) {
             throw new RuntimeException("The server is not running");
         }
-        $this->cluster->workers->close($graceful);
+        $this->cluster->close($graceful);
         $this->status = $graceful ? self::STATUS_CLOSING : self::STATUS_TERMINATED;
     }
 
