@@ -21,7 +21,7 @@ use React\Stream\DuplexStreamInterface;
 use Viso\Http\Exception\InvalidArgumentException;
 use Viso\Http\Exception\InvalidHeaderException;
 use Viso\Parser\ParserInterface;
-use Viso\Server\StreamAwareInterface;
+use Viso\Parser\StreamAwareInterface;
 
 class HttpParser implements ParserInterface, StreamAwareInterface
 {

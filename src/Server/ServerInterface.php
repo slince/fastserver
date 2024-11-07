@@ -23,7 +23,7 @@ interface ServerInterface
      * @param string $event
      * @param callable $listener
      */
-    public function on($event, callable $listener): void;
+    public function on($event, callable $listener);
 
     /**
      * Start the server.
@@ -49,5 +49,5 @@ interface ServerInterface
      *
      * @return LoggerInterface
      */
-    public function getLogger(): LoggerInterface;
+    public function logger(): LoggerInterface;
 }

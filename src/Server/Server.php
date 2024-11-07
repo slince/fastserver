@@ -21,8 +21,11 @@ use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
+use Viso\Cluster\Command\CommandFactory;
+use Viso\Cluster\Command\CommandFactoryInterface;
 use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Command\ControlCommand;
+use Viso\Server\Command\ConnectionsCommand;
 use Viso\Server\Exception\RuntimeException;
 
 final class Server extends EventEmitter implements ServerInterface
@@ -77,11 +80,16 @@ final class Server extends EventEmitter implements ServerInterface
      */
     private array $plugins;
 
+    private CommandFactoryInterface $commandFactory;
+
     public function __construct(array $options, array $plugins = [], ?LoggerInterface $logger = null)
     {
         $this->plugins = $plugins;
         $this->logger = $logger ?? new NullLogger();
         $this->connections = new ConnectionPool();
+        $this->commandFactory = CommandFactory::create([
+            ConnectionsCommand::class
+        ]);
         $this->configure($options);
     }
 

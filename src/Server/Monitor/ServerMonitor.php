@@ -1,6 +1,17 @@
 <?php
 
-namespace Viso\Monitor;
+declare(strict_types=1);
+
+/*
+ * This file is part of the waveman/waveman package.
+ *
+ * (c) Slince <taosikai@yeah.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Viso\Server\Monitor;
 
 use React\Socket\SocketServer;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -18,7 +29,7 @@ final class ServerMonitor implements PluginInterface
         return 'monitor';
     }
 
-    public function activate(ServerInterface $server): void
+    public function activate(ServerInterface $server, array $options): void
     {
         $this->server = $server;
         $this->socketServer = new SocketServer($this->options['address'], $this->options);

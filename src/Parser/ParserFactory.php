@@ -15,7 +15,6 @@ namespace Viso\Parser;
 
 use React\Stream\DuplexStreamInterface as Stream;
 use Viso\Server\Exception\InvalidArgumentException;
-use Viso\Server\StreamAwareInterface;
 
 final class ParserFactory implements ParserFactoryInterface
 {
