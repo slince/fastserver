@@ -25,6 +25,7 @@ use Viso\Cluster\Command\CommandFactory;
 use Viso\Cluster\Command\CommandFactoryInterface;
 use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Command\ControlCommand;
+use Viso\Cluster\Worker\Worker;
 use Viso\Server\Command\ConnectionsCommand;
 use Viso\Server\Command\ReloadCommand;
 use Viso\Server\Exception\RuntimeException;
@@ -224,16 +225,16 @@ final class Server extends EventEmitter implements ServerInterface
             $worker->on('start', function() use($worker){
                 $this->emit('worker.start', [$worker]);
             });
-            $worker->on('close', function () use ($worker){
-                $this->emit('worker.close', [$worker]);
-                if ($this->status === self::STATUS_STARTED) {
-                    $this->logger->warning(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
-//                $this->cluster->fork();
-                } else if ($this->status === self::STATUS_CLOSING) {
-                    $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
-                }
-            });
         }
+
+        $this->cluster->on('worker.close', function (Worker $worker){
+            if ($this->status === self::STATUS_STARTED) {
+                $this->logger->warning(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
+                $this->cluster->fork();
+            } else if ($this->status === self::STATUS_CLOSING) {
+                $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
+            }
+        });
     }
 
     private function createSetupWorker(): \Closure
