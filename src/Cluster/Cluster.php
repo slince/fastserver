@@ -169,9 +169,11 @@ final class Cluster extends EventEmitter
                 });
             }
             $this->logger->debug('The cluster is running');
+            $this->emit('start');
             $this->workers->run();
         } else {
             // run in proc child process.
+            $this->emit('start');
             $this->worker->run();
         }
     }

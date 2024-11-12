@@ -17,6 +17,7 @@ use Evenement\EventEmitter;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use React\Socket\ConnectionInterface;
+use React\Stream\Util;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
@@ -159,7 +160,7 @@ final class Server extends EventEmitter implements ServerInterface
             throw new RuntimeException('The server is already running.');
         }
 
-        $this->cluster = Cluster::create($this->createSetupWorker());
+        $this->cluster = Cluster::create($this->createSetupWorker(), $this->logger, $this->commandFactory, $this->options['cluster'] ?? []);
         $this->activatePlugins();
 
         if ($this->cluster->primary) {
@@ -168,6 +169,7 @@ final class Server extends EventEmitter implements ServerInterface
 
         $this->status = self::STATUS_STARTED;
         $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
+
         $this->emit('start', [$this]);
         $this->cluster->run();
     }
@@ -237,22 +239,18 @@ final class Server extends EventEmitter implements ServerInterface
             });
             // handler error
             $socket->on('error', function (\Exception $error) use ($cluster){
-                $this->logger->error(sprintf('Worker [%s] [%s] Accept connection error %s', $cluster->worker->getId(), $cluster->worker->getPid(), $error));
+                $this->logger->error(sprintf('Worker accept connection error %s', $error->getMessage()));
                 $this->emit('error', [$error]);
             });
 
-            $worker = $cluster->worker;
-            $worker->on('start', function() use($worker){
-                $this->emit('worker.start', [$worker]);
-            });
+            Util::forwardEvents($cluster, $this, ['worker.start', 'worker.close']);
             // on worker close.
-            $onClose = function () use ($worker){
-                $this->emit('worker.close', [$worker]);
+            $onClose = function (){
                 $this->connections->close();
             };
             // when the worker received close command.
-            $worker->on('close', $onClose);
-            $worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $onClose);
+            $cluster->worker->on('close', $onClose);
+            $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $onClose);
         };
     }
 
