@@ -18,7 +18,6 @@ use React\Socket\SocketServer;
 use Viso\Channel\Frame;
 use Viso\Channel\StreamChannel;
 use Viso\Cluster\Cluster;
-use Viso\Cluster\Command\CommandFactory;
 use Viso\Cluster\Command\CommandFactoryInterface;
 
 final class ProcWorkerPool extends WorkerPool
@@ -46,10 +45,9 @@ final class ProcWorkerPool extends WorkerPool
 
         $server->on('connection', function (ConnectionInterface $connection){
             $channel = new StreamChannel($connection);
-            $commandFactory = CommandFactory::create();
 
-            $channel->listen(function(Frame $frame) use($commandFactory, $channel, $connection){
-                $command = $commandFactory->createCommand($frame);
+            $channel->listen(function(Frame $frame) use($channel, $connection){
+                $command = $this->commandFactory->createCommand($frame);
                 if ('REGISTER' === $command->getCommandId()) {
                     /* @var ProcWorker $worker */
                     $worker = $this->get($command->getWorkerId());
