@@ -16,9 +16,12 @@ final class MessageCommand implements CommandInterface
 {
     private string $message;
 
-    public function __construct(string $message)
+    private array $context;
+
+    public function __construct(string $message, array $context = [])
     {
         $this->message = $message;
+        $this->context = $context;
     }
 
     /**
@@ -28,6 +31,14 @@ final class MessageCommand implements CommandInterface
     public function getMessage(): string
     {
         return $this->message;
+    }
+
+    /**
+     * @return array
+     */
+    public function getContext(): array
+    {
+        return $this->context;
     }
 
     /**

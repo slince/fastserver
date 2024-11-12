@@ -36,7 +36,7 @@ final class CommandFactory implements CommandFactoryInterface
         $payload = match ($class) {
              CloseCommand::class => ['graceful' => $command->isGraceful()],
              ControlCommand::class => (string)$command->getFlags(),
-             MessageCommand::class => $command->getMessage(),
+             MessageCommand::class => ['message' => $command->getMessage(), 'context' => $command->getContext()],
              PingCommand::class, RegisterCommand::class => (string)$command->getWorkerId(),
              StatusCommand::class => ['worker_id' => $command->getWorkerId(), 'status' => $command->getStatus()],
             default => null
@@ -64,7 +64,7 @@ final class CommandFactory implements CommandFactoryInterface
         return match($class){
             CloseCommand::class => new CloseCommand($payload['graceful']),
             ControlCommand::class => new ControlCommand(intval($payload)),
-            MessageCommand::class => new MessageCommand($payload),
+            MessageCommand::class => new MessageCommand($payload['message'], $payload['context']),
             PingCommand::class => new PingCommand(intval($payload)),
             StatusCommand::class => new StatusCommand($payload['worker_id'], new WorkerStatus(...$payload['status'])),
             RegisterCommand::class => new RegisterCommand(intval($payload)),

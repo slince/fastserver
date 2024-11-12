@@ -308,11 +308,12 @@ abstract class Worker extends EventEmitter
      * Send message to the worker.
      *
      * @param string $message
+     * @param array $context
      * @return void
      */
-    public function sendMessage(string $message): void
+    public function sendMessage(string $message, array $context = []): void
     {
-        $this->sendCommand(new MessageCommand($message));
+        $this->sendCommand(new MessageCommand($message, $context));
     }
 
     /**
@@ -350,7 +351,7 @@ abstract class Worker extends EventEmitter
                 $this->emit('pong');
                 break;
             case 'MESSAGE':
-                $this->emit('message', [$command->getMessage()]);
+                $this->emit('message', [$command->getMessage(), $command->getContext()]);
                 break;
             case 'CONTROL':
                 $this->handleControl($command->getFlags());
