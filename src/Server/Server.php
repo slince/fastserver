@@ -264,6 +264,8 @@ final class Server extends EventEmitter implements ServerInterface
             // when the worker received close command.
             $cluster->worker->on('close', $onClose);
             $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $onClose);
+
+            // receive
         };
     }
 

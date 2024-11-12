@@ -9,7 +9,6 @@ use Viso\Cluster\WorkerStatus;
 final class CommandFactory implements CommandFactoryInterface
 {
     private array $commands = [
-        NopCommand::class,
         CloseCommand::class,
         ControlCommand::class,
         PongCommand::class,
