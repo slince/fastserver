@@ -26,6 +26,7 @@ use Viso\Cluster\Command\CommandFactoryInterface;
 use Viso\Cluster\Command\CommandInterface;
 use Viso\Cluster\Command\ControlCommand;
 use Viso\Server\Command\ConnectionsCommand;
+use Viso\Server\Command\ReloadCommand;
 use Viso\Server\Exception\RuntimeException;
 
 final class Server extends EventEmitter implements ServerInterface
@@ -88,7 +89,8 @@ final class Server extends EventEmitter implements ServerInterface
         $this->logger = $logger ?? new NullLogger();
         $this->connections = new ConnectionPool();
         $this->commandFactory = CommandFactory::create([
-            ConnectionsCommand::class
+            ConnectionsCommand::class,
+            ReloadCommand::class
         ]);
         $this->configure($options);
     }
