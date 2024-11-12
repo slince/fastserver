@@ -55,6 +55,16 @@ final class Server extends EventEmitter implements ServerInterface
     const STATUS_TERMINATED = 'terminated';
 
     /**
+     * control flags, status
+     */
+    const CONTROL_STATUS = 1;
+
+    /**
+     * control flags, connections
+     */
+    const CONTROL_CONNECTIONS = 2;
+
+    /**
      * @var string
      */
     protected string $status = self::STATUS_READY;
@@ -203,10 +213,10 @@ final class Server extends EventEmitter implements ServerInterface
             $this->handleCommand(new ReloadCommand());
         });
         $this->cluster->onSignals(\SIGUSR1, function (){
-            $this->handleCommand(new ControlCommand(ControlCommand::STATUS));
+            $this->handleCommand(new ControlCommand(self::CONTROL_STATUS));
         });
         $this->cluster->onSignals(\SIGUSR2, function (){
-            $this->handleCommand(new ControlCommand(ControlCommand::CONNECTIONS));
+            $this->handleCommand(new ControlCommand(self::CONTROL_CONNECTIONS));
         });
 
         for ($i = 0; $i < $this->options['worker_num']; $i++) {
@@ -247,7 +257,7 @@ final class Server extends EventEmitter implements ServerInterface
 
             Util::forwardEvents($cluster, $this, ['worker.start', 'worker.close']);
             // on worker close.
-            $onClose = function (){
+            $onClose = function () {
                 $this->connections->close();
             };
             // when the worker received close command.
@@ -265,6 +275,7 @@ final class Server extends EventEmitter implements ServerInterface
      */
     public function handleCommand(CommandInterface $command): void
     {
+        $this->cluster->requireInMainProcess(__METHOD__);
         $this->emit('command', [$command]);
         $this->logger->debug(sprintf('Received command %s', $command->getCommandId()), ['pid' => getmypid()]);
         switch ($command->getCommandId()) {
