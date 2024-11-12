@@ -83,6 +83,7 @@ final class Cluster extends EventEmitter
      *
      * @param callable $callback
      * @param LoggerInterface|null $logger
+     * @param CommandFactoryInterface|null $commandFactory
      * @param array $options
      * @return Cluster
      */

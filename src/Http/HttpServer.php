@@ -25,15 +25,12 @@ use Viso\Http\Parser\HttpEmitter;
 use Viso\Http\Parser\HttpParser;
 use Viso\Parser\ParserFactory;
 use Viso\Parser\StreamingReader;
-use Viso\Server\ConnectionPool;
 use Viso\Server\Exception\InvalidArgumentException;
 use Viso\Server\Server;
 use Viso\Server\ServerInterface;
 
 final class HttpServer extends EventEmitter implements ServerInterface
 {
-    private const EVENT_NAMES = ['connection', 'request', 'error'];
-
     /**
      * @var StreamingReader
      */
@@ -46,17 +43,11 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
     private ServerInterface $server;
 
-    private LoggerInterface $logger;
-
-    private ConnectionPool $connections;
-
     private array $options;
 
     public function __construct(array $options, ?LoggerInterface $logger = null)
     {
-        $this->server = new Server($options, $logger);
-        $this->connections = $this->server->getConnections();
-        $this->logger = $this->server->getLogger();
+        $this->server = new Server($options, [], $logger);
         $this->configure($options);
         $this->boot();
     }
@@ -108,7 +99,6 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
     private function boot(): void
     {
-        $this->streamReader = $this->createStreamReader();
 
         $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
             $this->connections->getMetadata($connection)->incrRequest();

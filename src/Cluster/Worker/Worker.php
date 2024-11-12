@@ -173,8 +173,7 @@ abstract class Worker extends EventEmitter
                 }
             });
             $this->sendCommand(new RegisterCommand($this->getId()));
-            $this->status = self::STATUS_STARTED;
-            $this->emit('start');
+            $this->register();
             $this->logger->debug('The worker is running');
         }, function (\Throwable $e) {
             $this->logger->error(sprintf('Cannot start the worker: %s', $e->getMessage()));
@@ -252,7 +251,7 @@ abstract class Worker extends EventEmitter
 
     /**
      * Mark the worker start ok.
-     *
+     * {@internal}
      * @return void
      * @internal
      */

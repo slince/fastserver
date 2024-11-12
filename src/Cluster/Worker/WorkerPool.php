@@ -168,6 +168,9 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
         $worker = $this->create($id);
         $this->add($worker);
         $worker->start();
+        $worker->on('start', function() use($worker){
+            $this->cluster->emit('worker.start', [$worker]);
+        });
         return $worker;
     }
 
@@ -289,7 +292,6 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     public static function guessType(): Type
     {
-        return Type::PROC;
         if (function_exists('pcntl_fork')) {
             return Type::FORK;
         }

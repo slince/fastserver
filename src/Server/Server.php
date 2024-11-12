@@ -16,7 +16,6 @@ namespace Viso\Server;
 use Evenement\EventEmitter;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
@@ -108,7 +107,7 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function getConnections(): ConnectionPool
+    public function connections(): ConnectionPool
     {
         return $this->connections;
     }
@@ -116,7 +115,7 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function getLogger(): LoggerInterface
+    public function logger(): LoggerInterface
     {
         return $this->logger;
     }
@@ -226,18 +225,16 @@ final class Server extends EventEmitter implements ServerInterface
     private function createSetupWorker(): \Closure
     {
         return function (Cluster $cluster) {
-            $loop = Loop::get();
+            // start the server.
             $socket = $cluster->listen($this->options['address'], $this->options);
-
             // handle connection
             $socket->on('connection', function(ConnectionInterface $connection) use ($cluster){
-                $this->logger->debug(sprintf('Worker [%s] [%s] Accept connection from %s', $cluster->worker->getId(), $cluster->worker->getPid(), $connection->getLocalAddress()));
+                $this->logger->debug(sprintf('Accept connection from %s', $connection->getLocalAddress()));
                 $connection->on('close', function() use($connection){
                     $this->connections->remove($connection);
                 });
                 $this->emit('connection', [$connection]);
             });
-
             // handler error
             $socket->on('error', function (\Exception $error) use ($cluster){
                 $this->logger->error(sprintf('Worker [%s] [%s] Accept connection error %s', $cluster->worker->getId(), $cluster->worker->getPid(), $error));
@@ -249,15 +246,13 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->emit('worker.start', [$worker]);
             });
             // on worker close.
-            $onClose = function () use ($worker, $loop){
+            $onClose = function () use ($worker){
                 $this->emit('worker.close', [$worker]);
                 $this->connections->close();
-                $loop->stop();
             };
             // when the worker received close command.
             $worker->on('close', $onClose);
             $worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $onClose);
-            $loop->run();
         };
     }
 
