@@ -167,13 +167,14 @@ final class Server extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function serve(): void
+    public function listen(string $address): void
     {
         if ($this->status !== self::STATUS_READY) {
             throw new RuntimeException('The server is already running.');
         }
 
-        $this->cluster = Cluster::create($this->createSetupWorker(), $this->logger, $this->commandFactory, $this->options['cluster'] ?? []);
+        $this->options['address'] = $address;
+        $this->cluster = Cluster::create($this->createSetupWorkerCallback(), $this->logger, $this->commandFactory, $this->options['cluster'] ?? []);
         $this->activatePlugins();
 
         if ($this->cluster->primary) {
@@ -181,7 +182,7 @@ final class Server extends EventEmitter implements ServerInterface
         }
 
         $this->status = self::STATUS_STARTED;
-        $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
+        $this->logger->debug(sprintf('The server is listen on %s', $this->options['address']));
 
         $this->emit('start', [$this]);
         $this->cluster->run();
@@ -203,6 +204,17 @@ final class Server extends EventEmitter implements ServerInterface
             $this->emit('close');
         });
 
+        $this->cluster->on('worker.close', function (Worker $worker){
+            if ($this->status === self::STATUS_STARTED) {
+                $this->logger->warning(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
+                $this->cluster->fork();
+            } else if ($this->status === self::STATUS_CLOSING) {
+                $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
+            }
+        });
+
+        Util::forwardEvents($this->cluster, $this, ['worker.start', 'worker.close']);
+
         // Register signal handlers for the cluster.
         $this->cluster->onSignals(\SIGINT, function (){
             $this->handleCommand(new CloseCommand(false));
@@ -220,24 +232,20 @@ final class Server extends EventEmitter implements ServerInterface
             $this->handleCommand(new ControlCommand(self::CONTROL_CONNECTIONS));
         });
 
+        // fork workers.
         for ($i = 0; $i < $this->options['worker_num']; $i++) {
             $worker = $this->cluster->fork();
             $worker->on('start', function() use($worker){
                 $this->emit('worker.start', [$worker]);
             });
         }
-
-        $this->cluster->on('worker.close', function (Worker $worker){
-            if ($this->status === self::STATUS_STARTED) {
-                $this->logger->warning(sprintf('Checked the worker %d has exited, restart a new worker', $worker->getPid()));
-                $this->cluster->fork();
-            } else if ($this->status === self::STATUS_CLOSING) {
-                $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
-            }
-        });
     }
 
-    private function createSetupWorker(): \Closure
+    /**
+     * Create worker callback.
+     * @return \Closure
+     */
+    private function createSetupWorkerCallback(): \Closure
     {
         return function (Cluster $cluster) {
             // start the server.
@@ -256,17 +264,21 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->emit('error', [$error]);
             });
 
-            Util::forwardEvents($cluster, $this, ['worker.start', 'worker.close']);
-            // on worker close.
-            $onClose = function () {
-                $this->connections->close();
-            };
             // when the worker received close command.
-            $cluster->worker->on('close', $onClose);
-            $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT], $onClose);
-
-            // receive
+            $cluster->worker->on('close', [$this, 'onClose']);
+            $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT],  [$this, 'onClose']);
         };
+    }
+
+    /**
+     * Close callback
+     * {@internal}
+     * @return void
+     */
+    public function onClose(): void
+    {
+        $this->cluster->requireInChildProcess(__METHOD__);
+        $this->connections->close();
     }
 
     /**

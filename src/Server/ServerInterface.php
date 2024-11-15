@@ -28,7 +28,7 @@ interface ServerInterface
     /**
      * Start the server.
      */
-    public function serve(): void;
+    public function listen(string $address): void;
 
     /**
      * Close the server and exit.

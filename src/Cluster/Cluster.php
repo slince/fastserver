@@ -58,6 +58,8 @@ final class Cluster extends EventEmitter
 
     private static bool $frozen = false;
 
+    private bool $running = false;
+
     private function __construct(callable $callback, ?LoggerInterface $logger = null, ?CommandFactoryInterface $commandFactory = null, array $options = [])
     {
         $this->logger = new Logger($this,$logger ?? new NullLogger());
@@ -159,6 +161,10 @@ final class Cluster extends EventEmitter
      */
     public function run(): void
     {
+        if ($this->running) {
+            throw new RuntimeException('The cluster is already running');
+        }
+        $this->running = true;
         if ($this->primary) {
             $this->loop->addPeriodicTimer(3, function(){
                 $this->wait();
