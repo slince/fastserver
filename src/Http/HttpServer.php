@@ -19,7 +19,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use React\Http\HttpServer as ReactHttpServer;
+use React\Http\Io\MiddlewareRunner;
+use React\Http\Io\StreamingServer;
 use React\Http\Middleware\LimitConcurrentRequestsMiddleware;
 use React\Http\Middleware\RequestBodyBufferMiddleware;
 use React\Http\Middleware\RequestBodyParserMiddleware;
@@ -101,16 +102,16 @@ final class HttpServer extends EventEmitter implements ServerInterface
         return $requestHandler;
     }
 
-    private function createHttpReader(): ReactHttpServer
+    private function createHttpReader(): StreamingServer
     {
-        return new ReactHttpServer(
-            Cluster::get()->loop,
+        $middlewareRunner = new MiddlewareRunner([
             new StreamingRequestMiddleware(),
             new LimitConcurrentRequestsMiddleware($this->config['limit-concurrent-requests'] ?? 1024),
             new RequestBodyBufferMiddleware($this->config['request-body-buffer'] ?? 65536),
             new RequestBodyParserMiddleware(),
             [$this, 'onRequest']
-        );
+        ]);
+        return new StreamingServer(Cluster::get()->loop, $middlewareRunner);
     }
 
     public function onRequest(ServerRequestInterface $request): ResponseInterface
@@ -133,7 +134,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
     private function boot(): void
     {
         $httpServer = $this->createHttpReader();
-
+        $httpServer->on('connection', );
         $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
 
         });
