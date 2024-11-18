@@ -269,6 +269,8 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->emit('error', [$error]);
             });
 
+            // socket created.
+            $this->emit('socket', [$socket]);
             // when the worker received close command.
             $cluster->worker->on('close', [$this, 'onClose']);
             $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT],  [$this, 'onClose']);

@@ -25,6 +25,7 @@ use React\Http\Middleware\RequestBodyBufferMiddleware;
 use React\Http\Middleware\RequestBodyParserMiddleware;
 use React\Http\Middleware\StreamingRequestMiddleware;
 use React\Socket\ConnectionInterface;
+use React\Socket\SocketServer;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
 use Viso\Http\Exception\InvalidHeaderException;
@@ -119,24 +120,25 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
     public function onRequest(ServerRequestInterface $request): ResponseInterface
     {
-        $this->server->connections()->getMetadata($connection)->incrRequest();
-        $this->emit('message', [$request, $connection]);
+        $this->connections->getMetadata($connection)->incrRequest();
+        $this->emit('request', [$request, $connection]);
         $response = $this->requestHandler->handle($request);
         $keepalive = $this->options['keepalive'] && 0 !== strcasecmp($request->getHeaderLine('connection'), 'close');
         if ($keepalive) {
             $response = $response->withHeader('Connection', 'Keep-Alive');
         }
-        $writer->write($response);
         if (!$keepalive) {
             $connection->end();
         }
-
-        return $this->requestHandler->handle($request);
+        return $response;
     }
 
     private function boot(): void
     {
         $httpServer = $this->createHttpReader();
+        $this->server->on('socket', function(SocketServer $socket) use($httpServer){
+            $httpServer->listen($socket);
+        });
 
         $this->server->on('error', function (\Exception $error) {
             $this->emit('error', [$error]);
@@ -145,7 +147,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
         // Add a timer for connections.
         if ($this->options['keepalive']) {
             $this->server->on('worker.start', function (){
-                $this->server->getLoop()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+                Cluster::get()->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
             });
         }
     }
