@@ -18,7 +18,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use React\EventLoop\LoopInterface;
 use React\Http\HttpServer as ReactHttpServer;
 use React\Http\Middleware\LimitConcurrentRequestsMiddleware;
 use React\Http\Middleware\RequestBodyBufferMiddleware;
@@ -44,7 +43,6 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
     private array $options;
 
-    private LoopInterface $loop;
     private LoggerInterface $logger;
 
     private ConnectionPool $connections;
@@ -118,6 +116,11 @@ final class HttpServer extends EventEmitter implements ServerInterface
         );
     }
 
+    /**
+     * {@internal}
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     */
     public function onRequest(ServerRequestInterface $request): ResponseInterface
     {
         $this->connections->getMetadata($connection)->incrRequest();
