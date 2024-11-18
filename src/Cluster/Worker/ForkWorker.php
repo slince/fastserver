@@ -79,6 +79,7 @@ final class ForkWorker extends Worker
     private function createCallable(): \Closure
     {
         return function(){
+            // Reset cluster properties.
             $this->cluster->primary = false;
             $this->cluster->worker = $this;
             $this->cluster->loop = Loop::get();

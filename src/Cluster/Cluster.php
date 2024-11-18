@@ -64,6 +64,7 @@ final class Cluster extends EventEmitter
     {
         $this->logger = new Logger($this,$logger ?? new NullLogger());
         $this->commandFactory = $commandFactory ?? CommandFactory::create();
+        // for proc child process.
         $this->primary = getenv(self::VISO_PID) === false;
         $this->options = $options;
         $this->workers = WorkerPool::createPool($this, $this->logger, $this->commandFactory, $callback, $this->options);
