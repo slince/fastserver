@@ -104,6 +104,7 @@ final class Server extends EventEmitter implements ServerInterface
             ReloadCommand::class
         ]);
         $this->configure($options);
+        $this->setupCluster();
     }
 
     /**
@@ -116,22 +117,6 @@ final class Server extends EventEmitter implements ServerInterface
         $optionsResolver = new OptionsResolver();
         $this->configureOptions($optionsResolver);
         $this->options = $optionsResolver->resolve($options);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function connections(): ConnectionPool
-    {
-        return $this->connections;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function logger(): LoggerInterface
-    {
-        return $this->logger;
     }
 
     /**
@@ -150,6 +135,27 @@ final class Server extends EventEmitter implements ServerInterface
                 $plugin->configureOptions($resolver);
             });
         }
+    }
+
+    /**
+     * Set up cluster instance.
+     * @return void
+     */
+    private function setupCluster(): void
+    {
+        $this->cluster = Cluster::create($this->createWorkerSetup(),
+            $this->logger,
+            $this->commandFactory,
+            $this->options['cluster'] ?? []
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function connections(): ConnectionPool
+    {
+        return $this->connections;
     }
 
     /**
@@ -174,7 +180,6 @@ final class Server extends EventEmitter implements ServerInterface
         }
 
         $this->options['address'] = $address;
-        $this->cluster = Cluster::create($this->createSetupWorkerCallback(), $this->logger, $this->commandFactory, $this->options['cluster'] ?? []);
         $this->activatePlugins();
 
         if ($this->cluster->primary) {
@@ -245,7 +250,7 @@ final class Server extends EventEmitter implements ServerInterface
      * Create worker callback.
      * @return \Closure
      */
-    private function createSetupWorkerCallback(): \Closure
+    private function createWorkerSetup(): \Closure
     {
         return function (Cluster $cluster) {
             // start the server.

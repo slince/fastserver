@@ -13,18 +13,10 @@ declare(strict_types=1);
 
 namespace Viso\Server;
 
-use Psr\Log\LoggerInterface;
+use Evenement\EventEmitterInterface;
 
-interface ServerInterface
+interface ServerInterface extends EventEmitterInterface
 {
-    /**
-     * Add an event listener.
-     *
-     * @param string $event
-     * @param callable $listener
-     */
-    public function on($event, callable $listener);
-
     /**
      * Start the server.
      */
@@ -43,11 +35,4 @@ interface ServerInterface
      * @return ConnectionPool
      */
     public function connections(): ConnectionPool;
-
-    /**
-     * Return the logger instance.
-     *
-     * @return LoggerInterface
-     */
-    public function logger(): LoggerInterface;
 }

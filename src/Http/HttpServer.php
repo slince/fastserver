@@ -14,13 +14,12 @@ declare(strict_types=1);
 namespace Viso\Http;
 
 use Evenement\EventEmitter;
-use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use React\Http\Io\MiddlewareRunner;
-use React\Http\Io\StreamingServer;
+use React\EventLoop\LoopInterface;
+use React\Http\HttpServer as ReactHttpServer;
 use React\Http\Middleware\LimitConcurrentRequestsMiddleware;
 use React\Http\Middleware\RequestBodyBufferMiddleware;
 use React\Http\Middleware\RequestBodyParserMiddleware;
@@ -29,10 +28,7 @@ use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
 use Viso\Http\Exception\InvalidHeaderException;
-use Viso\Http\Parser\HttpEmitter;
-use Viso\Http\Parser\HttpParser;
-use Viso\Parser\ParserFactory;
-use Viso\Parser\StreamingReader;
+use Viso\Server\ConnectionPool;
 use Viso\Server\Server;
 use Viso\Server\ServerInterface;
 
@@ -47,11 +43,18 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
     private array $options;
 
+    private LoopInterface $loop;
+    private LoggerInterface $logger;
+
+    private ConnectionPool $connections;
+
     public function __construct(callable|RequestHandlerInterface $requestHandler, array $options, ?LoggerInterface $logger = null)
     {
         $this->requestHandler = self::normalizeRequestHandler($requestHandler);
         $this->configure($options);
         $this->server = new Server($this->options, [], $logger);
+        $this->logger = Cluster::get()->logger();
+        $this->connections = $this->server->connections();
         $this->boot();
     }
 
@@ -102,16 +105,16 @@ final class HttpServer extends EventEmitter implements ServerInterface
         return $requestHandler;
     }
 
-    private function createHttpReader(): StreamingServer
+    private function createHttpReader(): ReactHttpServer
     {
-        $middlewareRunner = new MiddlewareRunner([
+        return new ReactHttpServer(
+            Cluster::get()->loop,
             new StreamingRequestMiddleware(),
             new LimitConcurrentRequestsMiddleware($this->config['limit-concurrent-requests'] ?? 1024),
             new RequestBodyBufferMiddleware($this->config['request-body-buffer'] ?? 65536),
             new RequestBodyParserMiddleware(),
             [$this, 'onRequest']
-        ]);
-        return new StreamingServer(Cluster::get()->loop, $middlewareRunner);
+        );
     }
 
     public function onRequest(ServerRequestInterface $request): ResponseInterface
@@ -134,21 +137,6 @@ final class HttpServer extends EventEmitter implements ServerInterface
     private function boot(): void
     {
         $httpServer = $this->createHttpReader();
-        $httpServer->on('connection', );
-        $this->streamReader->on('message', function(ServerRequestInterface $request, HttpEmitter $writer, ConnectionInterface $connection){
-
-        });
-
-        $this->streamReader->on('error', function(\Exception $exception, $writer, ConnectionInterface $connection){
-            $response = new Response($exception->getCode() ?: 400, [], $exception->getMessage());
-            $writer->write($response);
-            $connection->end();
-        });
-
-        $this->server->on('connection', function(ConnectionInterface $connection){
-            $this->emit('connection', [$connection]);
-            $this->streamReader->listen($connection);
-        });
 
         $this->server->on('error', function (\Exception $error) {
             $this->emit('error', [$error]);
@@ -160,12 +148,6 @@ final class HttpServer extends EventEmitter implements ServerInterface
                 $this->server->getLoop()->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
             });
         }
-    }
-
-    private static function createStreamReader(): StreamingReader
-    {
-        $parserFactory = new ParserFactory(HttpParser::class, HttpEmitter::class);
-        return new StreamingReader($parserFactory);
     }
 
     /**
@@ -190,9 +172,17 @@ final class HttpServer extends EventEmitter implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function serve(): void
+    public function connections(): ConnectionPool
     {
-        $this->server->serve();
+        return $this->server->connections();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function listen(string $address): void
+    {
+        $this->server->listen($address);
     }
 
     /**
