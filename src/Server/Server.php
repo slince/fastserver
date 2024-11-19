@@ -271,6 +271,10 @@ final class Server extends EventEmitter implements ServerInterface
 
             // socket created.
             $this->emit('socket', [$socket]);
+            // fire worker.start event, only in worker process.
+            $cluster->worker->on('start', function() use($cluster){
+                $this->emit('worker.start', [$cluster->worker]);
+            });
             // when the worker received close command.
             $cluster->worker->on('close', [$this, 'onClose']);
             $cluster->worker->onSignals([SIGINT, SIGTERM, SIGQUIT],  [$this, 'onClose']);
