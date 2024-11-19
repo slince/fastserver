@@ -17,7 +17,6 @@ use Evenement\EventEmitter;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use React\Socket\ConnectionInterface;
-use React\Stream\Util;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
 use Viso\Cluster\Command\CloseCommand;
@@ -127,8 +126,9 @@ final class Server extends EventEmitter implements ServerInterface
     private function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setRequired(['address', 'worker_num'])
+            ->setDefault('worker_num', 4)
             ->setInfo('worker_num', 'The worker num of the server')
+            ->setIgnoreUndefined()
         ;
         foreach ($this->plugins as $plugin) {
             $resolver->setDefault($plugin->getId(), function(OptionsResolver $resolver) use ($plugin){
@@ -167,7 +167,7 @@ final class Server extends EventEmitter implements ServerInterface
             throw new RuntimeException("The server is not running");
         }
         $this->cluster->close($graceful);
-        $this->status = $graceful ? self::STATUS_CLOSING : self::STATUS_TERMINATED;
+        $this->status = self::STATUS_CLOSING;
     }
 
     /**
@@ -186,15 +186,14 @@ final class Server extends EventEmitter implements ServerInterface
             $this->setupPrimary();
         }
 
-        $this->status = self::STATUS_STARTED;
-        $this->logger->debug(sprintf('The server is listen on %s', $this->options['address']));
-
-        $this->emit('start', [$this]);
         $this->cluster->run();
     }
 
     private function activatePlugins(): void
     {
+        if (empty($this->plugins)) {
+            return;
+        }
         $this->logger->debug('Activate plugins.');
         foreach ($this->plugins as $plugin) {
             $plugin->activate($this, $this->options[$plugin->getId()]);
@@ -203,6 +202,12 @@ final class Server extends EventEmitter implements ServerInterface
 
     private function setupPrimary(): void
     {
+        $this->cluster->on('start', function(){
+            $this->status = self::STATUS_STARTED;
+            $this->logger->info(sprintf('The server is listen on %s', $this->options['address']));
+            $this->emit('start', [$this]);
+        });
+
         $this->cluster->on('close', function (){
             $this->status = self::STATUS_TERMINATED;
             $this->logger->info('All workers have been closed and exit the server');
@@ -217,8 +222,6 @@ final class Server extends EventEmitter implements ServerInterface
                 $this->logger->debug(sprintf('Checked the worker %d has exited', $worker->getPid()));
             }
         });
-
-        Util::forwardEvents($this->cluster, $this, ['worker.start', 'worker.close']);
 
         // Register signal handlers for the cluster.
         $this->cluster->onSignals(\SIGINT, function (){
@@ -239,10 +242,7 @@ final class Server extends EventEmitter implements ServerInterface
 
         // fork workers.
         for ($i = 0; $i < $this->options['worker_num']; $i++) {
-            $worker = $this->cluster->fork();
-            $worker->on('start', function() use($worker){
-                $this->emit('worker.start', [$worker]);
-            });
+            $this->cluster->fork();
         }
     }
 

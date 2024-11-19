@@ -25,6 +25,7 @@ use React\Http\Middleware\RequestBodyParserMiddleware;
 use React\Http\Middleware\StreamingRequestMiddleware;
 use React\Socket\ConnectionInterface;
 use React\Socket\SocketServer;
+use React\Stream\Util;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
 use Viso\Http\Exception\InvalidHeaderException;
@@ -138,13 +139,11 @@ final class HttpServer extends EventEmitter implements ServerInterface
 
     private function boot(): void
     {
+        Util::forwardEvents($this->server, $this, ['error', 'connection', 'socket']);
+
         $httpServer = $this->createHttpReader();
         $this->server->on('socket', function(SocketServer $socket) use($httpServer){
             $httpServer->listen($socket);
-        });
-
-        $this->server->on('error', function (\Exception $error) {
-            $this->emit('error', [$error]);
         });
 
         // Add a timer for connections.

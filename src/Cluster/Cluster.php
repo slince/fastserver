@@ -180,7 +180,6 @@ final class Cluster extends EventEmitter
             $this->workers->run();
         } else {
             // run in proc child process.
-            $this->emit('start');
             $this->worker->run();
         }
     }
@@ -212,7 +211,6 @@ final class Cluster extends EventEmitter
     {
         $this->requireInMainProcess(__METHOD__);
         $this->workers->close($graceful);
-        $this->loop->stop();
     }
 
     /**
