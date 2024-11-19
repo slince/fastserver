@@ -15,7 +15,6 @@ namespace Viso\Server;
 
 use Evenement\EventEmitter;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use React\Socket\ConnectionInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
@@ -96,14 +95,13 @@ final class Server extends EventEmitter implements ServerInterface
     public function __construct(array $options, array $plugins = [], ?LoggerInterface $logger = null)
     {
         $this->plugins = $plugins;
-        $this->logger = $logger ?? new NullLogger();
         $this->connections = new ConnectionPool();
         $this->commandFactory = CommandFactory::create([
             ConnectionsCommand::class,
             ReloadCommand::class
         ]);
         $this->configure($options);
-        $this->setupCluster();
+        $this->setupCluster($logger);
     }
 
     /**
@@ -139,15 +137,17 @@ final class Server extends EventEmitter implements ServerInterface
 
     /**
      * Set up cluster instance.
+     * @param LoggerInterface|null $logger
      * @return void
      */
-    private function setupCluster(): void
+    private function setupCluster(?LoggerInterface $logger = null): void
     {
         $this->cluster = Cluster::create($this->createWorkerSetup(),
-            $this->logger,
+            $logger,
             $this->commandFactory,
             $this->options['cluster'] ?? []
         );
+        $this->logger = $this->cluster->logger();
     }
 
     /**

@@ -149,7 +149,7 @@ final class HttpServer extends EventEmitter implements ServerInterface
         // Add a timer for connections.
         if ($this->options['keepalive']) {
             $this->server->on('worker.start', function (){
-                Cluster::get()->loop->addPeriodicTimer(5, [$this, 'closeExpiredConnections']);
+                Cluster::get()->loop->addPeriodicTimer(30, [$this, 'closeExpiredConnections']);
             });
         }
     }
