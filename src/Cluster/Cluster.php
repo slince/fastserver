@@ -78,6 +78,7 @@ final class Cluster extends EventEmitter
             }
             $this->worker = $this->workers->create(intval($workerId));
             $this->loop = Loop::get();
+            $this->worker->run();
         }
     }
 
@@ -162,26 +163,22 @@ final class Cluster extends EventEmitter
      */
     public function run(): void
     {
+        $this->requireInMainProcess(__METHOD__);
         if ($this->running) {
             throw new RuntimeException('The cluster is already running');
         }
         $this->running = true;
-        if ($this->primary) {
-            $this->loop->addPeriodicTimer(3, function(){
+        $this->loop->addPeriodicTimer(3, function(){
+            $this->wait();
+        });
+        if (SignalUtils::supportSignal()) {
+            $this->onSignals(\SIGCHLD, function (){
                 $this->wait();
             });
-            if (SignalUtils::supportSignal()) {
-                $this->onSignals(\SIGCHLD, function (){
-                    $this->wait();
-                });
-            }
-            $this->logger->debug('The cluster is running');
-            $this->emit('start');
-            $this->workers->run();
-        } else {
-            // run in proc child process.
-            $this->worker->run();
         }
+        $this->logger->debug('The cluster is running');
+        $this->emit('start');
+        $this->workers->run();
     }
 
     /**

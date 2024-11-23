@@ -50,24 +50,18 @@ $cluster = Cluster::create(function(Cluster $cluster){
     });
 }, $logger);
 
-if ($cluster->primary) {
-    for ($i = 0; $i < 3; $i++) {
-        $worker = $cluster->fork();
-        $worker->on('message', function (string $message) use ($cluster) {
-            $cluster->logger()->info(sprintf('received message from worker: %s', $message));
-        });
-        $worker->on('ping', function () use ($worker, $cluster) {
-            $cluster->logger()->info(sprintf('the worker %d is alive', $worker->getId()));
-        });
-        $worker->on('close', function () use ($cluster) {
-//        $cluster->logger()->info('fork new worker');
-//        $cluster->fork();
-        });
-    }
-    $cluster->on('work.close', function(Worker $worker) use($cluster){
-        $cluster->logger()->warning(sprintf('the worker %d is closed', $worker->getId()));
-        echo $worker->getOutput();
+for ($i = 0; $i < 3; $i++) {
+    $worker = $cluster->fork();
+    $worker->on('message', function (string $message) use ($cluster) {
+        $cluster->logger()->info(sprintf('received message from worker: %s', $message));
+    });
+    $worker->on('ping', function () use ($worker, $cluster) {
+        $cluster->logger()->info(sprintf('the worker %d is alive', $worker->getId()));
     });
 }
+$cluster->on('work.close', function(Worker $worker) use($cluster){
+    $cluster->logger()->warning(sprintf('the worker %d is closed', $worker->getId()));
+    echo $worker->getOutput();
+});
 
 $cluster->run();
