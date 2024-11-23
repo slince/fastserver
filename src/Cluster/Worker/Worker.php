@@ -388,10 +388,10 @@ abstract class Worker extends EventEmitter
      */
     protected function listenChannel(): void
     {
-        $this->channel->listen(function (Frame $frame){
+        $this->channel->on('frame', function (Frame $frame){
             $command = $this->commandFactory->createCommand($frame);
             $this->handleCommand($command);
-        }, true);
+        });
     }
 
 

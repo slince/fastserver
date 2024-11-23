@@ -270,6 +270,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      * Creates a worker pool.
      * @param Cluster $cluster
      * @param LoggerInterface $logger
+     * @param CommandFactoryInterface $commandFactory
      * @param callable $callback
      * @param array $options
      * @return WorkerPool
@@ -292,6 +293,7 @@ abstract class WorkerPool implements \IteratorAggregate, \Countable
      */
     public static function guessType(): Type
     {
+//        return Type::PROC;
         if (function_exists('pcntl_fork')) {
             return Type::FORK;
         }

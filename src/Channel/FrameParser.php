@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace Viso\Channel;
 
+use Evenement\EventEmitter;
 use Viso\Channel\Exception\MetaException;
-use Viso\Parser\ParserInterface;
 
-final class FrameParser implements ParserInterface
+final class FrameParser extends EventEmitter
 {
     /**
      * @var string
@@ -35,7 +35,9 @@ final class FrameParser implements ParserInterface
     protected ?array $meta = null;
 
     /**
-     * {@inheritdoc}
+     * Push incoming data to the parser.
+     *
+     * @param string $chunk
      */
     public function push(string $chunk): void
     {
@@ -44,7 +46,9 @@ final class FrameParser implements ParserInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Evaluate frames.
+     *
+     * @return array
      */
     public function evaluate(): iterable
     {
@@ -67,7 +71,7 @@ final class FrameParser implements ParserInterface
 
             // maybe buffer contains 2+ frame.
             if ($this->length >= Frame::HEADER_SIZE && ($rest = $this->evaluate())) {
-                yield $rest;
+                yield from $rest;
             }
         }
     }

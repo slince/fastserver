@@ -13,27 +13,30 @@ declare(strict_types=1);
 
 namespace Viso\Channel;
 
+use Evenement\EventEmitter;
 use React\Stream\DuplexStreamInterface;
-use Viso\Cluster\Exception\RuntimeException;
-use Viso\Parser\ParserInterface;
 
-class StreamChannel implements ChannelInterface
+class StreamChannel extends EventEmitter implements ChannelInterface
 {
-    protected DuplexStreamInterface $stream;
-
     protected FrameEncoder $encoder;
-    protected ParserInterface $parser;
+    protected FrameParser $parser;
 
-    private ?\Closure $listener = null;
+    protected DuplexStreamInterface $stream;
 
     /**
      * @param DuplexStreamInterface $stream
      */
     public function __construct(DuplexStreamInterface $stream)
     {
-        $this->stream = $stream;
         $this->encoder = FrameEncoder::get();
         $this->parser = new FrameParser();
+        $this->stream = $stream;
+        $this->stream->on('data', function(string $chunk){
+            $this->parser->push($chunk);
+            foreach ($this->parser->evaluate() as $frame){
+                $this->emit('frame', [$frame]);
+            }
+        });
     }
 
     /**
@@ -43,25 +46,5 @@ class StreamChannel implements ChannelInterface
     {
         $message = $this->encoder->pack($frame);
         $this->stream->write($message);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function listen(callable $listener, bool $override = false): void
-    {
-        if (null !== $this->listener && !$override) {
-            throw new RuntimeException('The channel is listened by other listeners');
-        }
-        if (null !== $this->listener) {
-            $this->stream->removeListener('data', $this->listener);
-        }
-        $this->listener = function(string $chunk) use($listener){
-            $this->parser->push($chunk);
-            foreach ($this->parser->evaluate() as $frame){
-                call_user_func($listener, $frame);
-            }
-        };
-        $this->stream->on('data', $this->listener);
     }
 }

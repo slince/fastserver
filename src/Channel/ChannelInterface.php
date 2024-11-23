@@ -13,7 +13,9 @@ declare(strict_types=1);
 
 namespace Viso\Channel;
 
-interface ChannelInterface
+use Evenement\EventEmitterInterface;
+
+interface ChannelInterface extends EventEmitterInterface
 {
     /**
      * Writes a request for the given command over the connection.
@@ -21,12 +23,4 @@ interface ChannelInterface
      * @param Frame $frame
      */
     public function send(Frame $frame): void;
-
-    /**
-     * Add a listener to listen command.
-     *
-     * @param callable $listener
-     * @param bool $override
-     */
-    public function listen(callable $listener, bool $override = false);
 }
