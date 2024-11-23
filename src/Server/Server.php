@@ -182,10 +182,8 @@ final class Server extends EventEmitter implements ServerInterface
         $this->options['address'] = $address;
         $this->activatePlugins();
 
-        if ($this->cluster->primary) {
-            $this->setupPrimary();
-        }
-
+        $this->setupPrimary();
+        
         $this->cluster->run();
     }
 
