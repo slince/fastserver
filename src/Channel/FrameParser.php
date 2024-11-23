@@ -49,6 +49,7 @@ final class FrameParser extends EventEmitter
      * Evaluate frames.
      *
      * @return array
+     * @throws MetaException
      */
     public function evaluate(): iterable
     {

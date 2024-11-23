@@ -33,7 +33,7 @@ class StreamChannel extends EventEmitter implements ChannelInterface
         $this->stream = $stream;
         $this->stream->on('data', function(string $chunk){
             $this->parser->push($chunk);
-            foreach ($this->parser->evaluate() as $frame){
+            foreach ($this->parser->evaluate() as $frame) {
                 $this->emit('frame', [$frame]);
             }
         });
