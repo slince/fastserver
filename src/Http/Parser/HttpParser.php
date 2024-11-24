@@ -13,13 +13,12 @@ declare(strict_types=1);
 
 namespace Viso\Http\Parser;
 
-use GuzzleHttp\Psr7\BufferStream;
+use Evenement\EventEmitter;
 use GuzzleHttp\Psr7\ServerRequest;
-use Psr\Http\Message\MessageInterface;
 use React\Socket\ConnectionInterface;
 use Viso\Http\Exception\InvalidHeaderException;
 
-final class HttpParser
+final class HttpParser extends EventEmitter
 {
     public const CRLF = "\r\n";
     public const HEADER_BODY_DELIMITER = "\r\n\r\n";
@@ -32,7 +31,7 @@ final class HttpParser
     /**
      * @var int
      */
-    protected int $length;
+    protected int $length2;
 
     private ConnectionInterface $connection;
 
@@ -54,7 +53,6 @@ final class HttpParser
                 $header = substr($this->buffer, 0, $pos);
                 $this->request = $this->parserHeader($header);
 
-                $body = null;
                 if ($this->request->hasHeader('Content-Length')) {
                     $contentLength = (int)$this->request->getHeaderLine('Content-Length');
                     $body = new LimitedLengthBody($this->connection, $contentLength);
@@ -64,74 +62,14 @@ final class HttpParser
                     throw new InvalidHeaderException('Unable to recognize the transmission method of the body');
                 }
 
+                $this->request = $this->request->withBody(new AsyncStream($body));
+                $this->emit('request', [$this->request]);
+
                 // reset buffer
                 $this->buffer = substr($this->buffer, $pos);
                 $this->length -= $pos;
             }
         });
-    }
-
-    /**
-     * Push incoming data to the parser.
-     *
-     * @param string $chunk
-     */
-    public function push(string $chunk): void
-    {
-        $this->buffer .= $chunk;
-        $this->length += strlen($chunk);
-    }
-
-    /**
-     * Evaluate http requests.
-     *
-     * @return array
-     * @throws InvalidHeaderException
-     */
-    public function evaluate(): iterable
-    {
-        // parse http request header
-        if (null === $this->request && false !== ($pos = strpos($this->buffer, self::HEADER_BODY_DELIMITER))) {
-            $header = substr($this->buffer, 0, $pos);
-            $this->request = $this->parserHeader($header);
-            $this->contentLength = 0;
-            if ($this->request->hasHeader('Content-Length')) {
-                $this->contentLength = (int)$this->request->getHeaderLine('Content-Length');
-            } elseif ($this->request->hasHeader('Transfer-Encoding')) {
-
-            } else {
-
-            }
-           // reset buffer
-            $this->buffer = substr($this->buffer, $pos);
-            $this->length -= $pos;
-        }
-
-        // collect request body.
-        if (null !== $this->request) {
-            if ($this->contentLength > 0 && $this->length >= ($length = $this->contentLength + 4)) {
-                yield $this->captureRequestBody($length);
-                $this->request = null;
-                $this->contentLength = 0;
-
-                // Maybe reset buffer contains a full request.
-                if (str_contains($this->buffer, "\r\n\r\n")) {
-                    $this->evaluate();
-                }
-            }
-        }
-    }
-
-    protected function captureRequestBody(int $length): MessageInterface
-    {
-        $content = ltrim(substr($this->buffer, 0, $length), self::CRLF);
-        // reset buffer state
-        $this->buffer = substr($this->buffer, $length);
-        $this->length -= $length;
-
-        $body = new BufferStream();
-        $body->write($content);
-        return $this->request->withBody($body);
     }
 
     protected function parserHeader(string $header): ServerRequest

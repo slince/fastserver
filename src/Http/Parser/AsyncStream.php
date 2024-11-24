@@ -3,12 +3,13 @@
 namespace Viso\Http\Parser;
 
 use Psr\Http\Message\StreamInterface;
+use React\Stream\ReadableStreamInterface;
 
 class AsyncStream implements StreamInterface
 {
-    private StreamInterface $stream;
+    private ReadableStreamInterface $stream;
 
-    public function __construct(StreamInterface $stream)
+    public function __construct(ReadableStreamInterface $stream)
     {
         $this->stream = $stream;
     }
