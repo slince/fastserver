@@ -41,8 +41,6 @@ final class HttpParser
      */
     protected ?ServerRequest $request;
 
-    private BodyParserInterface $bodyParser;
-
     public function __construct(ConnectionInterface $connection)
     {
         $this->connection = $connection;
@@ -56,16 +54,15 @@ final class HttpParser
                 $header = substr($this->buffer, 0, $pos);
                 $this->request = $this->parserHeader($header);
 
+                $body = null;
                 if ($this->request->hasHeader('Content-Length')) {
                     $contentLength = (int)$this->request->getHeaderLine('Content-Length');
-                    $this->bodyParser = new LimitedLengthBodyParser($contentLength);
+                    $body = new LimitedLengthBody($this->connection, $contentLength);
                 } elseif ($this->request->hasHeader('Transfer-Encoding')) {
-                    $this->bodyParser = new ChunkedBodyParser();
+                    $body = new ChunkedBody();
                 } else {
                     throw new InvalidHeaderException('Unable to recognize the transmission method of the body');
                 }
-
-                $this->bodyParser->on('body', );
 
                 // reset buffer
                 $this->buffer = substr($this->buffer, $pos);
