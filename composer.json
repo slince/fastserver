@@ -20,7 +20,8 @@
         "symfony/options-resolver": "^6.3",
         "psr/http-server-handler": "^1.0",
         "spiral/goridge": "^4.0",
-        "guzzlehttp/psr7": "^2.6"
+        "guzzlehttp/psr7": "^2.6",
+        "laminas/laminas-diactoros": "^3.4"
     },
     "require-dev": {
         "monolog/monolog": "^3.4"
