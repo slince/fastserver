@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Viso\Http\Parser;
 
 use Evenement\EventEmitter;
-use GuzzleHttp\Psr7\ServerRequest;
+use Laminas\Diactoros\ServerRequest;
 use React\Socket\ConnectionInterface;
 use Viso\Http\Exception\InvalidHeaderException;
 
@@ -28,48 +28,51 @@ final class HttpParser extends EventEmitter
      */
     protected string $buffer = '';
 
-    /**
-     * @var int
-     */
-    protected int $length2;
-
     private ConnectionInterface $connection;
 
-    /**
-     * @var ServerRequest|null
-     */
-    protected ?ServerRequest $request;
+    private \Closure $listener;
 
     public function __construct(ConnectionInterface $connection)
     {
         $this->connection = $connection;
 
-        $this->connection->on('data', function(string $chunk){
-
+        $this->listener = function(string $chunk){
             $this->buffer .= $chunk;
-            $this->length += strlen($chunk);
 
-            if (null === $this->request && false !== ($pos = strpos($this->buffer, self::HEADER_BODY_DELIMITER))) {
+            while (false !== ($pos = strpos($this->buffer, self::HEADER_BODY_DELIMITER))) {
                 $header = substr($this->buffer, 0, $pos);
-                $this->request = $this->parserHeader($header);
+                $request = $this->parserHeader($header);
+                $this->pause();
 
-                if ($this->request->hasHeader('Content-Length')) {
-                    $contentLength = (int)$this->request->getHeaderLine('Content-Length');
+                if ($request->hasHeader('Content-Length')) {
+                    $contentLength = (int)$request->getHeaderLine('Content-Length');
                     $body = new LimitedLengthBody($this->connection, $contentLength);
-                } elseif ($this->request->hasHeader('Transfer-Encoding')) {
+                } elseif ($request->hasHeader('Transfer-Encoding')) {
                     $body = new ChunkedBody();
                 } else {
                     throw new InvalidHeaderException('Unable to recognize the transmission method of the body');
                 }
-
-                $this->request = $this->request->withBody(new AsyncStream($body));
-                $this->emit('request', [$this->request]);
+                $body->on('end', fn() => $this->resume());
+                
+                $request = $request->withBody(new AsyncStream($body));
+                $this->emit('request', [$request]);
 
                 // reset buffer
                 $this->buffer = substr($this->buffer, $pos);
-                $this->length -= $pos;
             }
-        });
+        };
+
+        $this->resume();
+    }
+
+    private function pause(): void
+    {
+        $this->connection->removeListener('data', $this->listener);
+    }
+
+    private function resume(): void
+    {
+        $this->connection->on('data', $this->listener);
     }
 
     protected function parserHeader(string $header): ServerRequest

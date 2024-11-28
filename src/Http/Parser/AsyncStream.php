@@ -5,7 +5,10 @@ namespace Viso\Http\Parser;
 use Psr\Http\Message\StreamInterface;
 use React\Stream\ReadableStreamInterface;
 
-class AsyncStream implements StreamInterface
+/**
+ * @internal
+ */
+final class AsyncStream implements StreamInterface
 {
     private ReadableStreamInterface $stream;
 
@@ -16,41 +19,47 @@ class AsyncStream implements StreamInterface
 
     public function __toString()
     {
-        return '';
+        throw new \BadMethodCallException();
     }
 
-    public function close()
+    public function close(): void
     {
         $this->stream->close();
     }
 
     public function detach()
     {
-
+        throw new \BadMethodCallException();
     }
 
     public function getSize()
     {
+        throw new \BadMethodCallException();
     }
 
     public function tell()
     {
+        throw new \BadMethodCallException();
     }
 
     public function eof()
     {
+        throw new \BadMethodCallException();
     }
 
-    public function isSeekable()
+    public function isSeekable(): bool
     {
+        throw new \BadMethodCallException();
     }
 
     public function seek(int $offset, int $whence = SEEK_SET)
     {
+        throw new \BadMethodCallException();
     }
 
     public function rewind()
     {
+        throw new \BadMethodCallException();
     }
 
     public function isWritable()
@@ -60,7 +69,7 @@ class AsyncStream implements StreamInterface
 
     public function write(string $string)
     {
-        // TODO: Implement write() method.
+        throw new \BadMethodCallException();
     }
 
     public function isReadable()
