@@ -183,7 +183,7 @@ final class Server extends EventEmitter implements ServerInterface
         $this->activatePlugins();
 
         $this->setupPrimary();
-        
+
         $this->cluster->run();
     }
 
@@ -238,6 +238,7 @@ final class Server extends EventEmitter implements ServerInterface
             $this->handleCommand(new ControlCommand(self::CONTROL_CONNECTIONS));
         });
 
+        var_dump($this->options);
         // fork workers.
         for ($i = 0; $i < $this->options['worker_num']; $i++) {
             $this->cluster->fork();

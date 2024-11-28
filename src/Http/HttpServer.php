@@ -18,17 +18,13 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use React\Http\HttpServer as ReactHttpServer;
-use React\Http\Middleware\LimitConcurrentRequestsMiddleware;
-use React\Http\Middleware\RequestBodyBufferMiddleware;
-use React\Http\Middleware\RequestBodyParserMiddleware;
-use React\Http\Middleware\StreamingRequestMiddleware;
 use React\Socket\ConnectionInterface;
-use React\Socket\SocketServer;
 use React\Stream\Util;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Viso\Cluster\Cluster;
 use Viso\Http\Exception\InvalidHeaderException;
+use Viso\Http\Parser\HttpEmitter;
+use Viso\Http\Parser\HttpParser;
 use Viso\Server\ConnectionPool;
 use Viso\Server\Server;
 use Viso\Server\ServerInterface;
@@ -105,24 +101,13 @@ final class HttpServer extends EventEmitter implements ServerInterface
         return $requestHandler;
     }
 
-    private function createHttpReader(): ReactHttpServer
-    {
-        return new ReactHttpServer(
-            Cluster::get()->loop,
-            new StreamingRequestMiddleware(),
-            new LimitConcurrentRequestsMiddleware($this->config['limit-concurrent-requests'] ?? 1024),
-            new RequestBodyBufferMiddleware($this->config['request-body-buffer'] ?? 65536),
-            new RequestBodyParserMiddleware(),
-            [$this, 'onRequest']
-        );
-    }
-
     /**
      * {@internal}
      * @param ServerRequestInterface $request
+     * @param ConnectionInterface $connection
      * @return ResponseInterface
      */
-    public function onRequest(ServerRequestInterface $request): ResponseInterface
+    private function handleRequest(ServerRequestInterface $request, ConnectionInterface $connection): ResponseInterface
     {
         $this->connections->getMetadata($connection)->incrRequest();
         $this->emit('request', [$request, $connection]);
@@ -141,9 +126,13 @@ final class HttpServer extends EventEmitter implements ServerInterface
     {
         Util::forwardEvents($this->server, $this, ['error', 'connection', 'socket']);
 
-        $httpServer = $this->createHttpReader();
-        $this->server->on('socket', function(SocketServer $socket) use($httpServer){
-            $httpServer->listen($socket);
+        $this->server->on('connection', function(ConnectionInterface $connection){
+            $parser = new HttpParser($connection);
+            $emitter = new HttpEmitter($connection);
+            $parser->on('request', function (ServerRequestInterface $request) use ($connection, $emitter) {
+                $response = $this->handleRequest($request, $connection);
+                $emitter->emit($response);
+            });
         });
 
         // Add a timer for connections.

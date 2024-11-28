@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Viso\Http\Parser;
 
 use Evenement\EventEmitter;
-use Laminas\Diactoros\ServerRequest;
+use GuzzleHttp\Psr7\ServerRequest;
 use React\Socket\ConnectionInterface;
 use Viso\Http\Exception\InvalidHeaderException;
 
@@ -53,7 +53,7 @@ final class HttpParser extends EventEmitter
                     throw new InvalidHeaderException('Unable to recognize the transmission method of the body');
                 }
                 $body->on('end', fn() => $this->resume());
-                
+
                 $request = $request->withBody(new AsyncStream($body));
                 $this->emit('request', [$request]);
 
