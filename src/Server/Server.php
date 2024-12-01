@@ -124,7 +124,7 @@ final class Server extends EventEmitter implements ServerInterface
     private function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefault('worker_num', 4)
+            ->setDefault('worker_num', 1)
             ->setInfo('worker_num', 'The worker num of the server')
             ->setIgnoreUndefined()
         ;
@@ -238,7 +238,6 @@ final class Server extends EventEmitter implements ServerInterface
             $this->handleCommand(new ControlCommand(self::CONTROL_CONNECTIONS));
         });
 
-        var_dump($this->options);
         // fork workers.
         for ($i = 0; $i < $this->options['worker_num']; $i++) {
             $this->cluster->fork();
