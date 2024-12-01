@@ -13,14 +13,16 @@ final class LimitedLengthBody extends EventEmitter implements ReadableStreamInte
 
     private int $length;
 
+    private int $limited;
+
     private string $buffer;
 
     private bool $closed = false;
 
-    public function __construct(ReadableStreamInterface $source, int $length)
+    public function __construct(ReadableStreamInterface $source, int $limited)
     {
         $this->source = $source;
-        $this->length = $length;
+        $this->limited = $limited;
 
         $this->source->on('data', [$this, 'handleData']);
         $this->source->on('error', [$this, 'handleError']);
@@ -36,9 +38,10 @@ final class LimitedLengthBody extends EventEmitter implements ReadableStreamInte
     public function handleData(string $chunk): void
     {
         $this->buffer .= $chunk;
+        $this->length += strlen($chunk);
 
-        if (strlen($this->buffer) >= $this->length) {
-            $this->emit('data', [substr($this->buffer, 0, $this->length)]);
+        if ($this->length >= $this->limited) {
+            $this->emit('data', [substr($this->buffer, 0, $this->limited)]);
             $this->emit('end');
             $this->emit('close');
             $this->source->removeListener('data', [$this, 'handleData']);
